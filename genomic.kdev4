@@ -1,0 +1,4 @@
+[Project]
+Name=genomic
+Manager=KDevCMakeManager
+VersionControl=kdevgit
