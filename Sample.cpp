@@ -23,20 +23,6 @@ void GenericSampleSet::write(const string& fileName)
 {
 	string ext = fileName.substr(fileName.find_last_of('.')+1);
 	
-	/*
-	if (mapping::extension[ext] != rep->type()) {
-		SampleSet* tmp = rep->cloneAs(ext);
-		// problem: raw need to have fields for segmented and vice versa
-		swap(rep, tmp);
-		delete rep;
-	}
-	*/
-	
-	// perhaps need to use cloneFrom(SampleSet* set)
-	// but each class need to determine set->type()
-	// not different from using copy constructor
-	
-	
 	// cast $rep to appropriate type
 	// runtime checking is skipped (i.e. use static_cast instead of dynamic_case)
 	//  since exact type can be determined

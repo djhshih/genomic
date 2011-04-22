@@ -2,6 +2,7 @@
 #define genomic_Sample_h
 
 #include "genomic.h"
+#include "Tree.h"
 
 #include <iostream>
 #include <fstream>
@@ -27,11 +28,68 @@ public:
 };
 
 template<typename T>
+class Chromosome
+{
+private:
+	
+public:
+	size_t index;
+	Chromosome(const size_t chromIndex) : index(chromIndex) {
+	}
+};
+
+template<typename T>
+class LinearChromosome : Chromosome<T>
+{
+	typedef typename vector<T>::iterator iterator;
+private:
+	vector<T> items;
+public:
+	LinearChromosome(const size_t chromIndex) : Chromosome<T>(chromIndex) {
+	}
+	LinearChromosome(const LinearChromosome<T>& chr) 
+	: Chromosome<T>(chr.index) {
+		// deep copy
+		iterator i, end = chr.end();
+		for (i = chr.begin(); i != end; ++i) {
+			items.push_back(*i);
+		}
+	}
+	~LinearChromosome() {
+	}
+	T& at(size_t i) {
+		return items[i];
+	}
+	T& operator[](size_t i) {
+		return items[i];
+	}
+	iterator begin() {
+		return items.begin();
+	}
+	iterator end() {
+		return items.end();
+	}
+	void push_back(T& item) {
+		items.push_back(item);
+	}
+	void pop_back() {
+		items.pop_back();
+	}
+};
+
+template<typename T>
+class KDTreeChromosome : Chromosome<T>
+{
+private:
+	// k-d tree
+public:
+	KDTreeChromosome() {
+	}
+};
+
+template<typename T>
 class Sample
 {
-	friend class SampleSet;
-	friend class SegmentedSampleSet;
-	friend class RawSampleSet;
 public:
 	typedef vector<T*> Chromosome;
 	typedef vector<Chromosome> Chromosomes;
@@ -42,9 +100,13 @@ private:
 	Chromosomes items;
 public:
 	Sample(const string& sampleName) : name(sampleName) {
+		// always allocate for all chromosomes
 		items.resize(nChromosomes);
 	}
 	~Sample() {
+		clear();
+	}
+	void clear() {
 		for (typename Chromosomes::iterator i = items.begin(); i != items.end(); ++i) {
 			for (typename Chromosome::iterator j = i->begin(); j != i->end(); ++j) {
 				// delete object pointed to by Segment* pointer
@@ -109,6 +171,7 @@ class RawSampleSet;
 
 class SampleSet
 {
+	friend class GenericSampleSet;
 public:
 	SampleSet() {}
 	//virtual SampleSet(SampleSet& set) = 0;
@@ -119,10 +182,12 @@ public:
 	virtual void write(const string& fileName) = 0;
 	virtual void clear() = 0;
 	virtual data::Type type() = 0;
+	
 protected:
-	//virtual SampleSet* cloneFrom(SampleSet* set) = 0;
 	static const char delim;
 	fstream file;
+private:
+	virtual SampleSet* clone() = 0;
 };
 
 
@@ -134,11 +199,15 @@ private:
 	// body representation
 	// cannot only point to derived classes of SampleSet other than this class
 	SampleSet* rep;
-	/*SampleSet* cloneFrom(SampleSet* set) {
-		return rep->cloneFrom(set);
-	}*/
+	
+	SampleSet* clone() {
+		return new GenericSampleSet(*this);
+	}
 public:
 	GenericSampleSet() : rep(NULL) {}
+	GenericSampleSet(const GenericSampleSet& gset) {
+		rep = gset.rep->clone();
+	}
 	~GenericSampleSet() {
 		clear();
 	}
@@ -174,15 +243,17 @@ private:
 	Markers markers;
 	map<string, Sample<Value>*> byNames;
 	
-	/*RawSampleSet* cloneFrom(SampleSet* set) {
-		return new RawSampleSet(*set);
-	}*/
+	RawSampleSet* clone() {
+		return new RawSampleSet(*this);
+	}
 public:
 	RawSampleSet() {
 		markers.resize(nChromosomes);
 	}
 	RawSampleSet(SampleSet& set);
-	RawSampleSet(RawSampleSet& raw);
+	RawSampleSet(RawSampleSet& raw) {
+		// TODO
+	}
 	RawSampleSet(SegmentedSampleSet& segmented);
 	~RawSampleSet() {
 		clear();
@@ -238,13 +309,16 @@ private:
 	Samples samples;
 	map<string, Sample<Segment>*> byNames;
 	
-	/*SegmentedSampleSet* cloneFrom(SampleSet* set) {
-		return new SegmentedSampleSet(*set);
-	}*/
+	SegmentedSampleSet* clone() {
+		return new SegmentedSampleSet(*this);
+	}
 public:
 	SegmentedSampleSet() {
 	}
-	SegmentedSampleSet(SegmentedSampleSet& segmented);
+	SegmentedSampleSet(SegmentedSampleSet& segmented) {
+		byNames = segmented.byNames;
+		// TODO
+	}
 	SegmentedSampleSet(RawSampleSet& raw);
 	~SegmentedSampleSet() {
 		clear();
