@@ -2,6 +2,7 @@
 #define genomic_Tree_h
 
 #include <iostream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -271,8 +272,12 @@ namespace tree {
 			cout << endl;
 			_print(subroot->right, level+1);
 		}
-		Node<T>* _remove(Node<T>* subroot , const Key& key, Node<T>*& item) {}
-		Node<T>* deleteMin(Node<T>* subroot, Node<T>*& min) {}
+		Node<T>* _remove(Node<T>* subroot , const Key& key, Node<T>*& item) {
+			throw runtime_error("KDTree::_remove(...) is yet not implemented!");
+		}
+		Node<T>* deleteMin(Node<T>* subroot, Node<T>*& min) {
+			throw runtime_error("KDTree::_deleteMin(...) is yet not implemented!");
+		}
 	public:
 		KDTree(size_t nDimensions) : ndim(nDimensions) {}
 		~KDTree() {
