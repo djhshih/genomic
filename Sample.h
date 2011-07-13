@@ -55,6 +55,14 @@ public:
 			items.push_back(*i);
 		}
 	}
+	LinearChromosome<T>& operator=(const LinearChromosome<T>& chr) {
+		LinearChromosome tmp(chr);
+		swap(tmp);
+		return *this;
+	}
+	LinearChromosome<T>& swap(LinearChromosome<T>& chr) {
+		items.swap(chr.items);
+	}
 	~LinearChromosome() {
 	}
 	T& at(size_t i) {
@@ -197,7 +205,7 @@ class GenericSampleSet : public SampleSet
 {
 private:
 	// body representation
-	// cannot only point to derived classes of SampleSet other than this class
+	// N.B. can only point to derived classes of SampleSet other than this class
 	SampleSet* rep;
 	
 	SampleSet* clone() {

@@ -257,7 +257,7 @@ void SegmentedSampleSet::write(const string& fileName)
 	file.open(fileName.c_str(), ios::out);
 	if (!file.is_open()) throw runtime_error("Failed to open output file");
 	
-	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "markers" << delim << "value" << endl;
+	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "state" << endl;
 	
 	// iteratrate through samples
 	SamplesIterator it, end = samples.end();

@@ -2,7 +2,7 @@
 #define BOOST_TEST_MODULE "Unit Tests for genomic"
 #include <boost/test/unit_test.hpp>
 #include "../Sample.h"
-#include "FilesDiff.h"
+#include "FilesDiff.hpp"
 
 #include <fstream>
 #include <queue>
@@ -61,6 +61,7 @@ struct IOFixture
 				stream >> s;
 				if (s[0] == chrClass) {
 					// item specifies which class to use
+					// remove the first character
 					s = s.substr(1);
 					if (s == "RawSampleSet") {
 						sets[type].push(&rset);
@@ -81,7 +82,7 @@ struct IOFixture
 		configf.close();
 	}
 	
-	IOFixture() : chrComment('#'), chrClass('@') {	
+	IOFixture() : chrComment('#'), chrClass('@'), diff(1) {	
 		
 		sets.resize(tests.configFilenames.size());
 		filenames.resize(tests.configFilenames.size());
