@@ -34,6 +34,7 @@ private:
 	
 public:
 	size_t index;
+	Chromosome() {}
 	Chromosome(const size_t chromIndex) : index(chromIndex) {
 	}
 };
@@ -41,19 +42,27 @@ public:
 template<typename T>
 class LinearChromosome : Chromosome<T>
 {
+public:
 	typedef typename vector<T>::iterator iterator;
 private:
 	vector<T> items;
 public:
+	LinearChromosome() {}
 	LinearChromosome(const size_t chromIndex) : Chromosome<T>(chromIndex) {
 	}
 	LinearChromosome(const LinearChromosome<T>& chr) 
 	: Chromosome<T>(chr.index) {
 		// deep copy
-		iterator i, end = chr.end();
-		for (i = chr.begin(); i != end; ++i) {
+		for (size_t i = 0; i < chr.items.size(); ++i) {
+			items.push_back(chr.items[i]);
+		}
+		// could not use iterator here... ambiguity issue with T?
+		/*
+		iterator i, end = chr.items.end();
+		for (i = chr.items.begin(); i != end; ++i) {
 			items.push_back(*i);
 		}
+		*/
 	}
 	LinearChromosome<T>& operator=(const LinearChromosome<T>& chr) {
 		LinearChromosome tmp(chr);
@@ -77,11 +86,14 @@ public:
 	iterator end() {
 		return items.end();
 	}
-	void push_back(T& item) {
+	void push_back(const T& item) {
 		items.push_back(item);
 	}
 	void pop_back() {
 		items.pop_back();
+	}
+	void clear() {
+		items.clear();
 	}
 };
 
@@ -95,11 +107,11 @@ public:
 	}
 };
 
-template<typename T>
+template<typename T, typename Chromosome>
 class Sample
 {
 public:
-	typedef vector<T*> Chromosome;
+	//typedef vector<T*> Chromosome;
 	typedef vector<Chromosome> Chromosomes;
 	string name;
 	string platform;
@@ -115,12 +127,15 @@ public:
 		clear();
 	}
 	void clear() {
+		items.clear();
+		/*
 		for (typename Chromosomes::iterator i = items.begin(); i != items.end(); ++i) {
 			for (typename Chromosome::iterator j = i->begin(); j != i->end(); ++j) {
 				// delete object pointed to by Segment* pointer
 				delete (*j);
 			}
 		}
+		*/
 	}
 	Chromosome* operator[](size_t chromIndex) {
 		if (chromIndex < items.size()) {
@@ -150,24 +165,18 @@ public:
 		if (k != 0) return &(items[k-1]);
 		return NULL;
 	}
-	T* createAt(size_t chromIndex) {
+	void addToChromosome(size_t chromIndex, T& item) {
 		if (chromIndex < items.size()) {
-			T* item = new T();
 			items[chromIndex].push_back(item);
-			return item;
 		}
-		return NULL;
 	}
-	T* createAt(string& chromName) {
+	void addToChromosome(string& chromName, T& item) {
 		size_t k = mapping::chromosome[chromName];
 		if (k != 0) {
-			T* item = new T();
 			items[k-1].push_back(item);
-			return item;
 		}
-		return NULL;
 	}
-	void remove(T* item) {
+	void remove(T item) {
 		// not implemented
 		// need to find segment in data structure
 	}
@@ -240,16 +249,18 @@ class RawSampleSet : public SampleSet
 	friend class SegmentedSampleSet;
 public:
 	typedef float Value;
-	typedef vector<Sample<Value>*> Samples;
+	//typedef LinearChromosome<Value> Chromosome;
+	typedef Sample<Value, LinearChromosome<Value> > RawSample;
+	typedef vector<RawSample*> Samples;
 	typedef Samples::iterator SamplesIterator;
-	typedef Sample<Value>::Chromosomes::iterator ChromosomesIterator;
-	typedef Sample<Value>::Chromosome::iterator DataIterator;
+	typedef typename RawSample::Chromosomes::iterator ChromosomesIterator;
+	typedef typename LinearChromosome<Value>::iterator DataIterator;
 	// vector of vector of markers organized by chromosomes
 	typedef vector< vector<Marker*> > Markers;
 private:
 	Samples samples;
 	Markers markers;
-	map<string, Sample<Value>*> byNames;
+	map<string, RawSample*> byNames;
 	
 	RawSampleSet* clone() {
 		return new RawSampleSet(*this);
@@ -289,11 +300,11 @@ public:
 	}
 	void read(const string& fileName);
 	void write(const string& fileName);
-	Sample<Value>* sample(const string& sampleName) {
-		Sample<Value>* sam = byNames[sampleName];
+	RawSample* sample(const string& sampleName) {
+		RawSample* sam = byNames[sampleName];
 		if (sam == NULL) {
 			// sample does not exist: create it
-			sam = new Sample<Value>(sampleName);
+			sam = new RawSample(sampleName);
 			samples.push_back(sam);
 			// register name
 			byNames[sampleName] = sam;
@@ -309,13 +320,16 @@ class SegmentedSampleSet : public SampleSet
 	friend class GenericSampleSet;
 	friend class RawSampleSet;
 public:
-	typedef vector<Sample<Segment>*> Samples;
+	//typedef LinearChromosome<Segment> Chromosome;
+	typedef Sample<Segment, LinearChromosome<Segment> > SegmentedSample;
+	
+	typedef vector<SegmentedSample*> Samples;
 	typedef Samples::iterator SamplesIterator;
-	typedef Sample<Segment>::Chromosomes::iterator ChromosomesIterator;
-	typedef Sample<Segment>::Chromosome::iterator DataIterator;
+	typedef typename SegmentedSample::Chromosomes::iterator ChromosomesIterator;
+	typedef LinearChromosome<Segment>::iterator DataIterator;
 private:
 	Samples samples;
-	map<string, Sample<Segment>*> byNames;
+	map<string, SegmentedSample*> byNames;
 	
 	SegmentedSampleSet* clone() {
 		return new SegmentedSampleSet(*this);
@@ -345,11 +359,11 @@ public:
 	}
 	void read(const string& fileName);
 	void write(const string& fileName);
-	Sample<Segment>* sample(const string& sampleName) {
-		Sample<Segment>* sam = byNames[sampleName];
+	SegmentedSample* sample(const string& sampleName) {
+		SegmentedSample* sam = byNames[sampleName];
 		if (sam == NULL) {
 			// sample does not exist: create it
-			sam = new Sample<Segment>(sampleName);
+			sam = new SegmentedSample(sampleName);
 			samples.push_back(sam);
 			// register name
 			byNames[sampleName] = sam;

@@ -107,11 +107,7 @@ void RawSampleSet::read(const string& fileName)
 				while (!stream.eof()) {
 					stream >> value;
 					// create point at specified chromosome
-					Value* point = samples[++i]->createAt(chromName);
-					if (point == NULL) {
-						throw runtime_error("Failed to create point on specified chromosome");
-					}	
-					*point = value;
+					samples[++i]->addToChromosome(chromName, value);
 				}
 			}
 		} else {
@@ -147,7 +143,7 @@ void RawSampleSet::write(const string& fileName)
 			// iterate through samples to print values, selected the specified chromosome and marker
 			SamplesIterator it, end = samples.end();
 			for (it = samples.begin(); it != end; ++it) {
-				file << delim << *((**it)[chr]->at(markerIndex));
+				file << delim << (**it)[chr]->at(markerIndex);
 			}
 			file << endl;
 			
@@ -165,14 +161,14 @@ SegmentedSampleSet::SegmentedSampleSet(RawSampleSet& raw)
 	// however, need to assume that markers are stored in vectors, for looking up marker information
 	
 	typedef RawSampleSet::Samples::iterator RawSamplesIterator;
-	typedef Sample<RawSampleSet::Value>::Chromosomes::iterator RawChromosomesIterator;
-	typedef Sample<RawSampleSet::Value>::Chromosome::iterator RawDataIterator;
+	typedef RawSampleSet::ChromosomesIterator RawChromosomesIterator;
+	typedef RawSampleSet::DataIterator RawDataIterator;
 	
 	// iterate through samples in $raw
 	RawSamplesIterator it, end = raw.samples.end();
 	for (it = raw.samples.begin(); it != end; ++it) {
 		// create sample
-		Sample<Segment>* sam = sample((*it)->name);
+		SegmentedSample* sam = sample((*it)->name);
 		// iterate through chromosome in sample
 		size_t chr = 0;
 		RawChromosomesIterator chrIt, chrEnd = (*it)->end();
@@ -183,21 +179,23 @@ SegmentedSampleSet::SegmentedSampleSet(RawSampleSet& raw)
 			position markerIndex, startMarkerIndex = 0;
 			RawSampleSet::Value prevValue;
 			if (markerIt != markerEnd) {
-				prevValue = **markerIt;
+				prevValue = *markerIt;
 				// start at second marker
 				++markerIt;
 				markerIndex = 1;
 				while (markerIt != markerEnd) {
-					if (**markerIt != prevValue) {
+					if (*markerIt != prevValue) {
 						// segment ended: store segment from $startMarkerIndex to $markerIndex-1
-						sam->chromosome(chr)->push_back( new Segment(
+						Segment seg(
 							raw.markers[chr][startMarkerIndex]->pos,
 							raw.markers[chr][markerIndex-1]->pos,
 							(markerIndex-1) - startMarkerIndex + 1,
-							prevValue) );
+							prevValue
+						);
+						sam->chromosome(chr)->push_back(seg);
 						// start new segment
 						startMarkerIndex = markerIndex;
-						prevValue = **markerIt;
+						prevValue = *markerIt;
 					}
 					++markerIndex;
 					++markerIt;
@@ -205,11 +203,13 @@ SegmentedSampleSet::SegmentedSampleSet(RawSampleSet& raw)
 				// store last segment
 				// handling is same whether last segment is the last marker alone or
 				// 	laste segment ends on the last marker
-				sam->chromosome(chr)->push_back( new Segment(
+				Segment seg(
 					raw.markers[chr][startMarkerIndex]->pos,
 					raw.markers[chr][markerIndex-1]->pos,
 					(markerIndex-1) - startMarkerIndex + 1,
-					prevValue) );
+					prevValue
+				);
+				sam->chromosome(chr)->push_back(seg);
 			}
 			++chr;
 		}  // for chrIt
@@ -236,11 +236,9 @@ void SegmentedSampleSet::read(const string& fileName)
 			// ignore unknown chromosome: continue to next line
 			if (mapping::chromosome[chromName] == 0) continue;
 			// create segment at specified chromosome
-			seg = sample(sampleName)->createAt(chromName);
-			if (seg == NULL) {
-				throw runtime_error("Failed to create segment on specified chromosome");
-			}	
-			file >> seg->start >> seg->end >> seg->nelem >> seg->value;
+			Segment seg;
+			file >> seg.start >> seg.end >> seg.nelem >> seg.value;
+			sample(sampleName)->addToChromosome(chromName, seg);
 			//trace("%s %s %d %d %d %f\n", sampleName.c_str(), chromName.c_str(), seg->start, seg->end, seg->nelem, seg->value);
 		} else {
 			// discard line
@@ -271,8 +269,7 @@ void SegmentedSampleSet::write(const string& fileName)
 			// CANNOT assume segments are stored in a vector
 			DataIterator segIt, segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
-				Segment* seg = (*segIt);
-				file << (*it)->name << delim << chr << delim << seg->start << delim << seg->end << delim << seg->nelem << delim << seg->value << endl;
+				file << (*it)->name << delim << chr << delim << segIt->start << delim << segIt->end << delim << segIt->nelem << delim << segIt->value << endl;
 			}
 			++chr;
 		}
