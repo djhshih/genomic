@@ -33,7 +33,7 @@ namespace tree {
 		virtual Node<T>* _insert(Node<T>* subroot, const T& item) = 0;
 		virtual Node<T>* _remove(Node<T>* subroot , const Key& key, Node<T>*& item) = 0;
 		virtual void _print(Node<T>* subroot, int level) const = 0;
-		virtual Node<T>* deleteMin(Node<T>* subroot, Node<T>*& min) = 0;
+		virtual Node<T>* removeMin(Node<T>* subroot, Node<T>*& min) = 0;
 	private:
 		void __clear(Node<T>* subroot) {
 			if (subroot == NULL) return;
@@ -69,7 +69,7 @@ namespace tree {
 			// delete minimum value
 			if (root == NULL) return false;
 			Node<T>* t;
-			root = deleteMin(root, t);
+			root = removeMin(root, t);
 			item = t->value();
 			delete t;
 			--count;
@@ -154,7 +154,7 @@ namespace tree {
 					// find node with least key value that is greater than the node;
 					//  store it in $tmp
 					// (no need to to assignment?)
-					subroot->right = deleteMin(subroot->right, tmp);
+					subroot->right = removeMin(subroot->right, tmp);
 					// swap values
 					T value = subroot->value;
 					subroot->value = tmp->value;
@@ -178,7 +178,7 @@ namespace tree {
 		
 		// return the subroot with the min key value node removed
 		//  also returns pointer to the removed node by reference
-		Node<T>* deleteMin(Node<T>* subroot, Node<T>*& min) {
+		Node<T>* removeMin(Node<T>* subroot, Node<T>*& min) {
 			if (subroot->left == NULL) {
 				// node with min key has no left-child
 				// (if it did, it would not have the min key)
@@ -189,7 +189,7 @@ namespace tree {
 				return subroot->right;
 			} else {
 				// continue traversing down the left branch to find the min
-				subroot->left = deleteMin(subroot->left, min);
+				subroot->left = removeMin(subroot->left, min);
 				return subroot;
 			}
 		}
@@ -199,18 +199,19 @@ namespace tree {
 	};
 	
 	// T must support T.keys()
+	// the size of T.keys() must match ndim
 	template <typename T>
 	class KDTree : public Tree<T, int*>
 	{
-		typedef int* Key;
+		typedef int* Keys;
 	private:
 		size_t ndim;
-		bool _find(Node<T>* subroot, const Key& coord, T& item) const {
+		bool _find(Node<T>* subroot, const Keys& coord, T& item) const {
 			return this->_find(subroot, coord, item, 0);
 		}
-		bool _find(Node<T>* subroot, const Key& coord, T& item, int discrim) const {
+		bool _find(Node<T>* subroot, const Keys& coord, T& item, int discrim) const {
 			if (subroot == NULL) return false;  // empty tree
-			int* currCoord = subroot->value.keys();
+			Keys currCoord = subroot->value.keys();
 			bool coordsAreEqual = true;
 			for (size_t i = 0; i < ndim; ++i) {
 				if (currCoord[i] != coord[i]) {
@@ -265,11 +266,44 @@ namespace tree {
 			cout << endl;
 			_print(subroot->right, level+1);
 		}
-		Node<T>* _remove(Node<T>* subroot , const Key& key, Node<T>*& item) {
+		// Remving node N
+		// first find node N, then replace its record by the record in N's right
+		//   subtree with the least value of N's discriminator, or
+		//   by the record in N's left subtree with the greatest value for this
+		//   discriminator
+		Node<T>* _remove(Node<T>* subroot, const Keys& key, Node<T>*& item) {
 			throw runtime_error("KDTree::_remove(...) is yet not implemented!");
 		}
-		Node<T>* deleteMin(Node<T>* subroot, Node<T>*& min) {
-			throw runtime_error("KDTree::_deleteMin(...) is yet not implemented!");
+		Node<T>* removeMin(Node<T>* subroot, Node<T>*& min) {
+			throw runtime_error("KDTree::_removeMin(...) is yet not implemented!");
+		}
+		// auxilary function for removing a node
+		// finds the node with the mininum key value for the specified discriminator
+		Node<T>* findMin(Node<T>* subroot, int discrim, int currDiscrim) {
+			if (subroot == NULL) return NULL;
+			Node<T> *a, *b;
+			Keys *keys, *akeys, *bkeys;
+			keys = subroot->value.keys();
+			a = findMin(subroot->left, discrim, (currDiscrim+1)%ndim);
+			if (a != NULL) akeys = a->value.keys();
+			if (discrim != currDiscrim) {
+				// discriminator for the current level is different from the
+				//   the specified discrminator
+				// Thus, min could be on either side: check the right side too
+				// Otherwise, having checked the left side sufficient
+				b = findMin(subroot->right, discrim, (currDiscrim+1)%ndim);
+				if (b != NULL) bkeys = b->value.keys();
+				if (a == NULL || (b != NULL && bkeys[discrim] < akeys[discrim])) {
+					// Right side has a smaller key value
+					a = b;
+					akeys = bkeys;
+				}
+			}
+			// Now, a has the smallest value in children
+			if (a == NULL || (keys[discrim] < akeys[discrim])) {
+				return subroot;
+			}
+			return a;
 		}
 	public:
 		KDTree(size_t nDimensions) : ndim(nDimensions) {}
