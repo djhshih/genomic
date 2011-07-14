@@ -29,18 +29,25 @@ namespace tree {
 	protected:
 		Node<T>* root;
 		size_t count;
-		virtual void _clear(Node<T>* subroot) = 0;
 		virtual bool _find(Node<T>* subroot, const Key& key, T& item) const = 0;
 		virtual Node<T>* _insert(Node<T>* subroot, const T& item) = 0;
 		virtual Node<T>* _remove(Node<T>* subroot , const Key& key, Node<T>*& item) = 0;
 		virtual void _print(Node<T>* subroot, int level) const = 0;
 		virtual Node<T>* deleteMin(Node<T>* subroot, Node<T>*& min) = 0;
+	private:
+		void __clear(Node<T>* subroot) {
+			if (subroot == NULL) return;
+			__clear(subroot->left);
+			__clear(subroot->right);
+			delete subroot;
+		}
 	public:
 		Tree() : root(NULL), count(0) {}
 		virtual ~Tree() {
+			clear();
 		}
 		void clear() {
-			_clear(root);
+			__clear(root);
 			root = NULL;
 			count = 0;
 		}
@@ -87,12 +94,6 @@ namespace tree {
 	class BSTree : public Tree<T, T>
 	{
 	private:
-		void _clear(Node<T>* subroot) {
-			if (subroot == NULL) return;
-			this->_clear(subroot->left);
-			this->_clear(subroot->right);
-			delete subroot;
-		}
 		bool _find(Node<T>* subroot, const T& key, T& item) const {
 			if (subroot == NULL) {
 				return false;
@@ -194,9 +195,7 @@ namespace tree {
 		}
 	public:
 		BSTree() {}
-		~BSTree() {
-			Tree<T, T>::clear();
-		}
+		~BSTree() {}
 	};
 	
 	// T must support T.keys()
@@ -206,12 +205,6 @@ namespace tree {
 		typedef int* Key;
 	private:
 		size_t ndim;
-		void _clear(Node<T>* subroot) {
-			if (subroot == NULL) return;
-			this->_clear(subroot->left);
-			this->_clear(subroot->right);
-			delete subroot;
-		}
 		bool _find(Node<T>* subroot, const Key& coord, T& item) const {
 			return this->_find(subroot, coord, item, 0);
 		}
@@ -280,9 +273,7 @@ namespace tree {
 		}
 	public:
 		KDTree(size_t nDimensions) : ndim(nDimensions) {}
-		~KDTree() {
-			Tree<T, int*>::clear();
-		}
+		~KDTree() {}
 	};
 	
 };
