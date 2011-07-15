@@ -73,6 +73,13 @@ namespace mapping
 	static ExtensionMap extension;
 };
 
+namespace compare
+{
+	template <typename T1, typename T2>
+	bool pair(pair<T1, T2> a, pair<T1, T2> b) {
+		return a.first < b.first;
+	}
+}
 
 class Marker
 {
@@ -83,6 +90,14 @@ public:
 	Marker() {}
 	Marker(string markerName, size_t markerChromosome, position markerPosition)
 	: name(markerName), chromosome(markerChromosome), pos(markerPosition) {}
+	/*
+	static bool compare(const Marker& a, const Marker& b) {
+		return a.pos < b.pos;
+	}
+	static bool comparePointers(Marker* a, Marker* b) {
+		return a->pos < b->pos;
+	}
+	*/
 };
 
 /*

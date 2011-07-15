@@ -190,20 +190,23 @@ namespace tree {
 		~BSTree() {}
 	};
 	
-	
-	
 	template <typename T>
 	class Container
 	{
 	public:
 		typedef int Key;
-		typedef int* Keys;
+		typedef Key* Keys;
 	private:
 		const size_t ndim;
-	public:
 		Keys keys;
+	public:
 		T value;
 		Container(size_t nKeys) : ndim(nKeys), keys(new Key[nKeys]) {}
+		Container(size_t nKeys, const Keys& k) : ndim(nKeys), keys(new Key[nKeys]) {
+			for (size_t i = 0; i < ndim; ++i) {
+				keys[i] = k[i];
+			}
+		}
 		Container(const Container& d)
 		: ndim(d.ndim), keys(new Key[d.ndim]), value(d.value) {
 			for (size_t i = 0; i < d.ndim; ++i) {

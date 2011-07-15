@@ -101,7 +101,7 @@ template<typename T>
 class KDTreeChromosome : Chromosome<T>
 {
 private:
-	// k-d tree
+	tree::KDTree< tree::Container<Segment> > items;
 public:
 	KDTreeChromosome() {
 	}
@@ -249,14 +249,15 @@ class RawSampleSet : public SampleSet
 	friend class SegmentedSampleSet;
 public:
 	typedef float Value;
-	//typedef LinearChromosome<Value> Chromosome;
-	typedef Sample<Value, LinearChromosome<Value> > RawSample;
+	typedef LinearChromosome<Value> RawChromosome;
+	typedef Sample<Value, RawChromosome > RawSample;
 	typedef vector<RawSample*> Samples;
 	typedef Samples::iterator SamplesIterator;
 	typedef typename RawSample::Chromosomes::iterator ChromosomesIterator;
-	typedef typename LinearChromosome<Value>::iterator DataIterator;
+	typedef typename RawChromosome::iterator DataIterator;
 	// vector of vector of markers organized by chromosomes
-	typedef vector< vector<Marker*> > Markers;
+	typedef vector<Marker*> ChromosomeMarkers;
+	typedef vector<ChromosomeMarkers> Markers;
 private:
 	Samples samples;
 	Markers markers;
@@ -311,6 +312,7 @@ public:
 		}
 		return sam;
 	}
+	void sort();
 };
 
 

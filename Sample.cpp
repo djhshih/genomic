@@ -117,6 +117,7 @@ void RawSampleSet::read(const string& fileName)
 	
 	file.close();
 	trace("Read file %s\n", fileName.c_str());
+	sort();
 }
 
 void RawSampleSet::write(const string& fileName)
@@ -152,6 +153,51 @@ void RawSampleSet::write(const string& fileName)
 	
 	file.close();
 	trace("Wrote file %s\n", fileName.c_str());
+}
+
+void RawSampleSet::sort()
+{
+	// Construct order vector for obtaining a sorted index of markers
+	vector< pair<position, size_t> > order;
+	
+	for (size_t chri = 0; chri < markers.size(); ++chri) {	
+		
+		// Construct order vector for obtaining a sorted index of markers
+		// Additionally, replicate the markers on the curent chromosome;
+		//               replicate the chromosome for all samples
+		ChromosomeMarkers chromosomeMarkers;
+		vector<RawChromosome> samplesChromosomeCopy;
+		vector< pair<position, size_t> > order;
+		for (size_t j = 0; j < markers[chri].size(); ++j) {
+			order.push_back( make_pair(markers[chri][j]->pos, j) );
+			
+			chromosomeMarkers.push_back(markers[chri][j]);
+			
+			for (size_t s = 0; s < samples.size(); ++s) {
+				samplesChromosomeCopy.push_back(*(samples[s]->chromosome(chri)));
+			}
+		}
+		
+		// Sort on the order vector instead of the original vector<Markers*>,
+		//   in order to obtain the sorted index
+		std::sort(order.begin(), order.end(), &compare::pair<position, size_t>);
+		
+		// Now, order is sorted by genomic position, and order[i].second
+		//   contains each sorted index
+		
+		// Sort the markers on current chromosome, and each sample
+		for (size_t j = 0; j < markers[chri].size(); ++j) {
+			size_t index = order[j].second;
+			// Set the marker to the corresponding sorted marker
+			markers[chri][j] = chromosomeMarkers[index];
+			
+			// Iterate through samples, set the corresponding marker in the current chromosome
+			for (size_t s = 0; s < samples.size(); ++s) {
+				samples[s]->chromosome(chri)->at(j) = samplesChromosomeCopy[s][index];
+			}
+		}
+		
+	}
 }
 
 SegmentedSampleSet::SegmentedSampleSet(RawSampleSet& raw)
