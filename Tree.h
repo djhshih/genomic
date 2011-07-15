@@ -33,7 +33,6 @@ namespace tree {
 		virtual Node<T>* _insert(Node<T>* subroot, const T& item) = 0;
 		virtual Node<T>* _remove(Node<T>* subroot , const Key& key, Node<T>*& item) = 0;
 		virtual void _print(Node<T>* subroot, int level) const = 0;
-		virtual Node<T>* removeMin(Node<T>* subroot, Node<T>*& min) = 0;
 	private:
 		void __clear(Node<T>* subroot) {
 			if (subroot == NULL) return;
@@ -90,6 +89,7 @@ namespace tree {
 		}
 	};
 	
+	// Assume T and Key are the same
 	template <typename T>
 	class BSTree : public Tree<T, T>
 	{
@@ -128,8 +128,9 @@ namespace tree {
 		// remove designated node by replacing it with the node
 		//  with the least key value greater than the one being removed,
 		//  i.e. the node with the least key value in the right branch
-		//  (alternatively, can replace the node with the greatest key value
-		//  less than the one being removed, i.e. in the left branch)
+		//  (alternatively, one can replace the node with the greatest key value
+		//  less than the one being removed, i.e. in the left branch; however,
+		//  duplicated values would result in an invalid tree)
 		Node<T>* _remove(Node<T>* subroot , const T& key, Node<T>*& item) {
 			if (subroot == NULL) {
 				// item is not in tree
@@ -144,21 +145,23 @@ namespace tree {
 				Node<T>* tmp;
 				item = subroot;
 				if (subroot->left == NULL) {
-					// only a right child: point to it
+					// only a right child (or no child): point to it
 					subroot = subroot->right;
 				} else if (subroot->right == NULL) {
 					// only a left child: point to it
 					subroot = subroot->left;
 				} else {
-					// node to be removed has both children
-					// find node with least key value that is greater than the node;
-					//  store it in $tmp
-					// (no need to to assignment?)
+					// Node to be removed has both children
+					// Replace current node's value with the node storing the
+					//  least key value that is greater than the node;
+					//  store it in $tmp (passed by reference)
 					subroot->right = removeMin(subroot->right, tmp);
 					// swap values
 					T value = subroot->value;
 					subroot->value = tmp->value;
 					tmp->value = value;
+					// Now, subroot is the replacing node
+					//   and $tmp stores the removed node: pass it by reference
 					item = tmp;
 				}
 			}
@@ -198,37 +201,43 @@ namespace tree {
 		~BSTree() {}
 	};
 	
+	
+	typedef int* Coordinates;
+	
+	inline bool equalCoordinates(Coordinates a, Coordinates b, size_t ndim) {
+		bool equal = true;
+		for (size_t i = 0; i < ndim; ++i) {
+			if (a[i] != b[i]) {
+				equal = false;
+				break;
+			}
+		}
+		return equal;
+	}
+	
 	// T must support T.keys()
 	// the size of T.keys() must match ndim
 	template <typename T>
-	class KDTree : public Tree<T, int*>
+	class KDTree : public Tree<T, Coordinates>
 	{
-		typedef int* Keys;
 	private:
 		size_t ndim;
-		bool _find(Node<T>* subroot, const Keys& coord, T& item) const {
-			return this->_find(subroot, coord, item, 0);
+		bool _find(Node<T>* subroot, const Coordinates& keys, T& item) const {
+			return this->_find(subroot, keys, item, 0);
 		}
-		bool _find(Node<T>* subroot, const Keys& coord, T& item, int discrim) const {
+		bool _find(Node<T>* subroot, const Coordinates& keys, T& item, int discrim) const {
 			if (subroot == NULL) return false;  // empty tree
-			Keys currCoord = subroot->value.keys();
-			bool coordsAreEqual = true;
-			for (size_t i = 0; i < ndim; ++i) {
-				if (currCoord[i] != coord[i]) {
-					coordsAreEqual = false;
-					break;
-				}
-			}
-			if (coordsAreEqual) {
+			Coordinates currKeys = subroot->value.keys();
+			if (equalCoordinates(currKeys, keys, ndim)) {
 				item = subroot->value;
 				return true;
 			}
-			if (coord[discrim] < currCoord[discrim]) {
+			if (keys[discrim] < currKeys[discrim]) {
 				// search left branch, incrementing the discriminant dimension
-				return _find(subroot->left, coord, item, (discrim+1)%ndim);
+				return _find(subroot->left, keys, item, (discrim+1)%ndim);
 			} else {
 				// search righ branch
-				return _find(subroot->right, coord, item, (discrim+1)%ndim);
+				return _find(subroot->right, keys, item, (discrim+1)%ndim);
 			}
 		}
 		Node<T>* _insert(Node<T>* subroot, const T& item) {
@@ -239,9 +248,9 @@ namespace tree {
 				// empty tree: create node
 				return new Node<T>(item);
 			}
-			int* currCoord = subroot->value.keys();
-			int* coord = item.keys();
-			if (coord[discrim] < currCoord[discrim]) {
+			Coordinates currKeys = subroot->value.keys();
+			Coordinates keys = item.keys();
+			if (keys[discrim] < currKeys[discrim]) {
 				// insert on left
 				subroot->left = _insert(subroot->left, item, (discrim+1)%ndim);
 			} else {
@@ -266,23 +275,96 @@ namespace tree {
 			cout << endl;
 			_print(subroot->right, level+1);
 		}
+		
+		Node<T>* _remove(Node<T>* subroot, const Coordinates& keys, Node<T>*& item) {
+			return _remove(subroot, keys, item, 0);
+		}
 		// Remving node N
-		// first find node N, then replace its record by the record in N's right
-		//   subtree with the least value of N's discriminator, or
-		//   by the record in N's left subtree with the greatest value for this
-		//   discriminator
-		Node<T>* _remove(Node<T>* subroot, const Keys& key, Node<T>*& item) {
-			throw runtime_error("KDTree::_remove(...) is yet not implemented!");
+		// If N has one child...
+		//   We cannot simply assign N's parent to point to N's child, since
+		//   the lefts would be changed, create an invalid KD tree.
+		//   Therefore, replace N by an appropriate node in the left or right tree.
+		// If N has only a right child (or both children)...
+		//   First find node N, then replace its record by the record in N's right
+		//   subtree with the least value of N's discriminator
+		// If the right subtree does not exist, it is not satisfactory to
+		//   replace N's record with the recording having the greatest value for
+		//   the discriminator in the left subtree: this value might appear more than
+		//   once in the left subtree.
+		//   This would lead to the equal values for the discriminator in N's left tree.
+		//   (Recall that nodes in the left tree must have lower values of the
+		//   discriminator.)
+		// Solution: first move the left subtree of node N to become the right
+		//   subtree. Then, process with normal deletion process, replacing the
+		//   the record of N to be deleted with the record containing the
+		//   *least* value of the discriminator from what is now N's right subtree
+		Node<T>* _remove(Node<T>* subroot, const Coordinates& keys, Node<T>*& item, int discrim) {
+			
+			if (subroot == NULL) {
+				// item is not in tree
+				return NULL;
+			}
+			
+			Coordinates currKeys = subroot->value.keys();
+			if (equalCoordinates(currKeys, keys, ndim)) {
+				// Found N == subroot: proceed to remove it
+				
+				if (subroot->right == NULL && subroot->left == NULL) {
+					// N has no children: N can simply be removed
+					// Pass N by reference back to caller
+					item = subroot;
+					// Set subroot to NULL, s.t. calling function can effectively 
+					//   remove N from tree while setting its pointer to subroot
+					subroot = NULL;
+				} else {
+					// N has at least one child
+				
+					// Always replace N's record by the record in N's right subtree with
+					//   the least value of N's discriminator
+					
+					// One special case: right subtree does not exist
+					//   Move to the left subtree to the right subtree
+					if (subroot->right == NULL) {
+						// only a left child: point to it
+						subroot->right = subroot->left;
+						subroot->left = NULL;
+					}
+					// Find the node with the minimum key of the N's discriminator,
+					//   in the right subtree
+					//   $discrim == N's discrminator, since subroot == N
+					Node<T>* min = findMin(subroot->right, discrim, discrim);
+					// At this point, N must have a right child, because if it only
+					//   had a left child, it has been assigned as the right child
+					// Since N has a right child, min cannot be NULL
+					// After finding min, remove it from the right subtree
+					subroot->right = _remove(subroot->right, min->value.keys(), min, discrim);
+					// swap values between N and the min Node
+					T value = subroot->value;
+					subroot->value = min->value;
+					min->value = value;
+					// Now, min holds of the record of N
+					item = min;
+				}
+				
+			} else if (keys[discrim] < currKeys[discrim]) {
+				// search left branch, incrementing the discriminant dimension
+				// assign left child to the residual left tree with the target node removed
+				subroot->left = _remove(subroot->left, keys, item, (discrim+1)%ndim);
+			} else {
+				// search righ branch
+				// assign right child to the residual right tree with the target node removed
+				subroot->right = _remove(subroot->right, keys, item, (discrim+1)%ndim);
+			}
+			
+			return subroot;
 		}
-		Node<T>* removeMin(Node<T>* subroot, Node<T>*& min) {
-			throw runtime_error("KDTree::_removeMin(...) is yet not implemented!");
-		}
-		// auxilary function for removing a node
-		// finds the node with the mininum key value for the specified discriminator
+		// Finds and returns the node with the mininum key value of the
+		//   specified discriminator
+		// Auxilary function for removing a node
 		Node<T>* findMin(Node<T>* subroot, int discrim, int currDiscrim) {
 			if (subroot == NULL) return NULL;
 			Node<T> *a, *b;
-			Keys *keys, *akeys, *bkeys;
+			Coordinates keys, akeys, bkeys;
 			keys = subroot->value.keys();
 			a = findMin(subroot->left, discrim, (currDiscrim+1)%ndim);
 			if (a != NULL) akeys = a->value.keys();
