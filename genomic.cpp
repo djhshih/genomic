@@ -6,7 +6,6 @@
 using namespace std;
 
 
-
 int main(int argc, char **argv)
 {
 	srand((unsigned int)time(NULL));
@@ -27,14 +26,6 @@ int main(int argc, char **argv)
 		for (int d = 0; d < ndim; ++d) {
 			dat[d] = (rand() % 100) + 1;
 		}
-		/*
-		// print tuple
-		cout << "/";
-		for (int i = 0; i < ndim; ++i) {
-			cout << dat.keys()[i] << "/";
-		}
-		cout << endl;
-		*/
 		tree2.insert(dat);
 	}
 	tree2.print();

@@ -23,15 +23,15 @@ namespace tree {
 	
 	// Tree derived classes have same interface, different mechanism
 	// Use Public Function Calls Virtual Protected idiom
-	template <typename T>
+	template <typename T, typename K>
 	class Tree
 	{
 	protected:
 		Node<T>* root;
 		size_t count;
-		virtual bool _find(Node<T>* subroot, const T& value, T& item) const = 0;
+		virtual bool _find(Node<T>* subroot, const K& value, T& item) const = 0;
 		virtual Node<T>* _insert(Node<T>* subroot, const T& item) = 0;
-		virtual Node<T>* _remove(Node<T>* subroot , const T& value, Node<T>*& item) = 0;
+		virtual Node<T>* _remove(Node<T>* subroot , const K& value, Node<T>*& item) = 0;
 		virtual void _print(Node<T>* subroot, int level) const = 0;
 	private:
 		void __clear(Node<T>* subroot) {
@@ -54,7 +54,7 @@ namespace tree {
 			root = _insert(root, item);
 			++count;
 		}
-		bool remove(const T& value, T& item) {
+		bool remove(const K& value, T& item) {
 			Node<T>* t = NULL;
 			root = _remove(root, value, t);
 			// value is not found
@@ -64,7 +64,7 @@ namespace tree {
 			delete t;
 			return true;
 		}
-		bool find(const T& value, T& item) const {
+		bool find(const K& value, T& item) const {
 			return _find(root, value, item);
 		}
 		unsigned int size() {
@@ -80,7 +80,7 @@ namespace tree {
 	};
 	
 	template <typename T>
-	class BSTree : public Tree<T>
+	class BSTree : public Tree<T, T>
 	{
 	private:
 		bool _find(Node<T>* subroot, const T& value, T& item) const {
@@ -244,7 +244,7 @@ namespace tree {
 	//   KDKeyedData::operater[](size_t) for accessing a key in the key set
   // Container is a class that fulfills these requirements
 	template <typename KDKeyedData>
-	class KDTree : public Tree<KDKeyedData>
+	class KDTree : public Tree<KDKeyedData, KDKeyedData>
 	{
 	private:
 		size_t ndim;
