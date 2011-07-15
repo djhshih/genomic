@@ -294,6 +294,7 @@ void SegmentedSampleSet::read(const string& fileName)
 	
 	file.close();
 	trace("Read file %s\n", fileName.c_str());
+	sort();
 }
 
 void SegmentedSampleSet::write(const string& fileName)
@@ -322,4 +323,18 @@ void SegmentedSampleSet::write(const string& fileName)
 	}
 	file.close();
 	trace("Wrote file %s\n", fileName.c_str());
+}
+
+void SegmentedSampleSet::sort()
+{
+	// Sort samples by name
+	std::sort(samples.begin(), samples.end(), &SegmentedSample::pcompare);
+	// Iterate through samples and chromosomes therefore, sort segments
+	SamplesIterator it, end = samples.end();
+	for (it = samples.begin(); it != end; ++it) {
+		ChromosomesIterator chrIt, chrEnd = (*it)->end();
+		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
+			std::sort(chrIt->begin(), chrIt->end(), &Segment::compare);
+		}
+	}
 }

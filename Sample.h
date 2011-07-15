@@ -25,6 +25,9 @@ public:
 	}
 	Segment() {}
 	Segment(position startPos, position endPos, unsigned long numElements, float segValue) : start(startPos), end(endPos), nelem(numElements), value(segValue) {}
+	static bool compare(const Segment& a, const Segment& b) {
+		return a.start < b.start; 
+	}
 };
 
 template<typename T>
@@ -180,6 +183,12 @@ public:
 		// not implemented
 		// need to find segment in data structure
 	}
+	static bool compare(const Sample& a, const Sample& b) {
+		return a.name < b.name;
+	}
+	static bool pcompare(Sample* a, Sample* b) {
+		return a->name < b->name;
+	}
 };
 
 
@@ -238,9 +247,6 @@ public:
 		return data::generic;
 	}
 };
-
-
-//TODO Ensure SegmentedSampleSet and RawSampleSet sort input after storing
 
 
 class RawSampleSet : public SampleSet
@@ -372,9 +378,8 @@ public:
 		}
 		return sam;
 	}
+	void sort();
 };
-
-
 
 
 #endif
