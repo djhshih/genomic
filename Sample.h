@@ -262,21 +262,19 @@ public:
 	typedef typename RawSample::Chromosomes::iterator ChromosomesIterator;
 	typedef typename RawChromosome::iterator DataIterator;
 	// vector of vector of markers organized by chromosomes
-	typedef vector<Marker*> ChromosomeMarkers;
-	typedef vector<ChromosomeMarkers> Markers;
+	//typedef vector<Marker*> ChromosomeMarkers;
+	//typedef vector<ChromosomeMarkers> Markers;
 private:
 	Samples samples;
-	Markers markers;
+	marker::Set* markers;
 	map<string, RawSample*> byNames;
 	
 	RawSampleSet* clone() {
 		return new RawSampleSet(*this);
 	}
 public:
-	RawSampleSet() {
-		markers.resize(nChromosomes);
+	RawSampleSet() : markers(NULL) {
 	}
-	RawSampleSet(SampleSet& set);
 	RawSampleSet(RawSampleSet& raw) {
 		// TODO
 	}
@@ -295,6 +293,7 @@ public:
 		}
 		samples.clear();
 		byNames.clear();
+		/*
 		Markers::iterator mi, mend = markers.end();
 		for (mi = markers.begin(); mi != mend; ++mi) {
 			vector<Marker*>::iterator mj, mjend = mi->end();
@@ -302,12 +301,12 @@ public:
 				delete (*mj);
 			}
 		}
-		markers.clear();
-		markers.resize(nChromosomes);
+		*/
+		marker::manager.unref(markers);
 	}
 	void read(const string& fileName);
 	void write(const string& fileName);
-	RawSample* sample(const string& sampleName) {
+	RawSample* create(const string& sampleName) {
 		RawSample* sam = byNames[sampleName];
 		if (sam == NULL) {
 			// sample does not exist: create it
@@ -328,13 +327,13 @@ class SegmentedSampleSet : public SampleSet
 	friend class GenericSampleSet;
 	friend class RawSampleSet;
 public:
-	//typedef LinearChromosome<Segment> Chromosome;
-	typedef Sample<Segment, LinearChromosome<Segment> > SegmentedSample;
+	typedef LinearChromosome<Segment> SegmentedChromosome;
+	typedef Sample<Segment, SegmentedChromosome> SegmentedSample;
 	
 	typedef vector<SegmentedSample*> Samples;
 	typedef Samples::iterator SamplesIterator;
 	typedef typename SegmentedSample::Chromosomes::iterator ChromosomesIterator;
-	typedef LinearChromosome<Segment>::iterator DataIterator;
+	typedef SegmentedChromosome::iterator DataIterator;
 private:
 	Samples samples;
 	map<string, SegmentedSample*> byNames;
@@ -367,7 +366,7 @@ public:
 	}
 	void read(const string& fileName);
 	void write(const string& fileName);
-	SegmentedSample* sample(const string& sampleName) {
+	SegmentedSample* create(const string& sampleName) {
 		SegmentedSample* sam = byNames[sampleName];
 		if (sam == NULL) {
 			// sample does not exist: create it

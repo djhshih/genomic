@@ -61,6 +61,8 @@ void GenericSampleSet::write(const string& fileName)
 RawSampleSet::RawSampleSet(SegmentedSampleSet& set)
 {
 	//TODO
+	// Problem: need to create marker information, or
+	//   store it in SegmentedSampleSet
 }
 
 void RawSampleSet::read(const string& fileName)
@@ -70,6 +72,9 @@ void RawSampleSet::read(const string& fileName)
 	// columns: marker, chromosome, position, samples...
 	file.open(fileName.c_str(), ios::in);
 	if (!file.is_open()) throw runtime_error("Failed to open input file");
+	
+	// Create marker set using fileName
+	markers = marker::manager.create(fileName);
 	
 	string line;
 	
@@ -90,7 +95,7 @@ void RawSampleSet::read(const string& fileName)
 				while (!stream.eof()) {
 					stream >> sampleName;
 					// create sample with $sampleName	
-					sample(sampleName);
+					create(sampleName);
 				}
 			} else {
 				istringstream stream(line);
@@ -100,7 +105,8 @@ void RawSampleSet::read(const string& fileName)
 				// ignore unknown chromosome: continue to next line
 				if (chr == 0) continue;
 				// create marker
-				markers[chr-1].push_back(new Marker(markerName, chr, pos));
+				marker::Marker marker(markerName, chr, pos);
+				markers->at(chr-1).push_back(marker);
 				
 				float value;
 				size_t i = -1;
@@ -135,11 +141,11 @@ void RawSampleSet::write(const string& fileName)
 	file << endl;
 	
 	// iterate through each chromosome in the vector of vector $markers
-	for (size_t chr = 0; chr < markers.size(); ++chr) {
-		for (unsigned long markerIndex = 0; markerIndex < markers[chr].size(); ++markerIndex) {
+	for (size_t chr = 0; chr < markers->size(); ++chr) {
+		for (unsigned long markerIndex = 0; markerIndex < markers->at(chr).size(); ++markerIndex) {
 			
 			// print marker information
-			file << markers[chr][markerIndex]->name << delim << markers[chr][markerIndex]->chromosome << delim << markers[chr][markerIndex]->pos;
+			file << markers->at(chr)[markerIndex].name << delim << markers->at(chr)[markerIndex].chromosome << delim << markers->at(chr)[markerIndex].pos;
 			
 			// iterate through samples to print values, selected the specified chromosome and marker
 			SamplesIterator it, end = samples.end();
@@ -160,18 +166,18 @@ void RawSampleSet::sort()
 	// Construct order vector for obtaining a sorted index of markers
 	vector< pair<position, size_t> > order;
 	
-	for (size_t chri = 0; chri < markers.size(); ++chri) {	
+	for (size_t chri = 0; chri < markers->size(); ++chri) {	
 		
 		// Construct order vector for obtaining a sorted index of markers
 		// Additionally, replicate the markers on the curent chromosome;
 		//               replicate the chromosome for all samples
-		ChromosomeMarkers chromosomeMarkers;
+		marker::Set::ChromosomeMarkers chromosomeMarkers;
 		vector<RawChromosome> samplesChromosomeCopy;
 		vector< pair<position, size_t> > order;
-		for (size_t j = 0; j < markers[chri].size(); ++j) {
-			order.push_back( make_pair(markers[chri][j]->pos, j) );
+		for (size_t j = 0; j < markers->at(chri).size(); ++j) {
+			order.push_back( make_pair(markers->at(chri)[j].pos, j) );
 			
-			chromosomeMarkers.push_back(markers[chri][j]);
+			chromosomeMarkers.push_back(markers->at(chri)[j]);
 			
 			for (size_t s = 0; s < samples.size(); ++s) {
 				samplesChromosomeCopy.push_back(*(samples[s]->chromosome(chri)));
@@ -186,10 +192,10 @@ void RawSampleSet::sort()
 		//   contains each sorted index
 		
 		// Sort the markers on current chromosome, and each sample
-		for (size_t j = 0; j < markers[chri].size(); ++j) {
+		for (size_t j = 0; j < markers->at(chri).size(); ++j) {
 			size_t index = order[j].second;
 			// Set the marker to the corresponding sorted marker
-			markers[chri][j] = chromosomeMarkers[index];
+			markers->at(chri)[j] = chromosomeMarkers[index];
 			
 			// Iterate through samples, set the corresponding marker in the current chromosome
 			for (size_t s = 0; s < samples.size(); ++s) {
@@ -214,7 +220,7 @@ SegmentedSampleSet::SegmentedSampleSet(RawSampleSet& raw)
 	RawSamplesIterator it, end = raw.samples.end();
 	for (it = raw.samples.begin(); it != end; ++it) {
 		// create sample
-		SegmentedSample* sam = sample((*it)->name);
+		SegmentedSample* sam = create((*it)->name);
 		// iterate through chromosome in sample
 		size_t chr = 0;
 		RawChromosomesIterator chrIt, chrEnd = (*it)->end();
@@ -233,8 +239,8 @@ SegmentedSampleSet::SegmentedSampleSet(RawSampleSet& raw)
 					if (*markerIt != prevValue) {
 						// segment ended: store segment from $startMarkerIndex to $markerIndex-1
 						Segment seg(
-							raw.markers[chr][startMarkerIndex]->pos,
-							raw.markers[chr][markerIndex-1]->pos,
+							raw.markers->at(chr)[startMarkerIndex].pos,
+							raw.markers->at(chr)[markerIndex-1].pos,
 							(markerIndex-1) - startMarkerIndex + 1,
 							prevValue
 						);
@@ -250,8 +256,8 @@ SegmentedSampleSet::SegmentedSampleSet(RawSampleSet& raw)
 				// handling is same whether last segment is the last marker alone or
 				// 	laste segment ends on the last marker
 				Segment seg(
-					raw.markers[chr][startMarkerIndex]->pos,
-					raw.markers[chr][markerIndex-1]->pos,
+					raw.markers->at(chr)[startMarkerIndex].pos,
+					raw.markers->at(chr)[markerIndex-1].pos,
 					(markerIndex-1) - startMarkerIndex + 1,
 					prevValue
 				);
@@ -284,7 +290,7 @@ void SegmentedSampleSet::read(const string& fileName)
 			// create segment at specified chromosome
 			Segment seg;
 			file >> seg.start >> seg.end >> seg.nelem >> seg.value;
-			sample(sampleName)->addToChromosome(chromName, seg);
+			create(sampleName)->addToChromosome(chromName, seg);
 			//trace("%s %s %d %d %d %f\n", sampleName.c_str(), chromName.c_str(), seg->start, seg->end, seg->nelem, seg->value);
 		} else {
 			// discard line
