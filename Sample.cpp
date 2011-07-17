@@ -2,24 +2,23 @@
 
 const char SampleSet::delim = '\t';
 
-void GenericSampleSet::read(const string& fileName)
+void GenericSampleSet::_read(fstream& file)
 {
-	clear();
 	string ext = fileName.substr(fileName.find_last_of('.')+1);
 	switch (mapping::extension[ext]) {
 		case data::raw:
-			rep = new RawSampleSet();
+			rep = new RawSampleSet(markers);
 			break;
 		case data::segmented:
-			rep = new SegmentedSampleSet();
+			rep = new SegmentedSampleSet(markers);
 			break;
 		default:
 			throw runtime_error("Cannot determine file type from file name extension");
 	}
-	rep->read(fileName);
+	rep->_read(file);
 }
 
-void GenericSampleSet::write(const string& fileName)
+void GenericSampleSet::_write(fstream& file)
 {
 	string ext = fileName.substr(fileName.find_last_of('.')+1);
 	
@@ -55,7 +54,7 @@ void GenericSampleSet::write(const string& fileName)
 		default:
 			throw runtime_error("Cannot determine file type from file name extension");
 	}
-	rep->write(fileName);
+	rep->_write(file);
 }
 
 RawSampleSet::RawSampleSet(SegmentedSampleSet& set)
@@ -65,16 +64,10 @@ RawSampleSet::RawSampleSet(SegmentedSampleSet& set)
 	//   store it in SegmentedSampleSet
 }
 
-void RawSampleSet::read(const string& fileName)
+void RawSampleSet::_read(fstream& file)
 {
-	clear();
 	// assume M x (3+N) data matrix with M makers and N samples
 	// columns: marker, chromosome, position, samples...
-	file.open(fileName.c_str(), ios::in);
-	if (!file.is_open()) throw runtime_error("Failed to open input file");
-	
-	// Create marker set using fileName
-	markers = marker::manager.create(fileName);
 	
 	string line;
 	
@@ -120,17 +113,10 @@ void RawSampleSet::read(const string& fileName)
 			// discard line
 		}
 	}
-	
-	file.close();
-	trace("Read file %s\n", fileName.c_str());
-	sort();
 }
 
-void RawSampleSet::write(const string& fileName)
+void RawSampleSet::_write(fstream& file)
 {
-	file.open(fileName.c_str(), ios::out);
-	if (!file.is_open()) throw runtime_error("Failed to open output file");
-	
 	file << "marker" << delim << "chromosome" << delim << "position";
 	
 	// print sample names
@@ -156,9 +142,6 @@ void RawSampleSet::write(const string& fileName)
 			
 		}
 	}
-	
-	file.close();
-	trace("Wrote file %s\n", fileName.c_str());
 }
 
 void RawSampleSet::sort()
@@ -268,13 +251,10 @@ SegmentedSampleSet::SegmentedSampleSet(RawSampleSet& raw)
 	} // for it
 }
 
-void SegmentedSampleSet::read(const string& fileName)
+void SegmentedSampleSet::_read(fstream& file)
 {
-	clear();
 	// assume M x 6 data matrix
 	// columns: sample, chr, start, end, markers, value
-	file.open(fileName.c_str(), ios::in);
-	if (!file.is_open()) throw runtime_error("Failed to open input file");
 	
 	string line;
 	size_t nSkippedLines = 1;
@@ -297,17 +277,10 @@ void SegmentedSampleSet::read(const string& fileName)
 			getline(file, line);
 		}
 	}
-	
-	file.close();
-	trace("Read file %s\n", fileName.c_str());
-	sort();
 }
 
-void SegmentedSampleSet::write(const string& fileName)
+void SegmentedSampleSet::_write(fstream& file)
 {
-	file.open(fileName.c_str(), ios::out);
-	if (!file.is_open()) throw runtime_error("Failed to open output file");
-	
 	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "state" << endl;
 	
 	// iteratrate through samples
@@ -327,8 +300,6 @@ void SegmentedSampleSet::write(const string& fileName)
 			++chr;
 		}
 	}
-	file.close();
-	trace("Wrote file %s\n", fileName.c_str());
 }
 
 void SegmentedSampleSet::sort()

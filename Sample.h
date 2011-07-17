@@ -114,7 +114,6 @@ template<typename T, typename Chromosome>
 class Sample
 {
 public:
-	//typedef vector<T*> Chromosome;
 	typedef vector<Chromosome> Chromosomes;
 	string name;
 	string platform;
@@ -122,23 +121,14 @@ private:
 	// vector of segments vectors for each Chromosome
 	Chromosomes items;
 public:
-	Sample(const string& sampleName) : name(sampleName) {
+	Sample(const string& sampleName) : name(sampleName), items(nChromosomes) {
 		// always allocate for all chromosomes
-		items.resize(nChromosomes);
 	}
 	~Sample() {
 		clear();
 	}
 	void clear() {
 		items.clear();
-		/*
-		for (typename Chromosomes::iterator i = items.begin(); i != items.end(); ++i) {
-			for (typename Chromosome::iterator j = i->begin(); j != i->end(); ++j) {
-				// delete object pointed to by Segment* pointer
-				delete (*j);
-			}
-		}
-		*/
 	}
 	Chromosome* operator[](size_t chromIndex) {
 		if (chromIndex < items.size()) {
@@ -197,22 +187,66 @@ class RawSampleSet;
 
 class SampleSet
 {
-	friend class GenericSampleSet;
+	friend class GenericSampleSet;  
+	//  for accessing the private clone() function
+	//    and the read() and write() functions
 public:
-	SampleSet() {}
+	SampleSet() : markers(NULL) {}
+	SampleSet(marker::Set* markerSet) : markers(markerSet) {}
 	//virtual SampleSet(SampleSet& set) = 0;
 	virtual ~SampleSet() {
 		if (file.is_open()) file.close();
 	}
-	virtual void read(const string& fileName) = 0;
-	virtual void write(const string& fileName) = 0;
+	void read(const string& fileName) {
+		// use fileName also as platform name
+		read(fileName, fileName);
+	}
+	void read(const string& fileName, const string& platform) {
+		file.open(fileName.c_str(), ios::in);
+		if (!file.is_open()) throw runtime_error("Failed to open input file");
+		
+		clear();
+		markers = marker::manager.create(platform);
+		this->fileName = fileName;
+		
+		_read(file);
+		file.close();
+		trace("Read file %s\n", fileName.c_str());
+		
+		sort();
+	}
+	void read(fstream& file) {
+		// TODO
+		// dilemma: determine file type just for GenericSampleSet
+		// platformi information
+	}
+	void write(const string& fileName) {
+		file.open(fileName.c_str(), ios::out);
+		if (!file.is_open()) throw runtime_error("Failed to open output file");
+		
+		this->fileName = fileName;
+		
+		_write(file);
+		file.close();
+		trace("Wrote file %s\n", fileName.c_str());
+	}
+	void write(fstream& file) {
+		// TODO
+		// see read(fstream& file)
+	}
 	virtual void clear() = 0;
+	virtual void sort() = 0;
 	virtual data::Type type() = 0;
 	
 protected:
 	static const char delim;
-	fstream file;
+	string fileName;
+	marker::Set* markers;
 private:
+	fstream file;
+	//  file IO is the responsibiliity of the base class
+	virtual void _read(fstream& file) = 0;
+	virtual void _write(fstream& file) = 0;
 	virtual SampleSet* clone() = 0;
 };
 
@@ -229,6 +263,9 @@ private:
 	SampleSet* clone() {
 		return new GenericSampleSet(*this);
 	}
+	
+	void _read(fstream& file);
+	void _write(fstream& file);
 public:
 	GenericSampleSet() : rep(NULL) {}
 	GenericSampleSet(const GenericSampleSet& gset) {
@@ -237,11 +274,12 @@ public:
 	~GenericSampleSet() {
 		clear();
 	}
-	void read(const string& fileName);
-	void write(const string& fileName);
 	void clear() {
 		delete rep;
 		rep = NULL;
+	}
+	void sort() {
+		rep->sort();
 	}
 	data::Type type() {
 		return data::generic;
@@ -266,15 +304,17 @@ public:
 	//typedef vector<ChromosomeMarkers> Markers;
 private:
 	Samples samples;
-	marker::Set* markers;
 	map<string, RawSample*> byNames;
 	
 	RawSampleSet* clone() {
 		return new RawSampleSet(*this);
 	}
+	
+	void _read(fstream& file);
+	void _write(fstream& file);
 public:
-	RawSampleSet() : markers(NULL) {
-	}
+	RawSampleSet() {}
+	RawSampleSet(marker::Set* markerSet) : SampleSet(markerSet) {}
 	RawSampleSet(RawSampleSet& raw) {
 		// TODO
 	}
@@ -304,8 +344,6 @@ public:
 		*/
 		marker::manager.unref(markers);
 	}
-	void read(const string& fileName);
-	void write(const string& fileName);
 	RawSample* create(const string& sampleName) {
 		RawSample* sam = byNames[sampleName];
 		if (sam == NULL) {
@@ -341,9 +379,12 @@ private:
 	SegmentedSampleSet* clone() {
 		return new SegmentedSampleSet(*this);
 	}
+	
+	void _read(fstream& file);
+	void _write(fstream& file);
 public:
-	SegmentedSampleSet() {
-	}
+	SegmentedSampleSet() {}
+	SegmentedSampleSet(marker::Set* markerSet) : SampleSet(markerSet) {}
 	SegmentedSampleSet(SegmentedSampleSet& segmented) {
 		byNames = segmented.byNames;
 		// TODO
@@ -364,8 +405,6 @@ public:
 		samples.clear();
 		byNames.clear();
 	}
-	void read(const string& fileName);
-	void write(const string& fileName);
 	SegmentedSample* create(const string& sampleName) {
 		SegmentedSample* sam = byNames[sampleName];
 		if (sam == NULL) {

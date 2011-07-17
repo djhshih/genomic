@@ -16,6 +16,7 @@ extern size_t nAutosomes;
 // Number of human chromosomes: 22 autosomes + 2 sex chromosomes
 extern size_t nChromosomes;
 
+
 namespace data
 {
 	enum Type {
@@ -25,6 +26,7 @@ namespace data
 
 namespace mapping
 {
+	/* singleton */
 	class ChromosomesMap
 	{
 	private:
@@ -56,6 +58,7 @@ namespace mapping
 	};
 	static ChromosomesMap chromosome;
 	
+	/* singleton */
 	class ExtensionMap
 	{
 	private:
@@ -149,6 +152,8 @@ namespace marker
 		}
 	};
 
+	/* singleton */
+	// Manage marker sets
 	class Manager
 	{
 	private:
