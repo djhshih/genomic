@@ -60,8 +60,8 @@ void GenericSampleSet::_write(fstream& file)
 RawSampleSet::RawSampleSet(SegmentedSampleSet& set)
 {
 	//TODO
-	// Problem: need to create marker information, or
-	//   store it in SegmentedSampleSet
+	// N.B. throw error if set.markers does not exist
+	//   Marker information in set is required for creating RawSampleSet
 }
 
 void RawSampleSet::_read(fstream& file)
@@ -312,6 +312,29 @@ void SegmentedSampleSet::sort()
 		ChromosomesIterator chrIt, chrEnd = (*it)->end();
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
 			std::sort(chrIt->begin(), chrIt->end(), &Segment::compare);
+		}
+	}
+}
+
+void SegmentedSampleSet::filter(SegmentedSampleSet& ref)
+{
+	// iteratrate through samples
+	SamplesIterator it;
+	const SamplesIterator end = samples.end();
+	for (it = samples.begin(); it != end; ++it) {
+		// iterate through chromosomes
+		ChromosomesIterator chrIt;
+		const ChromosomesIterator chrEnd = (*it)->end();
+		size_t chri = 0;
+		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
+			// iterate through segments on a chromosome
+			DataIterator segIt;
+			const DataIterator segEnd = chrIt->end();
+			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
+				// Compare against segments on reference
+				//TODO
+			}
+			++chri;
 		}
 	}
 }

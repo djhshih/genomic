@@ -204,35 +204,28 @@ public:
 	void read(const string& fileName, const string& platform) {
 		file.open(fileName.c_str(), ios::in);
 		if (!file.is_open()) throw runtime_error("Failed to open input file");
-		
-		clear();
-		markers = marker::manager.create(platform);
-		this->fileName = fileName;
-		
-		_read(file);
+		read(file, platform, fileName);
 		file.close();
 		trace("Read file %s\n", fileName.c_str());
-		
-		sort();
 	}
-	void read(fstream& file) {
-		// TODO
-		// dilemma: determine file type just for GenericSampleSet
-		// platformi information
+	void read(fstream& file, const string& platform, const string& fileType) {
+		clear();
+		markers = marker::manager.create(platform);
+		this->fileName = "." + fileType;
+		
+		_read(file);
+		sort();
 	}
 	void write(const string& fileName) {
 		file.open(fileName.c_str(), ios::out);
 		if (!file.is_open()) throw runtime_error("Failed to open output file");
-		
-		this->fileName = fileName;
-		
-		_write(file);
+		write(file, fileName);
 		file.close();
 		trace("Wrote file %s\n", fileName.c_str());
 	}
-	void write(fstream& file) {
-		// TODO
-		// see read(fstream& file)
+	void write(fstream& file, const string& fileName) {
+		this->fileName = fileName;
+		_write(file);
 	}
 	virtual void clear() = 0;
 	virtual void sort() = 0;
@@ -417,6 +410,8 @@ public:
 		return sam;
 	}
 	void sort();
+	
+	void filter(SegmentedSampleSet& ref);
 };
 
 

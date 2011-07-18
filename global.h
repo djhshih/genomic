@@ -6,6 +6,10 @@
 #include <string>
 #include <iostream>
 #include <cstdio>
+#include <fstream>
+#include <stdexcept>
+#include <sstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -95,14 +99,12 @@ namespace marker
 		Marker() {}
 		Marker(string markerName, size_t markerChromosome, position markerPosition)
 		: name(markerName), chromosome(markerChromosome), pos(markerPosition) {}
-		/*
 		static bool compare(const Marker& a, const Marker& b) {
 			return a.pos < b.pos;
 		}
-		static bool comparePointers(Marker* a, Marker* b) {
+		static bool pcompare(Marker* a, Marker* b) {
 			return a->pos < b->pos;
 		}
-		*/
 	};
 
 	class Set
@@ -113,7 +115,6 @@ namespace marker
 		typedef vector<ChromosomeMarkers> GenomeMarkers;
 		typedef typename GenomeMarkers::iterator ChromosomesIterator;
 		string platform;
-		GenomeMarkers set;
 		Set(const string& markerSetPlatform) : refCount(1), set(nChromosomes), platform(markerSetPlatform) {
 		}
 		ChromosomeMarkers& at(size_t i) {
@@ -131,7 +132,56 @@ namespace marker
 		ChromosomesIterator end() {
 			return set.end();
 		}
+		void read(const string& fileName, const string& platform) {
+			ifstream file(fileName.c_str(), ios::in);
+			if (!file.is_open()) throw runtime_error("Failed to open input file");
+			read(file, platform);
+			file.close();
+		}
+		void read(ifstream& file, const string& platform) {
+			clear();
+			// assume M x 3 data matrix with M makers
+			// columns: marker, chromosome, position
+			
+			string line;
+			size_t lineCount = 0, nSkippedLines = 0, headerLine = 1;
+			string markerName, chromName, sampleName, discard;
+			while (true) {
+				getline(file, line);
+				
+				if (file.eof()) break;
+				if (++lineCount > nSkippedLines) {
+					if (lineCount == headerLine) {
+						// discard
+					} else {
+						istringstream stream(line);
+						position pos;
+						stream >> markerName >> chromName >> pos;
+						size_t chr = mapping::chromosome[chromName];
+						// ignore unknown chromosome: continue to next line
+						if (chr == 0) continue;
+						// create marker
+						marker::Marker marker(markerName, chr, pos);
+						set[chr-1].push_back(marker);
+					}
+				} else {
+					// discard line
+				}
+			}
+			
+			sort();
+		}
+		
+		void sort() {
+			ChromosomesIterator it;
+			const ChromosomesIterator end = set.end();
+			for (it = set.begin(); it != end; ++it) {
+				std::sort(it->begin(), it->end(), &Marker::compare);
+			}
+		}
+		
 	private:
+		GenomeMarkers set;
 		size_t refCount;
 		void ref() {
 			++refCount;
