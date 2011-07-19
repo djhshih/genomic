@@ -188,6 +188,16 @@ namespace marker
 			}
 		}
 		
+		bool empty() {
+			bool isEmpty = true;
+			GenomeMarkers::iterator it;
+			const GenomeMarkers::iterator end = set.end();
+			for (it = set.begin(); it != end; ++it) {
+				isEmpty &= it->empty();
+			}
+			return isEmpty;
+		}
+		
 	private:
 		GenomeMarkers set;
 		size_t refCount;

@@ -141,7 +141,7 @@ BOOST_FIXTURE_TEST_CASE(InputOutput, IOFixture<CopyNumberValue>)
 		throw runtime_error("filenames queue was not exhausted: SampleSet IO Test configuration file is likely malformed");
 	}
 }
-
+/*
 BOOST_FIXTURE_TEST_CASE(InputOutput_AlleleSpecific, IOFixture<AlleleSpecificCopyNumberValue>)
 {
 	size_t type;
@@ -164,6 +164,7 @@ BOOST_FIXTURE_TEST_CASE(InputOutput_AlleleSpecific, IOFixture<AlleleSpecificCopy
 		throw runtime_error("filenames queue was not exhausted: SampleSet IO Test configuration file is likely malformed");
 	}
 }
+*/
 
 BOOST_AUTO_TEST_SUITE_END()
 
