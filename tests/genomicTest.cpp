@@ -32,7 +32,7 @@ struct IOFixture
 	RawSampleSet rset;
 	GenericSampleSet gset;
 	
-	vector< queue<SampleSet*> > sets;
+	vector< queue<SampleSet<CopyNumberValue>*> > sets;
 	vector< queue<string> > filenames;
 	
 	void readConfigFile(string& filename, size_t type) {
@@ -110,7 +110,7 @@ BOOST_FIXTURE_TEST_CASE(InputOutput, IOFixture)
 	BOOST_TEST_MESSAGE("Basic IO");
 	type = (size_t)IOTests::Basic;
 	while (!sets[type].empty()) {
-		SampleSet* set = sets[type].front();
+		SampleSet<CopyNumberValue>* set = sets[type].front();
 		sets[type].pop();
 		set->read(filenames[type].front());
 		filenames[type].pop();

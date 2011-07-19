@@ -13,13 +13,21 @@
 #include <algorithm>
 #include <stdexcept>
 
+typedef float CopyNumberValue;
+
+struct AlleleSpecificCopyNumberValue
+{
+	float a, b;
+};
+
+template <typename V>
 class Segment
 {
 public:
 	position start;
 	position end;
 	position nelem;
-	float value;
+	V value;
 	position length() {
 		return end - start + 1;
 	}
@@ -30,9 +38,11 @@ public:
 	}
 };
 
-template<typename T>
+template <typename T>
 class Chromosome
 {
+public:
+	typedef T DataType;
 private:
 	
 public:
@@ -42,7 +52,7 @@ public:
 	}
 };
 
-template<typename T>
+template <typename T>
 class LinearChromosome : Chromosome<T>
 {
 public:
@@ -100,17 +110,19 @@ public:
 	}
 };
 
-template<typename T>
+template <typename T>
 class KDTreeChromosome : Chromosome<T>
 {
 private:
-	tree::KDTree< tree::Container<Segment> > items;
+	tree::KDTree< tree::Container< Segment<CopyNumberValue> > > items;
 public:
 	KDTreeChromosome() {
 	}
 };
 
-template<typename T, typename Chromosome>
+// TODO let Sample determine type from Chromosome
+
+template <typename T, typename Chromosome>
 class Sample
 {
 public:
@@ -184,12 +196,22 @@ public:
 
 class SegmentedSampleSet;
 class RawSampleSet;
+class GenericSampleSet;
 
+/*
+template <typename V> class SegmentedSampleSet;
+template <typename V> class RawSampleSet;
+template <typename V> class GenericSampleSet;
+*/
+
+template <typename V>
 class SampleSet
 {
-	friend class GenericSampleSet;  
+	friend class GenericSampleSet;
 	//  for accessing the private clone() function
 	//    and the read() and write() functions
+public:
+	typedef V Value;
 public:
 	SampleSet() : markers(NULL) {}
 	SampleSet(marker::Set* markerSet) : markers(markerSet) {}
@@ -246,7 +268,8 @@ private:
 
 // Generic sample set, chooses appropriately between possible types of sample set
 // Use handle-body idiom
-class GenericSampleSet : public SampleSet
+//template <typename V>
+class GenericSampleSet : public SampleSet<CopyNumberValue>
 {
 private:
 	// body representation
@@ -279,22 +302,19 @@ public:
 	}
 };
 
-
-class RawSampleSet : public SampleSet
+//template <typename V>
+class RawSampleSet : public SampleSet<CopyNumberValue>
 {
 	friend class GenericSampleSet;
 	friend class SegmentedSampleSet;
 public:
-	typedef float Value;
+	//typedef V Value;
 	typedef LinearChromosome<Value> RawChromosome;
 	typedef Sample<Value, RawChromosome > RawSample;
 	typedef vector<RawSample*> Samples;
 	typedef Samples::iterator SamplesIterator;
 	typedef typename RawSample::Chromosomes::iterator ChromosomesIterator;
 	typedef typename RawChromosome::iterator DataIterator;
-	// vector of vector of markers organized by chromosomes
-	//typedef vector<Marker*> ChromosomeMarkers;
-	//typedef vector<ChromosomeMarkers> Markers;
 private:
 	Samples samples;
 	map<string, RawSample*> byNames;
@@ -326,15 +346,6 @@ public:
 		}
 		samples.clear();
 		byNames.clear();
-		/*
-		Markers::iterator mi, mend = markers.end();
-		for (mi = markers.begin(); mi != mend; ++mi) {
-			vector<Marker*>::iterator mj, mjend = mi->end();
-			for (mj = mi->begin(); mj != mjend; ++mj) {
-				delete (*mj);
-			}
-		}
-		*/
 		marker::manager.unref(markers);
 	}
 	RawSample* create(const string& sampleName) {
@@ -352,14 +363,14 @@ public:
 };
 
 
-
-class SegmentedSampleSet : public SampleSet
+//template <typename Value>
+class SegmentedSampleSet : public SampleSet<CopyNumberValue>
 {
 	friend class GenericSampleSet;
 	friend class RawSampleSet;
 public:
-	typedef LinearChromosome<Segment> SegmentedChromosome;
-	typedef Sample<Segment, SegmentedChromosome> SegmentedSample;
+	typedef LinearChromosome< Segment<Value> > SegmentedChromosome;
+	typedef Sample< Segment<Value>, SegmentedChromosome > SegmentedSample;
 	
 	typedef vector<SegmentedSample*> Samples;
 	typedef Samples::iterator SamplesIterator;
@@ -414,5 +425,20 @@ public:
 	void filter(SegmentedSampleSet& ref);
 };
 
+
+class PicnicSampleSet : public RawSampleSet
+{
+	
+};
+
+class DchipSampleSet : public RawSampleSet
+{
+	
+};
+
+class CnagSampleSet : public RawSampleSet
+{
+	
+};
 
 #endif

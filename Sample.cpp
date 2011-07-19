@@ -1,6 +1,6 @@
 #include "Sample.h"
 
-const char SampleSet::delim = '\t';
+template <typename V> const char SampleSet<V>::delim = '\t';
 
 void GenericSampleSet::_read(fstream& file)
 {
@@ -101,7 +101,7 @@ void RawSampleSet::_read(fstream& file)
 				marker::Marker marker(markerName, chr, pos);
 				markers->at(chr-1).push_back(marker);
 				
-				float value;
+				CopyNumberValue value;
 				size_t i = -1;
 				while (!stream.eof()) {
 					stream >> value;
@@ -213,6 +213,7 @@ SegmentedSampleSet::SegmentedSampleSet(RawSampleSet& raw)
 			RawDataIterator markerIt = chrIt->begin(), markerEnd = chrIt->end();
 			position markerIndex, startMarkerIndex = 0;
 			RawSampleSet::Value prevValue;
+			//Value prevValue;
 			if (markerIt != markerEnd) {
 				prevValue = *markerIt;
 				// start at second marker
@@ -221,7 +222,7 @@ SegmentedSampleSet::SegmentedSampleSet(RawSampleSet& raw)
 				while (markerIt != markerEnd) {
 					if (*markerIt != prevValue) {
 						// segment ended: store segment from $startMarkerIndex to $markerIndex-1
-						Segment seg(
+						Segment<Value> seg(
 							raw.markers->at(chr)[startMarkerIndex].pos,
 							raw.markers->at(chr)[markerIndex-1].pos,
 							(markerIndex-1) - startMarkerIndex + 1,
@@ -238,7 +239,7 @@ SegmentedSampleSet::SegmentedSampleSet(RawSampleSet& raw)
 				// store last segment
 				// handling is same whether last segment is the last marker alone or
 				// 	laste segment ends on the last marker
-				Segment seg(
+				Segment<Value> seg(
 					raw.markers->at(chr)[startMarkerIndex].pos,
 					raw.markers->at(chr)[markerIndex-1].pos,
 					(markerIndex-1) - startMarkerIndex + 1,
@@ -260,7 +261,7 @@ void SegmentedSampleSet::_read(fstream& file)
 	size_t nSkippedLines = 1;
 	size_t lineCount = 0;
 	string sampleName, chromName;
-	Segment* seg;
+	Segment<Value>* seg;
 	while (true) {
 		if (++lineCount > nSkippedLines) {
 			file >> sampleName >> chromName;
@@ -268,7 +269,7 @@ void SegmentedSampleSet::_read(fstream& file)
 			// ignore unknown chromosome: continue to next line
 			if (mapping::chromosome[chromName] == 0) continue;
 			// create segment at specified chromosome
-			Segment seg;
+			Segment<Value> seg;
 			file >> seg.start >> seg.end >> seg.nelem >> seg.value;
 			create(sampleName)->addToChromosome(chromName, seg);
 			//trace("%s %s %d %d %d %f\n", sampleName.c_str(), chromName.c_str(), seg->start, seg->end, seg->nelem, seg->value);
@@ -311,7 +312,7 @@ void SegmentedSampleSet::sort()
 	for (it = samples.begin(); it != end; ++it) {
 		ChromosomesIterator chrIt, chrEnd = (*it)->end();
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
-			std::sort(chrIt->begin(), chrIt->end(), &Segment::compare);
+			std::sort(chrIt->begin(), chrIt->end(), &Segment<Value>::compare);
 		}
 	}
 }
