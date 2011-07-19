@@ -101,7 +101,7 @@ void RawSampleSet::_read(fstream& file)
 				marker::Marker marker(markerName, chr, pos);
 				markers->at(chr-1).push_back(marker);
 				
-				CopyNumberValue value;
+				Value value;
 				size_t i = -1;
 				while (!stream.eof()) {
 					stream >> value;
