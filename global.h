@@ -11,6 +11,9 @@
 #include <sstream>
 #include <algorithm>
 
+#include <cmath>
+#include <string>
+
 using namespace std;
 
 typedef unsigned long position;
@@ -253,6 +256,11 @@ namespace marker
 	};
 	static Manager manager;
 
+}
+
+namespace name
+{
+	string common(const string& a, const string& b);
 }
 
 #endif

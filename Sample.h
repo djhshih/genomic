@@ -621,7 +621,6 @@ void RawSampleSet<V>::_write(fstream& file)
 template <> inline
 void RawSampleSet<AlleleSpecificCopyNumberValue>::_read(fstream& file)
 {
-	/*
 	// assume M x (3+N) data matrix with M makers and N samples
 	// columns: marker, chromosome, position, samples...
 	marker::Set* markers = Base::markers;
@@ -631,7 +630,7 @@ void RawSampleSet<AlleleSpecificCopyNumberValue>::_read(fstream& file)
 	size_t nSkippedLines = 0;
 	size_t headerLine = 1;
 	size_t lineCount = 0;
-	string markerName, chromName, sampleName, discard;
+	string markerName, chromName, sampleName1, sampleName2, discard;
 	while (true) {
 		getline(file, line);
 		
@@ -643,9 +642,9 @@ void RawSampleSet<AlleleSpecificCopyNumberValue>::_read(fstream& file)
 				stream >> discard >> discard >> discard;
 				// create samples
 				while (!stream.eof()) {
-					stream >> sampleName;
+					stream >> sampleName1 >> sampleName2;
 					// create sample with $sampleName	
-					create(sampleName);
+					create(name::common(sampleName1, sampleName2));
 				}
 			} else {
 				istringstream stream(line);
@@ -661,7 +660,7 @@ void RawSampleSet<AlleleSpecificCopyNumberValue>::_read(fstream& file)
 				Value value;
 				size_t i = -1;
 				while (!stream.eof()) {
-					stream >> value;
+					stream >> value.a >> value.b;
 					// create point at specified chromosome
 					samples[++i]->addToChromosome(chromName, value);
 				}
@@ -670,13 +669,11 @@ void RawSampleSet<AlleleSpecificCopyNumberValue>::_read(fstream& file)
 			// discard line
 		}
 	}
-	*/
 }
 
 template <> inline
 void RawSampleSet<AlleleSpecificCopyNumberValue>::_write(fstream& file)
 {
-	/*
 	const char delim = Base::delim;
 	marker::Set* markers = Base::markers;
 	
@@ -685,7 +682,7 @@ void RawSampleSet<AlleleSpecificCopyNumberValue>::_write(fstream& file)
 	// print sample names
 	SamplesIterator it, end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
-		file << delim << (**it).name;
+		file << delim << (**it).name << ".A" << delim << (**it).name << ".B";
 	}
 	file << endl;
 	
@@ -699,13 +696,13 @@ void RawSampleSet<AlleleSpecificCopyNumberValue>::_write(fstream& file)
 			// iterate through samples to print values, selected the specified chromosome and marker
 			SamplesIterator it, end = samples.end();
 			for (it = samples.begin(); it != end; ++it) {
-				file << delim << (**it)[chr]->at(markerIndex);
+				Value& value = (**it)[chr]->at(markerIndex);
+				file << delim << value.a << delim << value.b;
 			}
 			file << endl;
 			
 		}
 	}
-	*/
 }
 
 template <typename V>
