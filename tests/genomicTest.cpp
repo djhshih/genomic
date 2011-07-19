@@ -28,11 +28,11 @@ struct IOFixture
 	IOTests tests;
 	const char chrComment, chrClass;
 	
-	SegmentedSampleSet sset;
-	RawSampleSet rset;
-	GenericSampleSet gset;
+	SegmentedSampleSet<> sset;
+	RawSampleSet<> rset;
+	GenericSampleSet<> gset;
 	
-	vector< queue<SampleSet<CopyNumberValue>*> > sets;
+	vector< queue<SampleSet<>*> > sets;
 	vector< queue<string> > filenames;
 	
 	void readConfigFile(string& filename, size_t type) {
