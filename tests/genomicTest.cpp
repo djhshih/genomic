@@ -42,7 +42,7 @@ struct IOFixture
 			throw runtime_error("Failed to open IO test configuration file");
 		}
 		
-		// fstream::eof() is triggered until we read PAST the end of file
+		// fstream::eof() is not triggered until we read PAST the end of file
 		// istringstream::eof() is triggered when we read TO the end of file (unless an extra return character is present)
 		
 		string line, s;
