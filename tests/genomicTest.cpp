@@ -1,6 +1,8 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE "Unit Tests for genomic"
 #include <boost/test/unit_test.hpp>
+
+#include "../global.h"
 #include "../Sample.h"
 #include "FilesDiff.hpp"
 
@@ -10,8 +12,11 @@
 
 using namespace std;
 
+template <typename CopyNumberValueType> struct IOFixture;
+
+template <typename CopyNumberValueType>
 class IOTests {
-	friend struct IOFixture;
+	friend struct IOFixture<CopyNumberValueType>;
 public:
 	enum TestType { Basic = 0, Conversion };
 private:
@@ -21,18 +26,29 @@ private:
 	}
 };
 
+template <>
+class IOTests<AlleleSpecificCopyNumberValue> {
+	friend struct IOFixture<AlleleSpecificCopyNumberValue>;
+private:
+	vector<string> configFilenames;
+	IOTests() {
+		configFilenames.push_back("iotest_basic_as.cfg");
+	}
+};
+
+template <typename CopyNumberValueType>
 struct IOFixture
 {
 	FilesDiff diff;
 	fstream configf;
-	IOTests tests;
+	IOTests<CopyNumberValueType> tests;
 	const char chrComment, chrClass;
 	
-	SegmentedSampleSet<> sset;
-	RawSampleSet<> rset;
-	GenericSampleSet<> gset;
+	RawSampleSet<CopyNumberValueType> rset;
+	SegmentedSampleSet<CopyNumberValueType> sset;
+	GenericSampleSet<CopyNumberValueType> gset;
 	
-	vector< queue<SampleSet<>*> > sets;
+	vector< queue<SampleSet<CopyNumberValueType>*> > sets;
 	vector< queue<string> > filenames;
 	
 	void readConfigFile(string& filename, size_t type) {
@@ -103,14 +119,37 @@ struct IOFixture
 
 BOOST_AUTO_TEST_SUITE(SampleSetBasic)
 
-BOOST_FIXTURE_TEST_CASE(InputOutput, IOFixture)
+BOOST_FIXTURE_TEST_CASE(InputOutput, IOFixture<CopyNumberValue>)
 {
 	size_t type;
 	
 	BOOST_TEST_MESSAGE("Basic IO");
-	type = (size_t)IOTests::Basic;
+	type = (size_t)IOTests<CopyNumberValue>::Basic;
 	while (!sets[type].empty()) {
 		SampleSet<CopyNumberValue>* set = sets[type].front();
+		sets[type].pop();
+		set->read(filenames[type].front());
+		filenames[type].pop();
+		string out = filenames[type].front();
+		filenames[type].pop();
+		set->write(out);
+		string ans = filenames[type].front();
+		filenames[type].pop();
+		BOOST_CHECK_EQUAL(diff.different(out, ans), 0);
+	}
+	if (!filenames[type].empty()) {
+		throw runtime_error("filenames queue was not exhausted: SampleSet IO Test configuration file is likely malformed");
+	}
+}
+
+BOOST_FIXTURE_TEST_CASE(InputOutput_AlleleSpecific, IOFixture<AlleleSpecificCopyNumberValue>)
+{
+	size_t type;
+	
+	BOOST_TEST_MESSAGE("Basic IO (Allele-specific)");
+	type = (size_t)IOTests<CopyNumberValue>::Basic;
+	while (!sets[type].empty()) {
+		SampleSet<AlleleSpecificCopyNumberValue>* set = sets[type].front();
 		sets[type].pop();
 		set->read(filenames[type].front());
 		filenames[type].pop();
