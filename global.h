@@ -122,14 +122,23 @@ namespace marker
 		typedef vector<Marker> ChromosomeMarkers;
 		typedef vector<ChromosomeMarkers> GenomeMarkers;
 		typedef typename GenomeMarkers::iterator ChromosomesIterator;
+		typedef typename ChromosomeMarkers::iterator MarkersIterator;
 		string platform;
-		Set(const string& markerSetPlatform) : refCount(1), set(nChromosomes), platform(markerSetPlatform) {
+		Set(const string& markerSetPlatform)
+		: refCount(1), set(nChromosomes), unsortedChromIndex(0),
+			platform(markerSetPlatform) {
 		}
 		ChromosomeMarkers& at(size_t i) {
 			return set[i];
 		}
 		ChromosomeMarkers& operator[](size_t i) {
 			return set[i];
+		}
+		ChromosomeMarkers* unsortedChromosome() {
+			if (unsortedChromIndex > 0) {
+				return &set[unsortedChromIndex];
+			}
+			return NULL;
 		}
 		const size_t size() const {
 			return set.size();
@@ -140,16 +149,21 @@ namespace marker
 		ChromosomesIterator end() {
 			return set.end();
 		}
-		void read(const string& fileName, const string& platform) {
+		void read(const string& fileName, const string& platform, bool doSort=true) {
 			ifstream file(fileName.c_str(), ios::in);
 			if (!file.is_open()) throw runtime_error("Failed to open input file");
-			read(file, platform);
+			read(file, platform, doSort);
 			file.close();
 		}
-		void read(ifstream& file, const string& platform) {
+		void read(ifstream& file, const string& platform, bool doSort=true) {
 			clear();
 			// assume M x 3 data matrix with M makers
 			// columns: marker, chromosome, position
+			
+			if (!doSort) {
+				unsortedChromIndex = set.size();
+				set.resize(set.size()+1);
+			}
 			
 			string line;
 			size_t lineCount = 0, nSkippedLines = 0, headerLine = 1;
@@ -165,19 +179,41 @@ namespace marker
 						istringstream stream(line);
 						position pos;
 						stream >> markerName >> chromName >> pos;
+						
 						size_t chr = mapping::chromosome[chromName];
 						// ignore unknown chromosome: continue to next line
 						if (chr == 0) continue;
 						// create marker
 						marker::Marker marker(markerName, chr, pos);
-						set[chr-1].push_back(marker);
+						
+						if (doSort) {
+							// add marker onto appropriate chromosome
+							set[chr-1].push_back(marker);
+						} else {
+							// add all markers to extra chromosome
+							set[unsortedChromIndex].push_back(marker);
+						}
 					}
 				} else {
 					// discard line
 				}
 			}
 			
-			sort();
+			if (doSort) sort();
+		}
+		
+		void sortOntoChromosomes() {
+			if (unsortedChromIndex > 0) {
+				// Move markers from the first chromosome onto appropriate chromosomes
+				MarkersIterator it;
+				const MarkersIterator end = set[0].end();
+				for (it = set[0].begin(); it != end; ++it) {
+					set[it->chromosome-1].push_back(*it);
+				}
+				// Remove extra chromosome
+				set[unsortedChromIndex].clear();
+				set.resize(set.size()-1);
+			}
 		}
 		
 		void sort() {
@@ -188,8 +224,19 @@ namespace marker
 			}
 		}
 		
+		bool empty() {
+			bool isEmpty = true;
+			GenomeMarkers::iterator it;
+			const GenomeMarkers::iterator end = set.end();
+			for (it = set.begin(); it != end; ++it) {
+				isEmpty &= it->empty();
+			}
+			return isEmpty;
+		}
+		
 	private:
 		GenomeMarkers set;
+		size_t unsortedChromIndex;
 		size_t refCount;
 		void ref() {
 			++refCount;

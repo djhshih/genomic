@@ -8,6 +8,7 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
+	/*
 	srand((unsigned int)time(NULL));
 	cout << "BSTree" << endl;
 	tree::BSTree<int> tree;
@@ -29,6 +30,7 @@ int main(int argc, char **argv)
 		tree2.insert(dat);
 	}
 	tree2.print();
+	*/
 	
 
 	return 0;
