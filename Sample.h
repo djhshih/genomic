@@ -454,6 +454,11 @@ private:
 	
 	void _read(fstream& file);
 	void _write(fstream& file);
+	
+	void readSegment(fstream& file, Segment<V>& seg) {
+		file >> seg.start >> seg.end >> seg.nelem >> seg.value;
+	}
+	
 public:
 	SegmentedSampleSet() {}
 	SegmentedSampleSet(marker::Set* markerSet) : SampleSet<V>(markerSet) {}
@@ -902,8 +907,8 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 			// ignore unknown chromosome: continue to next line
 			if (mapping::chromosome[chromName] == 0) continue;
 			// create segment at specified chromosome
-			Segment<Value> seg;
-			file >> seg.start >> seg.end >> seg.nelem >> seg.value;
+			Segment<V> seg;
+			readSegment(file, seg);
 			create(sampleName)->addToChromosome(chromName, seg);
 			//trace("%s %s %d %d %d %f\n", sampleName.c_str(), chromName.c_str(), seg.start, seg.end, seg.nelem, seg.value);
 		} else {
@@ -913,6 +918,11 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 	}
 }
 
+template <> inline
+void SegmentedSampleSet<AlleleSpecificCopyNumberValue>::readSegment(fstream& file, Segment<AlleleSpecificCopyNumberValue>& seg) {
+	file >> seg.start >> seg.end >> seg.nelem >> seg.value.a >> seg.value.b;
+}
+
 template <typename V>
 void SegmentedSampleSet<V>::_write(fstream& file)
 {
@@ -920,50 +930,16 @@ void SegmentedSampleSet<V>::_write(fstream& file)
 	
 	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "state" << endl;
 	
-	// iteratrate through samples
 	SamplesIterator it, end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
-		// iterate through chromosomes
-		// can assume that Sample are stored chromosomes in a vector
 		ChromosomesIterator chrIt, chrEnd = (*it)->end();
 		size_t chr = 1;
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
-			// iterate through segments on a chromosome
-			// CANNOT assume segments are stored in a vector
 			DataIterator segIt, segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
 				file << (*it)->name << delim << chr << delim << segIt->start << delim << segIt->end << delim << segIt->nelem << delim << segIt->value << endl;
 			}
 			++chr;
-		}
-	}
-}
-
-template <> inline
-void SegmentedSampleSet<AlleleSpecificCopyNumberValue>::_read(fstream& file)
-{
-	const char delim = Base::delim;
-	const size_t nSkippedLines = Base::nSkippedLines, headerLine = Base::headerLine;
-	
-	// assume M x 6 data matrix
-	// columns: sample, chr, start, end, markers, value
-	
-	size_t lineCount = 0;
-	string line, sampleName, chromName;
-	Segment<Value>* seg;
-	while (true) {
-		if (++lineCount > nSkippedLines && lineCount != headerLine) {
-			file >> sampleName >> chromName;
-			if (file.eof()) break;
-			// ignore unknown chromosome: continue to next line
-			if (mapping::chromosome[chromName] == 0) continue;
-			// create segment at specified chromosome
-			Segment<Value> seg;
-			file >> seg.start >> seg.end >> seg.nelem >> seg.value.a >> seg.value.b;
-			create(sampleName)->addToChromosome(chromName, seg);
-		} else {
-			// discard line
-			getline(file, line);
 		}
 	}
 }
@@ -975,16 +951,11 @@ void SegmentedSampleSet<AlleleSpecificCopyNumberValue>::_write(fstream& file)
 	
 	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "stateA" << delim << "stateB" << endl;
 	
-	// iteratrate through samples
 	SamplesIterator it, end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
-		// iterate through chromosomes
-		// can assume that Sample are stored chromosomes in a vector
 		ChromosomesIterator chrIt, chrEnd = (*it)->end();
 		size_t chr = 1;
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
-			// iterate through segments on a chromosome
-			// CANNOT assume segments are stored in a vector
 			DataIterator segIt, segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
 				file << (*it)->name << delim << chr << delim << segIt->start << delim << segIt->end << delim << segIt->nelem << delim << segIt->value.a << delim << segIt->value.b << endl;
@@ -1098,7 +1069,6 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 template <typename V> inline
 void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
 	typename Base::Value value;
-	//stream >> value;
 	string s;
 	getline(stream, s, delim);
 	value = atof(s.c_str());
@@ -1110,7 +1080,6 @@ void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base:
 template <> inline
 void SplitRawSampleSet<AlleleSpecificCopyNumberValue>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
 	typename Base::Value value;
-	//stream >> value.a >> value.b;
 	string s;
 	getline(stream, s, delim);
 	value.a = atof(s.c_str());
