@@ -166,7 +166,7 @@ namespace marker
 			}
 			
 			string line;
-			size_t lineCount = 0, nSkippedLines = 0, headerLine = 1;
+			size_t lineCount = 0, nSkippedLines = 0, headerLine = 0;
 			string markerName, chromName, sampleName, discard;
 			while (true) {
 				getline(file, line);
@@ -202,17 +202,18 @@ namespace marker
 			if (doSort) sort();
 		}
 		
-		void sortOntoChromosomes() {
+		void distribute() {
 			if (unsortedChromIndex > 0) {
 				// Move markers from the first chromosome onto appropriate chromosomes
 				MarkersIterator it;
-				const MarkersIterator end = set[0].end();
-				for (it = set[0].begin(); it != end; ++it) {
+				const MarkersIterator end = set[unsortedChromIndex].end();
+				for (it = set[unsortedChromIndex].begin(); it != end; ++it) {
 					set[it->chromosome-1].push_back(*it);
 				}
 				// Remove extra chromosome
 				set[unsortedChromIndex].clear();
 				set.resize(set.size()-1);
+				unsortedChromIndex = 0;
 			}
 		}
 		
@@ -254,6 +255,7 @@ namespace marker
 			for (it = set.begin(); it != end; ++it) {
 				it->clear();
 			}
+			unsortedChromIndex = 0;
 		}
 	};
 

@@ -243,14 +243,14 @@ public:
 		markers = marker::manager.create(platform);
 		markers->read(markersFileName, platform, false);
 		
-		vector<string>::iterator it;
-		const vector<string>::iterator end = fileNames.end();
+		vector<string>::const_iterator it, end = fileNames.end();
 		for (it = fileNames.begin(); it < end; ++it) {
 			// read samples, append to set
 			read(*it, platform, true);
 		}
 		
 		// Sort after all samples have been read
+		markers->distribute();
 		sort();
 	}
 	void read(const string& fileName, bool append=false) {
@@ -493,6 +493,8 @@ private:
 public:
 	SplitRawSampleSet() : dataColumn(1) {}
 	SplitRawSampleSet(size_t sampleDataColumn) : dataColumn(sampleDataColumn) {}
+protected:
+//	static const char delim = ',';
 };
 
 class PicnicSampleSet : public SplitRawSampleSet<AlleleSpecificCopyNumberValue>
@@ -502,6 +504,8 @@ public:
 public:
 	// set dataColumn to 10
 	PicnicSampleSet() : Base(10) {}
+protected:
+//	static const char delim = ',';
 };
 
 //typedef SplitRawSampleSet<AlleleSpecificCopyNumberValue, 10> PicnicSampleSet;
@@ -1106,6 +1110,7 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref)
 template <typename V>
 void SplitRawSampleSet<V>::_read(fstream& file)
 {
+	const char delim = Base::Base::delim;
 	// assume M makers and N samples
 	// no headerLine
 	
@@ -1141,7 +1146,8 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 				// discard previous columns
 				size_t colCount = 0;
 				while (++colCount < dataColumn) {
-					stream >> discard;
+					//stream >> discard;
+					getline(stream, discard, delim);
 				}
 				
 				readSampleValue(stream, sample, markerIt->chromosome-1);
@@ -1158,12 +1164,17 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 	}
 }
 
+
 //template <typename V, size_t dataColumn> inline
 //void SplitRawSampleSet<V, dataColumn>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex) {
 template <typename V> inline
 void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex) {
+	const char delim = Base::Base::delim;
 	typename Base::Value value;
-	stream >> value;
+	//stream >> value;
+	string s;
+	getline(stream, s, delim);
+	value = atof(s.c_str());
 	sample->addToChromosome(chromIndex, value);
 }
 
@@ -1171,8 +1182,14 @@ void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base:
 //void SplitRawSampleSet<AlleleSpecificCopyNumberValue, dataColumn>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex) {
 template <> inline
 void SplitRawSampleSet<AlleleSpecificCopyNumberValue>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex) {
+	const char delim = Base::Base::delim;
 	typename Base::Value value;
-	stream >> value.a >> value.b;
+	//stream >> value.a >> value.b;
+	string s;
+	getline(stream, s, delim);
+	value.a = atof(s.c_str());
+	getline(stream, s, delim);
+	value.b = atof(s.c_str());
 	sample->addToChromosome(chromIndex, value);
 }
 
