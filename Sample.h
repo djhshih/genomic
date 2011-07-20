@@ -227,12 +227,21 @@ class SampleSet
 public:
 	//typedef V Value;
 public:
-	SampleSet() : markers(NULL) {}
-	SampleSet(marker::Set* markerSet) : markers(markerSet) {}
+	SampleSet() : markers(NULL) {
+		setIO();
+	}
+	SampleSet(marker::Set* markerSet) : markers(markerSet) {
+		setIO();
+	}
 	//virtual SampleSet(SampleSet& set) = 0;
 	virtual ~SampleSet() {
 		if (file.is_open()) file.close();
 	}
+	void setIO(char _delim='\t', size_t _headerLine=1, size_t _nSkippedLines=0) {
+		delim = _delim;
+		headerLine = _headerLine;
+		nSkippedLines = _nSkippedLines;
+	};
 	void read(const vector<string>& fileNames, const string& markersFileName) {
 		read(fileNames, markersFileName, markersFileName);
 	}
@@ -241,6 +250,7 @@ public:
 		
 		// Read markers, do not sort markers yet
 		markers = marker::manager.create(platform);
+		markers->setIO(delim, headerLine, nSkippedLines);
 		markers->read(markersFileName, platform, false);
 		
 		vector<string>::const_iterator it, end = fileNames.end();
@@ -289,7 +299,10 @@ public:
 	virtual data::Type type() = 0;
 	
 protected:
-	static const char delim;
+	char delim;
+	size_t nSkippedLines;
+	size_t headerLine;
+	
 	string fileName;
 	marker::Set* markers;
 private:
@@ -489,7 +502,7 @@ private:
 	size_t dataColumn;
 	void _read(fstream& file);
 	//void _write(fstream& file);
-	void readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex);
+	void readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim);
 public:
 	SplitRawSampleSet() : dataColumn(1) {}
 	SplitRawSampleSet(size_t sampleDataColumn) : dataColumn(sampleDataColumn) {}
@@ -503,7 +516,9 @@ public:
 	typedef SplitRawSampleSet<AlleleSpecificCopyNumberValue> Base;
 public:
 	// set dataColumn to 10
-	PicnicSampleSet() : Base(10) {}
+	PicnicSampleSet() : Base(10) {
+		setIO(',', 0, 0);
+	}
 protected:
 //	static const char delim = ',';
 };
@@ -525,15 +540,14 @@ class CnagSampleSet : public RawSampleSet<CopyNumberValue>
 /* Template implementation */
 /* Required to be in the same file as the definitions */
 
-template <typename V> const char SampleSet<V>::delim = '\t';
-
 template <typename V>
 void GenericSampleSet<V>::_read(fstream& file)
 {
 	const string& fileName = Base::fileName;
 	marker::Set* markers = Base::markers;
 	
-	string ext = fileName.substr(fileName.find_last_of('.')+1);
+	//string ext = fileName.substr(fileName.find_last_of('.')+1);
+	string ext = name::fileext(fileName);
 	switch (mapping::extension[ext]) {
 		case data::raw:
 			rep = new RawSampleSet<V>(markers);
@@ -552,7 +566,8 @@ void GenericSampleSet<V>::_write(fstream& file)
 {
 	const string& fileName = Base::fileName;
 	
-	string ext = fileName.substr(fileName.find_last_of('.')+1);
+	//string ext = fileName.substr(fileName.find_last_of('.')+1);
+	string ext = name::fileext(fileName);
 	
 	// cast $rep to appropriate type
 	// runtime checking is skipped (i.e. use static_cast instead of dynamic_case)
@@ -600,12 +615,16 @@ RawSampleSet<V>::RawSampleSet(SegmentedSampleSet<V>& set)
 template <typename V>
 void RawSampleSet<V>::_read(fstream& file)
 {
+	const char delim = Base::delim;
+	const size_t nSkippedLines = Base::nSkippedLines, headerLine = Base::headerLine;
+	marker::Set* markers = Base::markers;
+	
 	// assume M x (3+N) data matrix with M makers and N samples
 	// columns: marker, chromosome, position, samples...
-	marker::Set* markers = Base::markers;
+	
 	bool readMarkers = (markers->empty()) ? true : false;
 	
-	size_t nSkippedLines = 0, headerLine = 1, lineCount = 0;
+	size_t lineCount = 0;
 	size_t sampleStart = samples.size()-1; 
 	string line, markerName, chromName, discard;
 	while (true) {
@@ -749,100 +768,6 @@ void RawSampleSet<AlleleSpecificCopyNumberValue>::writeSampleValues(fstream& fil
 	file << endl;
 }
 
-/*
-template <> inline
-void RawSampleSet<AlleleSpecificCopyNumberValue>::_read(fstream& file)
-{
-	// assume M x (3+N) data matrix with M makers and N samples
-	// columns: marker, chromosome, position, samples...
-	marker::Set* markers = Base::markers;
-	bool readMarkers = (markers->empty()) ? true : false;
-	
-	string line;
-	
-	size_t nSkippedLines = 0;
-	size_t headerLine = 1;
-	size_t lineCount = 0;
-	size_t sampleStart = samples.size()-1; 
-	string markerName, chromName, sampleName1, sampleName2, discard;
-	while (true) {
-		getline(file, line);
-		
-		if (file.eof()) break;
-		if (++lineCount > nSkippedLines) {
-			if (lineCount == headerLine) {
-				istringstream stream(line);
-				// discard the marker information columns (3)
-				stream >> discard >> discard >> discard;
-				// create samples
-				while (!stream.eof()) {
-					stream >> sampleName1 >> sampleName2;
-					// create sample with $sampleName	
-					create(name::common(sampleName1, sampleName2));
-				}
-			} else {
-				istringstream stream(line);
-				position pos;
-				stream >> markerName >> chromName >> pos;
-				
-				if (readMarkers) {
-					size_t chr = mapping::chromosome[chromName];
-					// ignore unknown chromosome: continue to next line
-					if (chr == 0) continue;
-					// create marker
-					marker::Marker marker(markerName, chr, pos);
-					markers->at(chr-1).push_back(marker);
-				}
-				
-				Value value;
-				size_t i = sampleStart;
-				while (!stream.eof()) {
-					stream >> value.a >> value.b;
-					// create point at specified chromosome
-					samples[++i]->addToChromosome(chromName, value);
-				}
-			}
-		} else {
-			// discard line
-		}
-	}
-}
-
-template <> inline
-void RawSampleSet<AlleleSpecificCopyNumberValue>::_write(fstream& file)
-{
-	const char delim = Base::delim;
-	marker::Set* markers = Base::markers;
-	
-	file << "marker" << delim << "chromosome" << delim << "position";
-	
-	// print sample names
-	SamplesIterator it, end = samples.end();
-	for (it = samples.begin(); it != end; ++it) {
-		file << delim << (**it).name << ".A" << delim << (**it).name << ".B";
-	}
-	file << endl;
-	
-	// iterate through each chromosome in the vector of vector $markers
-	for (size_t chr = 0; chr < markers->size(); ++chr) {
-		for (unsigned long markerIndex = 0; markerIndex < markers->at(chr).size(); ++markerIndex) {
-			
-			// print marker information
-			file << markers->at(chr)[markerIndex].name << delim << markers->at(chr)[markerIndex].chromosome << delim << markers->at(chr)[markerIndex].pos;
-			
-			// iterate through samples to print values, selected the specified chromosome and marker
-			SamplesIterator it, end = samples.end();
-			for (it = samples.begin(); it != end; ++it) {
-				Value& value = (**it)[chr]->at(markerIndex);
-				file << delim << value.a << delim << value.b;
-			}
-			file << endl;
-			
-		}
-	}
-}
-*/
-
 template <typename V>
 void RawSampleSet<V>::sort()
 {
@@ -959,16 +884,17 @@ SegmentedSampleSet<V>::SegmentedSampleSet(RawSampleSet<V>& raw)
 template <typename V>
 void SegmentedSampleSet<V>::_read(fstream& file)
 {
+	const char delim = Base::delim;
+	const size_t nSkippedLines = Base::nSkippedLines, headerLine = Base::headerLine;
+	
 	// assume M x 6 data matrix
 	// columns: sample, chr, start, end, markers, value
 	
-	string line;
-	size_t nSkippedLines = 1;
 	size_t lineCount = 0;
-	string sampleName, chromName;
+	string line, sampleName, chromName;
 	Segment<Value>* seg;
 	while (true) {
-		if (++lineCount > nSkippedLines) {
+		if (++lineCount > nSkippedLines && lineCount != headerLine) {
 			file >> sampleName >> chromName;
 			if (file.eof()) break;
 			// ignore unknown chromosome: continue to next line
@@ -977,7 +903,7 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 			Segment<Value> seg;
 			file >> seg.start >> seg.end >> seg.nelem >> seg.value;
 			create(sampleName)->addToChromosome(chromName, seg);
-			//trace("%s %s %d %d %d %f\n", sampleName.c_str(), chromName.c_str(), seg->start, seg->end, seg->nelem, seg->value);
+			//trace("%s %s %d %d %d %f\n", sampleName.c_str(), chromName.c_str(), seg.start, seg.end, seg.nelem, seg.value);
 		} else {
 			// discard line
 			getline(file, line);
@@ -1014,16 +940,17 @@ void SegmentedSampleSet<V>::_write(fstream& file)
 template <> inline
 void SegmentedSampleSet<AlleleSpecificCopyNumberValue>::_read(fstream& file)
 {
+	const char delim = Base::delim;
+	const size_t nSkippedLines = Base::nSkippedLines, headerLine = Base::headerLine;
+	
 	// assume M x 6 data matrix
 	// columns: sample, chr, start, end, markers, value
 	
-	string line;
-	size_t nSkippedLines = 1;
 	size_t lineCount = 0;
-	string sampleName, chromName;
+	string line, sampleName, chromName;
 	Segment<Value>* seg;
 	while (true) {
-		if (++lineCount > nSkippedLines) {
+		if (++lineCount > nSkippedLines && lineCount != headerLine) {
 			file >> sampleName >> chromName;
 			if (file.eof()) break;
 			// ignore unknown chromosome: continue to next line
@@ -1111,6 +1038,8 @@ template <typename V>
 void SplitRawSampleSet<V>::_read(fstream& file)
 {
 	const char delim = Base::Base::delim;
+	const size_t nSkippedLines = Base::Base::nSkippedLines, headerLine = Base::Base::headerLine;
+	
 	// assume M makers and N samples
 	// no headerLine
 	
@@ -1126,10 +1055,10 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 	//bool readMarkers = (markers->empty()) ? true : false;
 	
 	// Use fileName without extension as sampleName
-	string sampleName = Base::fileName.substr(0, Base::fileName.find_last_of('.'));
+	//string sampleName = Base::fileName.substr(0, Base::fileName.find_last_of('.'));
+	string sampleName = name::filestem(Base::fileName);
 	typename Base::RawSample* sample = Base::create(sampleName);
 	
-	const size_t nSkippedLines = 0, headerLine = 0;
 	size_t lineCount = 0;
 	//size_t sampleStart = Base::samples.size()-1; 
 	string line, markerName, chromName, discard;
@@ -1137,27 +1066,23 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 		getline(file, line);
 		
 		if (file.eof()) break;
-		if (++lineCount > nSkippedLines) {
-			if (lineCount == headerLine) {
-				// discard line
-			} else {
-				istringstream stream(line);
-				
-				// discard previous columns
-				size_t colCount = 0;
-				while (++colCount < dataColumn) {
-					//stream >> discard;
-					getline(stream, discard, delim);
-				}
-				
-				readSampleValue(stream, sample, markerIt->chromosome-1);
-				
-				// next marker
-				if (markerIt == markerEnd) {
-					throw runtime_error("Number of markers do not match the number of values for sample");
-				}
-				++markerIt;
+		if (++lineCount > nSkippedLines && lineCount != headerLine) {
+			istringstream stream(line);
+			
+			// discard previous columns
+			size_t colCount = 0;
+			while (++colCount < dataColumn) {
+				//stream >> discard;
+				getline(stream, discard, delim);
 			}
+			
+			readSampleValue(stream, sample, markerIt->chromosome-1, delim);
+			
+			// next marker
+			if (markerIt == markerEnd) {
+				throw runtime_error("Number of markers do not match the number of values for sample");
+			}
+				++markerIt;
 		} else {
 			// discard line
 		}
@@ -1168,8 +1093,7 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 //template <typename V, size_t dataColumn> inline
 //void SplitRawSampleSet<V, dataColumn>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex) {
 template <typename V> inline
-void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex) {
-	const char delim = Base::Base::delim;
+void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
 	typename Base::Value value;
 	//stream >> value;
 	string s;
@@ -1181,8 +1105,7 @@ void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base:
 //template <size_t dataColumn> inline
 //void SplitRawSampleSet<AlleleSpecificCopyNumberValue, dataColumn>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex) {
 template <> inline
-void SplitRawSampleSet<AlleleSpecificCopyNumberValue>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex) {
-	const char delim = Base::Base::delim;
+void SplitRawSampleSet<AlleleSpecificCopyNumberValue>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
 	typename Base::Value value;
 	//stream >> value.a >> value.b;
 	string s;

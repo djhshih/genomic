@@ -149,6 +149,11 @@ namespace marker
 		ChromosomesIterator end() {
 			return set.end();
 		}
+		void setIO(char _delim, size_t _headerLine, size_t _nSkippedLines) {
+			delim = _delim;
+			headerLine = _headerLine;
+			nSkippedLines = _nSkippedLines;
+		}
 		void read(const string& fileName, const string& platform, bool doSort=true) {
 			ifstream file(fileName.c_str(), ios::in);
 			if (!file.is_open()) throw runtime_error("Failed to open input file");
@@ -165,15 +170,14 @@ namespace marker
 				set.resize(set.size()+1);
 			}
 			
-			string line;
-			size_t lineCount = 0, nSkippedLines = 0, headerLine = 0;
-			string markerName, chromName, sampleName, discard;
+			size_t lineCount = 0;
+			string line, markerName, chromName, sampleName, discard;
 			while (true) {
 				getline(file, line);
 				
 				if (file.eof()) break;
 				if (++lineCount > nSkippedLines) {
-					if (lineCount == headerLine) {
+					if (lineCount != headerLine) {
 						// discard
 					} else {
 						istringstream stream(line);
@@ -239,6 +243,11 @@ namespace marker
 		GenomeMarkers set;
 		size_t unsortedChromIndex;
 		size_t refCount;
+		
+		char delim;
+		size_t nSkippedLines;
+		size_t headerLine;
+		
 		void ref() {
 			++refCount;
 		}
@@ -310,6 +319,8 @@ namespace marker
 namespace name
 {
 	string common(const string& a, const string& b);
+	string fileext(const string& s);
+	string filestem(const string& s);
 }
 
 #endif
