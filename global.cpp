@@ -20,4 +20,21 @@ namespace name
 		}
 		return s;
 	}
+	
+	string fileext(const string& s) {
+		size_t start = s.find_last_of('.');
+		return s.substr(
+			(start == string::npos) ? 0 : start + 1
+		);
+	}
+	
+	string filestem(const string& s) {
+		size_t start = s.find_last_of('/');
+		start = (start == string::npos) ? 0 : (start + 1);
+		size_t end = s.find_last_of('.');
+		return s.substr(
+			start, 
+			(end == string::npos) ? (s.length() - start + 1) : (end - start)
+		);
+	}
 }

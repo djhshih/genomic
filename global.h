@@ -122,14 +122,23 @@ namespace marker
 		typedef vector<Marker> ChromosomeMarkers;
 		typedef vector<ChromosomeMarkers> GenomeMarkers;
 		typedef typename GenomeMarkers::iterator ChromosomesIterator;
+		typedef typename ChromosomeMarkers::iterator MarkersIterator;
 		string platform;
-		Set(const string& markerSetPlatform) : refCount(1), set(nChromosomes), platform(markerSetPlatform) {
+		Set(const string& markerSetPlatform)
+		: refCount(1), set(nChromosomes), unsortedChromIndex(0),
+			platform(markerSetPlatform) {
 		}
 		ChromosomeMarkers& at(size_t i) {
 			return set[i];
 		}
 		ChromosomeMarkers& operator[](size_t i) {
 			return set[i];
+		}
+		ChromosomeMarkers* unsortedChromosome() {
+			if (unsortedChromIndex > 0) {
+				return &set[unsortedChromIndex];
+			}
+			return NULL;
 		}
 		const size_t size() const {
 			return set.size();
@@ -140,44 +149,77 @@ namespace marker
 		ChromosomesIterator end() {
 			return set.end();
 		}
-		void read(const string& fileName, const string& platform) {
+		void setIO(char _delim, size_t _headerLine, size_t _nSkippedLines) {
+			delim = _delim;
+			headerLine = _headerLine;
+			nSkippedLines = _nSkippedLines;
+		}
+		void read(const string& fileName, const string& platform, bool doSort=true) {
 			ifstream file(fileName.c_str(), ios::in);
 			if (!file.is_open()) throw runtime_error("Failed to open input file");
-			read(file, platform);
+			read(file, platform, doSort);
 			file.close();
 		}
-		void read(ifstream& file, const string& platform) {
+		void read(ifstream& file, const string& platform, bool doSort=true) {
 			clear();
 			// assume M x 3 data matrix with M makers
 			// columns: marker, chromosome, position
 			
+			if (!doSort) {
+				unsortedChromIndex = set.size();
+				set.resize(set.size()+1);
+			}
+			
+			size_t lineCount = 0;
 			string line;
-			size_t lineCount = 0, nSkippedLines = 0, headerLine = 1;
-			string markerName, chromName, sampleName, discard;
+			position pos;
+			string markerName, chromName, s;
 			while (true) {
 				getline(file, line);
 				
 				if (file.eof()) break;
-				if (++lineCount > nSkippedLines) {
-					if (lineCount == headerLine) {
-						// discard
-					} else {
+				if (++lineCount > nSkippedLines && lineCount != headerLine) {
 						istringstream stream(line);
-						position pos;
-						stream >> markerName >> chromName >> pos;
+						//stream >> markerName >> chromName >> pos;
+						getline(stream, markerName, delim);
+						getline(stream, chromName, delim);
+						getline(stream, s, delim);
+						pos = atol(s.c_str());
+						
 						size_t chr = mapping::chromosome[chromName];
 						// ignore unknown chromosome: continue to next line
 						if (chr == 0) continue;
 						// create marker
 						marker::Marker marker(markerName, chr, pos);
-						set[chr-1].push_back(marker);
-					}
+						
+						if (doSort) {
+							// add marker onto appropriate chromosome
+							set[chr-1].push_back(marker);
+						} else {
+							// add all markers to extra chromosome
+							set[unsortedChromIndex].push_back(marker);
+						}
 				} else {
 					// discard line
 				}
 			}
 			
-			sort();
+			if (doSort) sort();
+		}
+		
+		void distribute() {
+			if (unsortedChromIndex > 0) {
+				// Move markers from the first chromosome onto appropriate chromosomes
+				MarkersIterator it;
+				const MarkersIterator end = set[unsortedChromIndex].end();
+				for (it = set[unsortedChromIndex].begin(); it != end; ++it) {
+					set[it->chromosome-1].push_back(*it);
+				}
+				// Remove extra chromosome
+				set[unsortedChromIndex].clear();
+				set.resize(set.size()-1);
+				unsortedChromIndex = 0;
+			}
 		}
 		
 		void sort() {
@@ -200,7 +242,13 @@ namespace marker
 		
 	private:
 		GenomeMarkers set;
+		size_t unsortedChromIndex;
 		size_t refCount;
+		
+		char delim;
+		size_t nSkippedLines;
+		size_t headerLine;
+		
 		void ref() {
 			++refCount;
 		}
@@ -217,6 +265,7 @@ namespace marker
 			for (it = set.begin(); it != end; ++it) {
 				it->clear();
 			}
+			unsortedChromIndex = 0;
 		}
 	};
 
@@ -271,6 +320,8 @@ namespace marker
 namespace name
 {
 	string common(const string& a, const string& b);
+	string fileext(const string& s);
+	string filestem(const string& s);
 }
 
 #endif
