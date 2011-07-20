@@ -171,18 +171,20 @@ namespace marker
 			}
 			
 			size_t lineCount = 0;
-			string line, markerName, chromName, sampleName, discard;
+			string line;
+			position pos;
+			string markerName, chromName, s;
 			while (true) {
 				getline(file, line);
 				
 				if (file.eof()) break;
-				if (++lineCount > nSkippedLines) {
-					if (lineCount != headerLine) {
-						// discard
-					} else {
+				if (++lineCount > nSkippedLines && lineCount != headerLine) {
 						istringstream stream(line);
-						position pos;
-						stream >> markerName >> chromName >> pos;
+						//stream >> markerName >> chromName >> pos;
+						getline(stream, markerName, delim);
+						getline(stream, chromName, delim);
+						getline(stream, s, delim);
+						pos = atol(s.c_str());
 						
 						size_t chr = mapping::chromosome[chromName];
 						// ignore unknown chromosome: continue to next line
@@ -197,7 +199,6 @@ namespace marker
 							// add all markers to extra chromosome
 							set[unsortedChromIndex].push_back(marker);
 						}
-					}
 				} else {
 					// discard line
 				}

@@ -37,12 +37,15 @@ int main(int argc, char **argv)
 	vector<string> fileNames(2);
 	fileNames[0] = "tests/picnic1a.in";
 	fileNames[1] = "tests/picnic1b.in";
-	string markersFileName = "tests/picnic.snp6.tsv";
-	//string markersFileName = "tests/picnic.snp6.csv";
+	//string markersFileName = "tests/picnic.snp6.tsv";
+	string markersFileName = "tests/picnic.snp6.csv";
+	
 	PicnicSampleSet pset;
 	pset.read(fileNames, markersFileName);
 	pset.write("tests/picnic1.out");
 	
+	SegmentedSampleSet<AlleleSpecificCopyNumberValue> sset(pset);
+	sset.write("tests/picnic1.seg");
 
 	return 0;
 }

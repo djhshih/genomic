@@ -15,6 +15,8 @@
 
 
 //TODO fix floating point precision issue for equality comparisons
+//TODO use boost::spirit for parsing
+//TODO allow use of input delimiter other than whitespace in all functions
 
 typedef float CopyNumberValue;
 
@@ -1076,13 +1078,14 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 				getline(stream, discard, delim);
 			}
 			
-			readSampleValue(stream, sample, markerIt->chromosome-1, delim);
-			
-			// next marker
 			if (markerIt == markerEnd) {
 				throw runtime_error("Number of markers do not match the number of values for sample");
 			}
-				++markerIt;
+			
+			readSampleValue(stream, sample, markerIt->chromosome-1, delim);
+			
+			// next marker
+			++markerIt;
 		} else {
 			// discard line
 		}
