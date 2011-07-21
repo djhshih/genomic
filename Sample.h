@@ -17,6 +17,7 @@
 //TODO fix floating point precision issue for equality comparisons
 //TODO use boost::spirit for parsing
 //TODO allow use of input delimiter other than whitespace in all functions
+//TODO improve sorting (enable skipping): used up 50GB of RAM on 3 picnic samples!
 
 typedef float CopyNumberValue;
 
@@ -263,7 +264,8 @@ public:
 		
 		// Sort after all samples have been read
 		markers->distribute();
-		sort();
+		//TODO enable skipping!
+		//sort();
 	}
 	void read(const string& fileName, bool append=false) {
 		// use fileName also as platform name
@@ -521,8 +523,8 @@ class PicnicSampleSet : public SplitRawSampleSet<AlleleSpecificCopyNumberValue>
 public:
 	typedef SplitRawSampleSet<AlleleSpecificCopyNumberValue> Base;
 public:
-	// set dataColumn to 10
-	PicnicSampleSet() : Base(10) {
+	// set dataColumn to 5
+	PicnicSampleSet() : Base(5) {
 		setIO(',', 0, 0);
 	}
 protected:
@@ -773,7 +775,6 @@ void RawSampleSet<AlleleSpecificCopyNumberValue>::writeSampleValues(fstream& fil
 	}
 	file << endl;
 }
-*/
 
 template <typename V>
 void RawSampleSet<V>::sort()
