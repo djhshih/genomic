@@ -14,11 +14,13 @@ using namespace std;
 
 template <typename CopyNumberValueType> struct IOFixture;
 
+namespace test {
+	enum TestType { Basic = 0, Conversion };
+}
+
 template <typename CopyNumberValueType>
 class IOTests {
 	friend struct IOFixture<CopyNumberValueType>;
-public:
-	enum TestType { Basic = 0, Conversion };
 private:
 	vector<string> configFilenames;
 	IOTests() {
@@ -124,7 +126,7 @@ BOOST_FIXTURE_TEST_CASE(InputOutput, IOFixture<CopyNumberValue>)
 	size_t type;
 	
 	BOOST_TEST_MESSAGE("Basic IO");
-	type = (size_t)IOTests<CopyNumberValue>::Basic;
+	type = (size_t)test::Basic;
 	while (!sets[type].empty()) {
 		SampleSet<CopyNumberValue>* set = sets[type].front();
 		sets[type].pop();
@@ -146,8 +148,8 @@ BOOST_FIXTURE_TEST_CASE(InputOutput_AlleleSpecific, IOFixture<AlleleSpecificCopy
 {
 	size_t type;
 	
-	BOOST_TEST_MESSAGE("Basic IO (Allele-specific)");
-	type = (size_t)IOTests<CopyNumberValue>::Basic;
+	BOOST_TEST_MESSAGE("Basic IO (Allele-specific data)");
+	type = (size_t)test::Basic;
 	while (!sets[type].empty()) {
 		SampleSet<AlleleSpecificCopyNumberValue>* set = sets[type].front();
 		sets[type].pop();

@@ -2,7 +2,8 @@
 #define genomic_Sample_h
 
 #include "genomic.h"
-#include "Tree.h"
+#include "Tree.hpp"
+#include "Marker.hpp"
 
 #include <iostream>
 #include <fstream>

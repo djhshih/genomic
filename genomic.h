@@ -10,5 +10,6 @@
 #endif
 
 #include "global.h"
+#include "Sample.h"
 
 #endif

@@ -1,7 +1,7 @@
 
-include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR})
 
-set(genomicTest_SRCS genomicTest.cpp ../Sample.cpp ../global.cpp)
+set(genomicTest_SRCS genomicTest.cpp ../global.cpp ../Sample.cpp)
 
 add_executable(genomicTest ${genomicTest_SRCS})
 target_link_libraries(genomicTest boost_unit_test_framework)

@@ -6,7 +6,9 @@ find_package(Boost REQUIRED)
 
 include_directories(${BOOST_INCLUDES})
 
-set(genomic_SRCS genomic.cpp Sample.cpp global.cpp)
+set(genomic_SRCS genomic.cpp global.cpp Sample.cpp)
 
 add_executable(genomic ${genomic_SRCS})
+
 add_subdirectory(tests)
+add_subdirectory(examples)
