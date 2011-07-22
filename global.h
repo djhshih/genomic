@@ -21,7 +21,7 @@ extern size_t nChromosomes;
 namespace data
 {
 	enum Type {
-		generic, raw, segmented, raw_ascn, segmented_ascn, dchip, cnag, picnic
+		generic, raw, segmented, raw_ascn, segmented_ascn, dchip, cnag, picnic, penncnv
 	};
 };
 
@@ -68,11 +68,12 @@ namespace mapping
 		ExtensionMap() {
 			type["cn"] = data::raw;
 			type["seg"] = data::segmented;
-			type["ascn"] = data::raw_ascn;
-			type["asseg"] = data::segmented_ascn;
+			type["cnas"] = data::raw_ascn;
+			type["segas"] = data::segmented_ascn;
 			type["dchip"] = data::dchip;
 			type["cnag"] = data::cnag;
 			type["picnic"] = data::picnic;
+			type["penncnv"] = data::penncnv;
 		}
 		data::Type operator[] (const string& ext) {
 			return type[ext];

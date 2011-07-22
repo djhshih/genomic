@@ -12,45 +12,34 @@
 
 using namespace std;
 
-template <typename CopyNumberValueType> struct IOFixture;
 
-namespace test {
-	enum TestType { Basic = 0, Conversion };
-}
-
-template <typename CopyNumberValueType>
 class IOTests {
-	friend struct IOFixture<CopyNumberValueType>;
+	friend struct IOFixture;
 private:
 	vector<string> configFilenames;
 	IOTests() {
 		configFilenames.push_back("iotest_basic.cfg");
-	}
-};
-
-template <>
-class IOTests<AlleleSpecificCopyNumberValue> {
-	friend struct IOFixture<AlleleSpecificCopyNumberValue>;
-private:
-	vector<string> configFilenames;
-	IOTests() {
 		configFilenames.push_back("iotest_basic_as.cfg");
+		configFilenames.push_back("iotest_conversion.cfg");
 	}
 };
 
-template <typename CopyNumberValueType>
 struct IOFixture
 {
 	FilesDiff diff;
 	fstream configf;
-	IOTests<CopyNumberValueType> tests;
+	IOTests tests;
 	const char chrComment, chrClass;
 	
-	RawSampleSet<CopyNumberValueType> rset;
-	SegmentedSampleSet<CopyNumberValueType> sset;
-	GenericSampleSet<CopyNumberValueType> gset;
+	RawSampleSet<CopyNumberValue> rset;
+	RawSampleSet<AlleleSpecificCopyNumberValue> rset_as;
+	SegmentedSampleSet<CopyNumberValue> sset;
+	SegmentedSampleSet<AlleleSpecificCopyNumberValue> sset_as;
 	
-	vector< queue<SampleSet<CopyNumberValueType>*> > sets;
+	
+	GenericSampleSet gset;
+	
+	vector< queue<SampleSet*> > sets;
 	vector< queue<string> > filenames;
 	
 	void readConfigFile(string& filename, size_t type) {
@@ -83,8 +72,12 @@ struct IOFixture
 					s = s.substr(1);
 					if (s == "RawSampleSet") {
 						sets[type].push(&rset);
+					} else if (s == "RawSampleSet<AlleleSpecificCopyNumberValue>") {
+						sets[type].push(&rset_as);
 					} else if (s == "SegmentedSampleSet") {
 						sets[type].push(&sset);
+					} else if (s == "SegmentedSampleSet<AlleleSpecificCopyNumberValue>") {
+						sets[type].push(&sset_as);
 					} else if (s == "GenericSampleSet") {
 						sets[type].push(&gset);
 					} else {
@@ -98,6 +91,26 @@ struct IOFixture
 		}  // file loop
 		
 		configf.close();
+	}
+	
+	void test() {
+		for (size_t i = 0; i < sets.size(); ++i) {
+			while (!sets[i].empty()) {
+				SampleSet* set = sets[i].front();
+				sets[i].pop();
+				set->read(filenames[i].front());
+				filenames[i].pop();
+				string out = filenames[i].front();
+				filenames[i].pop();
+				set->write(out);
+				string ans = filenames[i].front();
+				filenames[i].pop();
+				BOOST_CHECK_EQUAL(diff.different(out, ans), 0);
+			}
+			if (!filenames[i].empty()) {
+				throw runtime_error("filenames queue was not exhausted: SampleSet IO Test configuration file is likely malformed");
+			}
+		}
 	}
 	
 	IOFixture() : chrComment('#'), chrClass('@'), diff(1) {	
@@ -121,50 +134,35 @@ struct IOFixture
 
 BOOST_AUTO_TEST_SUITE(SampleSetBasic)
 
-BOOST_FIXTURE_TEST_CASE(InputOutput, IOFixture<CopyNumberValue>)
+BOOST_FIXTURE_TEST_CASE(InputOutput, IOFixture)
 {
-	size_t type;
-	
-	BOOST_TEST_MESSAGE("Basic IO");
-	type = (size_t)test::Basic;
-	while (!sets[type].empty()) {
-		SampleSet<CopyNumberValue>* set = sets[type].front();
-		sets[type].pop();
-		set->read(filenames[type].front());
-		filenames[type].pop();
-		string out = filenames[type].front();
-		filenames[type].pop();
-		set->write(out);
-		string ans = filenames[type].front();
-		filenames[type].pop();
-		BOOST_CHECK_EQUAL(diff.different(out, ans), 0);
-	}
-	if (!filenames[type].empty()) {
-		throw runtime_error("filenames queue was not exhausted: SampleSet IO Test configuration file is likely malformed");
-	}
+	BOOST_TEST_MESSAGE("Input output");
+	test();
 }
 
-BOOST_FIXTURE_TEST_CASE(InputOutput_AlleleSpecific, IOFixture<AlleleSpecificCopyNumberValue>)
+BOOST_AUTO_TEST_CASE(InputOutput_Picnic)
 {
-	size_t type;
+	BOOST_TEST_MESSAGE("Input output - Picnic");
 	
-	BOOST_TEST_MESSAGE("Basic IO (Allele-specific data)");
-	type = (size_t)test::Basic;
-	while (!sets[type].empty()) {
-		SampleSet<AlleleSpecificCopyNumberValue>* set = sets[type].front();
-		sets[type].pop();
-		set->read(filenames[type].front());
-		filenames[type].pop();
-		string out = filenames[type].front();
-		filenames[type].pop();
-		set->write(out);
-		string ans = filenames[type].front();
-		filenames[type].pop();
-		BOOST_CHECK_EQUAL(diff.different(out, ans), 0);
-	}
-	if (!filenames[type].empty()) {
-		throw runtime_error("filenames queue was not exhausted: SampleSet IO Test configuration file is likely malformed");
-	}
+	FilesDiff diff;
+	
+	vector<string> fileNames(2);
+	fileNames[0] = "picnic1a.in";
+	fileNames[1] = "picnic1b.in";
+	string markersFileName = "picnic.snp6.csv";
+	string out = "picnic1.out";
+	string ans = "picnic1.ans";
+	string out_seg = "picnic1.seg";
+	string ans_seg = "picnic1.seg.ans";
+	
+	PicnicSampleSet pset;
+	pset.read(fileNames, markersFileName);
+	pset.write(out);
+	BOOST_CHECK_EQUAL(diff.different(out, ans), 0);
+	
+	SegmentedSampleSet<PicnicSampleSet::Value> sset(pset);
+	sset.write(out_seg);
+	BOOST_CHECK_EQUAL(diff.different(out_seg, ans_seg), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -219,13 +219,15 @@ class GenericSampleSet;
 
 template <typename V> class SegmentedSampleSet;
 template <typename V> class RawSampleSet;
-template <typename V> class GenericSampleSet;
+//template <typename V> class GenericSampleSet;
+class GenericSampleSet;
 
 //template <typename V>
-template <typename V = CopyNumberValue>
+//template <typename V = CopyNumberValue>
 class SampleSet
 {
-	friend class GenericSampleSet<V>;
+	//friend class GenericSampleSet<V>;
+	friend class GenericSampleSet;
 	//  for accessing the private clone() function
 	//    and the read() and write() functions
 public:
@@ -322,17 +324,18 @@ private:
 // Generic sample set, chooses appropriately between possible types of sample set
 // Use handle-body idiom
 //template <typename V>
-template <typename V = CopyNumberValue>
-class GenericSampleSet : public SampleSet<V>
+//template <typename V = CopyNumberValue>
+class GenericSampleSet : public SampleSet
 {
 public:
-	typedef SampleSet<V> Base;
+	//typedef SampleSet<V> Base;
+	typedef SampleSet Base;
 private:
 	// body representation
 	// N.B. can only point to derived classes of SampleSet other than this class
-	SampleSet<V>* rep;
+	SampleSet* rep;
 	
-	SampleSet<V>* clone() {
+	SampleSet* clone() {
 		return new GenericSampleSet(*this);
 	}
 	
@@ -360,12 +363,12 @@ public:
 
 //template <typename V>
 template <typename V = CopyNumberValue>
-class RawSampleSet : public SampleSet<V>
+class RawSampleSet : public SampleSet
 {
-	friend class GenericSampleSet<V>;
+	friend class GenericSampleSet;
 	friend class SegmentedSampleSet<V>;
 public:
-	typedef SampleSet<V> Base;
+	typedef SampleSet Base;
 	typedef V Value;
 	typedef LinearChromosome<Value> RawChromosome;
 	typedef Sample<Value, RawChromosome > RawSample;
@@ -395,7 +398,7 @@ private:
 	
 public:
 	RawSampleSet() {}
-	RawSampleSet(marker::Set* markerSet) : SampleSet<V>(markerSet) {}
+	RawSampleSet(marker::Set* markerSet) : SampleSet(markerSet) {}
 	RawSampleSet(RawSampleSet& raw) {
 		// TODO
 	}
@@ -414,7 +417,7 @@ public:
 		}
 		samples.clear();
 		byNames.clear();
-		marker::manager.unref(SampleSet<V>::markers);
+		marker::manager.unref(markers);
 	}
 	RawSample* create(const string& sampleName) {
 		RawSample* sam = byNames[sampleName];
@@ -433,12 +436,12 @@ public:
 
 //template <typename V = CopyNumberValue>
 template <typename V>
-class SegmentedSampleSet : public SampleSet<V>
+class SegmentedSampleSet : public SampleSet
 {
-	friend class GenericSampleSet<V>;
+	friend class GenericSampleSet;
 	friend class RawSampleSet<V>;
 public:
-	typedef SampleSet<V> Base;
+	typedef SampleSet Base;
 	typedef V Value;
 	typedef LinearChromosome< Segment<Value> > SegmentedChromosome;
 	typedef Sample< Segment<Value>, SegmentedChromosome > SegmentedSample;
@@ -464,7 +467,7 @@ private:
 	
 public:
 	SegmentedSampleSet() {}
-	SegmentedSampleSet(marker::Set* markerSet) : SampleSet<V>(markerSet) {}
+	SegmentedSampleSet(marker::Set* markerSet) : SampleSet(markerSet) {}
 	SegmentedSampleSet(SegmentedSampleSet& segmented) {
 		byNames = segmented.byNames;
 		// TODO
@@ -515,8 +518,6 @@ private:
 public:
 	SplitRawSampleSet() : dataColumn(1) {}
 	SplitRawSampleSet(size_t sampleDataColumn) : dataColumn(sampleDataColumn) {}
-protected:
-//	static const char delim = ',';
 };
 
 class PicnicSampleSet : public SplitRawSampleSet<AlleleSpecificCopyNumberValue>
@@ -528,8 +529,11 @@ public:
 	PicnicSampleSet() : Base(5) {
 		setIO(',', 0, 0);
 	}
-protected:
-//	static const char delim = ',';
+	data::Type type() {
+		return data::picnic;
+	}
+private:
+	
 };
 
 //typedef SplitRawSampleSet<AlleleSpecificCopyNumberValue, 10> PicnicSampleSet;
@@ -549,69 +553,16 @@ class CnagSampleSet : public RawSampleSet<CopyNumberValue>
 /* Template implementation */
 /* Required to be in the same file as the definitions */
 
-template <typename V>
-void GenericSampleSet<V>::_read(fstream& file)
-{
-	const string& fileName = Base::fileName;
-	marker::Set* markers = Base::markers;
-	
-	//string ext = fileName.substr(fileName.find_last_of('.')+1);
-	string ext = name::fileext(fileName);
-	switch (mapping::extension[ext]) {
-		case data::raw:
-			rep = new RawSampleSet<V>(markers);
-			break;
-		case data::segmented:
-			rep = new SegmentedSampleSet<V>(markers);
-			break;
-		default:
-			throw runtime_error("Cannot determine file type from file name extension");
-	}
-	rep->_read(file);
+template <> inline
+data::Type RawSampleSet<AlleleSpecificCopyNumberValue>::type() {
+	return data::raw_ascn;
 }
 
-template <typename V>
-void GenericSampleSet<V>::_write(fstream& file)
-{
-	const string& fileName = Base::fileName;
-	
-	//string ext = fileName.substr(fileName.find_last_of('.')+1);
-	string ext = name::fileext(fileName);
-	
-	// cast $rep to appropriate type
-	// runtime checking is skipped (i.e. use static_cast instead of dynamic_case)
-	//  since exact type can be determined
-	SampleSet<V>* tmp = NULL;
-	switch (mapping::extension[ext]) {
-		case data::raw:
-			switch (rep->type()) {
-				case data::raw:
-					// nothing needs to be done
-					break;
-				case data::segmented:
-					tmp = new RawSampleSet<V>(*static_cast<SegmentedSampleSet<V>*>(rep));
-					swap(rep, tmp);
-					delete tmp;
-					break;
-			}
-			break;
-		case data::segmented:
-			switch (rep->type()) {
-				case data::raw:
-					tmp = new SegmentedSampleSet<V>(*static_cast<RawSampleSet<V>*>(rep));
-					swap(rep, tmp);
-					delete tmp;
-					break;
-				case data::segmented:
-					// nothing to be done
-					break;
-			}
-			break;
-		default:
-			throw runtime_error("Cannot determine file type from file name extension");
-	}
-	rep->_write(file);
+template <> inline
+data::Type SegmentedSampleSet<AlleleSpecificCopyNumberValue>::type() {
+	return data::segmented_ascn;
 }
+
 
 template <typename V>
 RawSampleSet<V>::RawSampleSet(SegmentedSampleSet<V>& set)

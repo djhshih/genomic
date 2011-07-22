@@ -7,6 +7,6 @@ add_executable(genomicTest ${genomicTest_SRCS})
 target_link_libraries(genomicTest boost_unit_test_framework)
 
 # Copy data files from source to build tree
-file(COPY data/ DESTINATION . FILES_MATCHING REGEX "/.*\\.(cfg|in|ans|cn|seg)$")
+file(COPY data/ DESTINATION . FILES_MATCHING REGEX "/.*\\.(cfg|in|ans|cn|seg|cnas|segas)$")
 
 add_test(genomicTest genomicTest)
