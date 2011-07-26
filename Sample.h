@@ -74,6 +74,7 @@ template <typename T>
 class LinearChromosome : Chromosome<T>
 {
 public:
+	typedef T DataType;
 	typedef typename vector<T>::iterator iterator;
 private:
 	vector<T> items;
@@ -87,13 +88,6 @@ public:
 		for (size_t i = 0; i < chr.items.size(); ++i) {
 			items.push_back(chr.items[i]);
 		}
-		// could not use iterator here... ambiguity issue with T?
-		/*
-		iterator i, end = chr.items.end();
-		for (i = chr.items.begin(); i != end; ++i) {
-			items.push_back(*i);
-		}
-		*/
 	}
 	LinearChromosome<T>& operator=(const LinearChromosome<T>& chr) {
 		LinearChromosome tmp(chr);
@@ -110,6 +104,9 @@ public:
 	}
 	T& operator[](size_t i) {
 		return items[i];
+	}
+	size_t size() {
+		return items.size();
 	}
 	iterator begin() {
 		return items.begin();
@@ -138,12 +135,12 @@ public:
 	}
 };
 
-// TODO let Sample determine type from Chromosome
 
-template <typename T, typename Chromosome>
+template <typename Chromosome>
 class Sample
 {
 public:
+	typedef typename Chromosome::DataType T;
 	typedef vector<Chromosome> Chromosomes;
 	string name;
 	string platform;
@@ -211,27 +208,16 @@ public:
 	}
 };
 
-/*
-class SegmentedSampleSet;
-class RawSampleSet;
-class GenericSampleSet;
-*/
 
 template <typename V> class SegmentedSampleSet;
 template <typename V> class RawSampleSet;
-//template <typename V> class GenericSampleSet;
 class GenericSampleSet;
 
-//template <typename V>
-//template <typename V = CopyNumberValue>
 class SampleSet
 {
-	//friend class GenericSampleSet<V>;
 	friend class GenericSampleSet;
 	//  for accessing the private clone() function
 	//    and the read() and write() functions
-public:
-	//typedef V Value;
 public:
 	SampleSet() : markers(NULL) {
 		setIO();
@@ -239,7 +225,6 @@ public:
 	SampleSet(marker::Set* markerSet) : markers(markerSet) {
 		setIO();
 	}
-	//virtual SampleSet(SampleSet& set) = 0;
 	virtual ~SampleSet() {
 		if (file.is_open()) file.close();
 	}
@@ -248,10 +233,10 @@ public:
 		headerLine = _headerLine;
 		nSkippedLines = _nSkippedLines;
 	};
-	void read(const vector<string>& fileNames, const string& markersFileName) {
-		read(fileNames, markersFileName, markersFileName);
+	void read(const vector<string>& fileNames, const string& markersFileName, bool isSorted=false) {
+		read(fileNames, markersFileName, markersFileName, isSorted);
 	}
-	void read(const vector<string>& fileNames, const string& markersFileName, const string& platform) {
+	void read(const vector<string>& fileNames, const string& markersFileName, const string& platform, bool isSorted) {
 		if (fileNames.size() < 1) return;
 		
 		// Read markers, do not sort markers yet
@@ -267,8 +252,7 @@ public:
 		
 		// Sort after all samples have been read
 		markers->distribute();
-		//TODO enable skipping!
-		//sort();
+		if (!isSorted) sort();
 	}
 	void read(const string& fileName, bool append=false) {
 		// use fileName also as platform name
@@ -323,12 +307,9 @@ private:
 
 // Generic sample set, chooses appropriately between possible types of sample set
 // Use handle-body idiom
-//template <typename V>
-//template <typename V = CopyNumberValue>
 class GenericSampleSet : public SampleSet
 {
 public:
-	//typedef SampleSet<V> Base;
 	typedef SampleSet Base;
 private:
 	// body representation
@@ -361,7 +342,6 @@ public:
 	}
 };
 
-//template <typename V>
 template <typename V = CopyNumberValue>
 class RawSampleSet : public SampleSet
 {
@@ -371,7 +351,7 @@ public:
 	typedef SampleSet Base;
 	typedef V Value;
 	typedef LinearChromosome<Value> RawChromosome;
-	typedef Sample<Value, RawChromosome > RawSample;
+	typedef Sample<RawChromosome> RawSample;
 	typedef vector<RawSample*> Samples;
 	typedef typename Samples::iterator SamplesIterator;
 	typedef typename RawSample::Chromosomes::iterator ChromosomesIterator;
@@ -434,8 +414,7 @@ public:
 };
 
 
-//template <typename V = CopyNumberValue>
-template <typename V>
+template <typename V = CopyNumberValue>
 class SegmentedSampleSet : public SampleSet
 {
 	friend class GenericSampleSet;
@@ -444,7 +423,7 @@ public:
 	typedef SampleSet Base;
 	typedef V Value;
 	typedef LinearChromosome< Segment<Value> > SegmentedChromosome;
-	typedef Sample< Segment<Value>, SegmentedChromosome > SegmentedSample;
+	typedef Sample<SegmentedChromosome> SegmentedSample;
 	
 	typedef vector<SegmentedSample*> Samples;
 	typedef typename Samples::iterator SamplesIterator;
@@ -463,6 +442,21 @@ private:
 	
 	void readSegment(fstream& file, Segment<V>& seg) {
 		file >> seg.start >> seg.end >> seg.nelem >> seg.value;
+	}
+	
+	size_t _find(SegmentedChromosome& array, position x) {
+		// Initialize left and right beyond array bounds
+		size_t left = -1, right = array.size();
+		while (left + 1 != right) {
+			// Check middle of remaining subarray
+			size_t i = (left + right) / 2;
+			if (x < array[i].start) right = i;      // in the left half
+			if (x == array[i].start) return i;      // found
+			if (x > array[i].start) left = i;       // in the left half
+		}
+		// x is not found in the array
+		// return index of the value that is greatest value lower than the query
+		return ( (left == -1) ? 0 : left );
 	}
 	
 public:
@@ -501,10 +495,16 @@ public:
 	}
 	void sort();
 	
-	void filter(SegmentedSampleSet& ref);
+	size_t find(const string& sampleName, size_t chromIndex, position start) {
+		return _find(*(byNames[sampleName]->chromosome(chromIndex)), start);
+	}
+	size_t find(SegmentedSample* sample, size_t chromIndex, position start) {
+		return _find(*(sample->chromosome(chromIndex)), start);
+	}
+	
+	void filter(SegmentedSampleSet& ref, float diceThreshold);
 };
 
-//template <typename V, size_t dataColumn> 
 template <typename V> 
 class SplitRawSampleSet : public RawSampleSet<V>
 {
@@ -513,7 +513,6 @@ public:
 private:
 	size_t dataColumn;
 	void _read(fstream& file);
-	//void _write(fstream& file);
 	void readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim);
 public:
 	SplitRawSampleSet() : dataColumn(1) {}
@@ -532,11 +531,7 @@ public:
 	data::Type type() {
 		return data::picnic;
 	}
-private:
-	
 };
-
-//typedef SplitRawSampleSet<AlleleSpecificCopyNumberValue, 10> PicnicSampleSet;
 
 class DchipSampleSet : public RawSampleSet<CopyNumberValue>
 {
@@ -722,7 +717,7 @@ void RawSampleSet<AlleleSpecificCopyNumberValue>::writeSampleValues(fstream& fil
 	SamplesIterator it;
 	const SamplesIterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
-		Value& value = (**it)[chr]->at(markerIndex);
+		const Value& value = (**it)[chr]->at(markerIndex);
 		file << delim << value.a << delim << value.b;
 	}
 	file << endl;
@@ -934,11 +929,11 @@ void SegmentedSampleSet<V>::sort()
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref)
+void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 {
-	// iteratrate through samples
-	SamplesIterator it;
-	const SamplesIterator end = samples.end();
+	Samples oldSamples;
+	// iterate through samples
+	SamplesIterator it, end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
 		// iterate through chromosomes
 		ChromosomesIterator chrIt;
@@ -950,16 +945,72 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref)
 			const DataIterator segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
 				// Compare against segments on reference
-				//TODO
+				SamplesIterator refIt;
+				const SamplesIterator refEnd = ref.samples.end();
+				bool filterSegment = false;
+				for (refIt = ref.samples.begin(); refIt != refEnd; ++refIt) {
+					// determine lower and upper bounds
+					SegmentedChromosome* refChrom = (**refIt)[chri];
+					//position lower = (2-diceThreshold)/diceThreshold * (segIt->start - 1) + 1;
+					//position upper = diceThreshold/(2-diceThreshold) * (segIt->start - 1) + 1;
+					//size_t lowerIndex = ref.find(*refIt, chri, lower);
+					//size_t upperIndex = ref.find(*refIt, chri, upper) + 1;
+					//if (upperIndex >= refChrom->size()) upperIndex = refChrom->size()-1;
+					size_t lowerIndex = 0, upperIndex = refChrom->size()-1;
+					cout << "Index: " << lowerIndex << ", " << upperIndex << endl;
+					for (size_t i = lowerIndex; i <= upperIndex; ++i) {
+						// calculate Dice coefficient
+						long intersection = min(refChrom->at(i).end, segIt->end) - max(refChrom->at(i).start, segIt->start) + 1;
+						cout << segIt->start << " " << refChrom->at(i).start << " " << intersection << endl;
+						if (intersection > 0) {
+							float dice = 2 * float(intersection) / (refChrom->at(i).length() + segIt->length());
+							if (dice > diceThreshold) {
+								cout << "Filter: " << segIt->start << " " << refChrom->at(i).start << " " << dice << endl;
+								// Mark segment for deletion
+								segIt->nelem = 0;
+								filterSegment = true;
+								break;
+							}
+						}
+					}
+					if (filterSegment) break;
+				}
 			}
 			++chri;
 		}
+		
+		// copy current samples
+		oldSamples.push_back(*it);
 	}
+	
+	// Create new sample set with marked segments removed
+	samples.clear();
+	byNames.clear();
+	end = oldSamples.end();
+	for (it = oldSamples.begin(); it != end; ++it) {
+		SegmentedSample* sample = create((*it)->name);
+		ChromosomesIterator chrIt;
+		const ChromosomesIterator chrEnd = (*it)->end();
+		size_t chri = 0;
+		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
+			DataIterator segIt;
+			const DataIterator segEnd = chrIt->end();
+			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
+				if (segIt->nelem > 0) {
+					Segment<V> seg(segIt->start, segIt->end, segIt->nelem, segIt->value);
+					sample->addToChromosome(chri, seg);
+				}
+			}
+			++chri;
+		}
+		// delete old sample
+		delete (*it);
+	}
+	oldSamples.clear();
+	
 }
 
 
-//template <typename V, size_t dataColumn>
-//void SplitRawSampleSet<V, dataColumn>::_read(fstream& file)
 template <typename V>
 void SplitRawSampleSet<V>::_read(fstream& file)
 {
@@ -977,16 +1028,11 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 	marker::Set::MarkersIterator markerIt = allMarkers->begin();
 	const marker::Set::MarkersIterator markerEnd = allMarkers->end();
 	
-	//marker::Set* markers = Base::markers;
-	//bool readMarkers = (markers->empty()) ? true : false;
-	
 	// Use fileName without extension as sampleName
-	//string sampleName = Base::fileName.substr(0, Base::fileName.find_last_of('.'));
 	string sampleName = name::filestem(Base::fileName);
 	typename Base::RawSample* sample = Base::create(sampleName);
 	
 	size_t lineCount = 0;
-	//size_t sampleStart = Base::samples.size()-1; 
 	string line, markerName, chromName, discard;
 	while (true) {
 		getline(file, line);
@@ -1016,8 +1062,6 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 	}
 }
 
-//template <typename V, size_t dataColumn> inline
-//void SplitRawSampleSet<V, dataColumn>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex) {
 template <typename V> inline
 void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
 	typename Base::Value value;
@@ -1027,8 +1071,6 @@ void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base:
 	sample->addToChromosome(chromIndex, value);
 }
 
-//template <size_t dataColumn> inline
-//void SplitRawSampleSet<AlleleSpecificCopyNumberValue, dataColumn>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex) {
 template <> inline
 void SplitRawSampleSet<AlleleSpecificCopyNumberValue>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
 	typename Base::Value value;

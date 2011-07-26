@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 	}
 	
 	PicnicSampleSet pset;
-	pset.read(fileNames, markersFileName);
+	pset.read(fileNames, markersFileName, true);
 	pset.write("output.picnic.ascn");
 	
 	SegmentedSampleSet<PicnicSampleSet::Value> sset(pset);

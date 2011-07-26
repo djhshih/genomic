@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(InputOutput_Picnic)
 	vector<string> fileNames(2);
 	fileNames[0] = "picnic1a.in";
 	fileNames[1] = "picnic1b.in";
-	string markersFileName = "picnic.snp6.csv";
+	string markersFileName = "picnic.snp6.in";
 	string out = "picnic1.out";
 	string ans = "picnic1.ans";
 	string out_seg = "picnic1.seg";
@@ -163,6 +163,18 @@ BOOST_AUTO_TEST_CASE(InputOutput_Picnic)
 	SegmentedSampleSet<PicnicSampleSet::Value> sset(pset);
 	sset.write(out_seg);
 	BOOST_CHECK_EQUAL(diff.different(out_seg, ans_seg), 0);
+}
+
+BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Filter)
+{
+	BOOST_TEST_MESSAGE("SegmentedSampleSet filter");
+	
+	SegmentedSampleSet<CopyNumberValue> set1, set2;
+	set1.read("seg2.in");
+	set2.read("seg3.in");
+	
+	set1.filter(set2, 0.8);
+	set1.write("seg2.out");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
