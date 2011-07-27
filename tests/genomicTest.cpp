@@ -130,7 +130,7 @@ struct IOFixture
 		if (configf.is_open()) configf.close();
 	}
 };
-		
+
 
 BOOST_AUTO_TEST_SUITE(SampleSetBasic)
 
@@ -169,12 +169,18 @@ BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Filter)
 {
 	BOOST_TEST_MESSAGE("SegmentedSampleSet filter");
 	
+	FilesDiff diff;
+	
 	SegmentedSampleSet<CopyNumberValue> set1, set2;
-	set1.read("seg2.in");
-	set2.read("seg3.in");
+	set1.read("segfilt1a.in");
+	set2.read("segfilt1b.in");
+	
+	string out_seg = "segfilt1.out", ans_seg = "segfilt1.ans";
 	
 	set1.filter(set2, 0.8);
-	set1.write("seg2.out");
+	set1.write(out_seg);
+	
+	BOOST_CHECK_EQUAL(diff.different(out_seg, ans_seg), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

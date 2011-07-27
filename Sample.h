@@ -15,28 +15,10 @@
 #include <stdexcept>
 
 
-//TODO fix floating point precision issue for equality comparisons
 //TODO use boost::spirit for parsing
 //TODO allow use of input delimiter other than whitespace in all functions
 //TODO improve sorting (enable skipping): used up 50GB of RAM on 3 picnic samples!
 
-typedef float CopyNumberValue;
-
-struct AlleleSpecificCopyNumberValue
-{
-	float a, b;
-	/*
-	bool operator-(const AlleleSpecificCopyNumberValue& y) {
-		return abs(a - y.a) + abs(b = y.b);
-	}
-	*/
-	bool operator!=(const AlleleSpecificCopyNumberValue& y) {
-		return !(a == y.a && b == y.b);
-	}
-	bool operator==(const AlleleSpecificCopyNumberValue& y) {
-		return a == y.a && b == y.b;
-	}
-};
 
 template <typename V>
 class Segment
@@ -519,10 +501,10 @@ public:
 	SplitRawSampleSet(size_t sampleDataColumn) : dataColumn(sampleDataColumn) {}
 };
 
-class PicnicSampleSet : public SplitRawSampleSet<AlleleSpecificCopyNumberValue>
+class PicnicSampleSet : public SplitRawSampleSet<AlleleSpecificIntegerCopyNumberValue>
 {
 public:
-	typedef SplitRawSampleSet<AlleleSpecificCopyNumberValue> Base;
+	typedef SplitRawSampleSet<AlleleSpecificIntegerCopyNumberValue> Base;
 public:
 	// set dataColumn to 5
 	PicnicSampleSet() : Base(5) {
@@ -711,8 +693,33 @@ void RawSampleSet<AlleleSpecificCopyNumberValue>::writeSampleNames(fstream& file
 	file << endl;
 }
 
+// Exactly same as AlleleSpecificCopyNumberValue
+template <> inline
+void RawSampleSet<AlleleSpecificIntegerCopyNumberValue>::writeSampleNames(fstream& file, const char delim) {
+	// print sample names
+	SamplesIterator it;
+	const SamplesIterator end = samples.end();
+	for (it = samples.begin(); it != end; ++it) {
+		file << delim << (**it).name << ".A" << delim << (**it).name << ".B";
+	}
+	file << endl;
+}
+
 template <> inline
 void RawSampleSet<AlleleSpecificCopyNumberValue>::writeSampleValues(fstream& file, size_t chr, size_t markerIndex, const char delim) {
+	// iterate through samples to print values, selected the specified chromosome and marker
+	SamplesIterator it;
+	const SamplesIterator end = samples.end();
+	for (it = samples.begin(); it != end; ++it) {
+		const Value& value = (**it)[chr]->at(markerIndex);
+		file << delim << value.a << delim << value.b;
+	}
+	file << endl;
+}
+
+// Exactly same as AlleleSpecificCopyNumberValue
+template <> inline
+void RawSampleSet<AlleleSpecificIntegerCopyNumberValue>::writeSampleValues(fstream& file, size_t chr, size_t markerIndex, const char delim) {
 	// iterate through samples to print values, selected the specified chromosome and marker
 	SamplesIterator it;
 	const SamplesIterator end = samples.end();
@@ -803,8 +810,7 @@ SegmentedSampleSet<V>::SegmentedSampleSet(RawSampleSet<V>& raw)
 				++markerIt;
 				markerIndex = 1;
 				while (markerIt != markerEnd) {
-					//if (*markerIt != prevValue) {
-					if (*markerIt != prevValue) {
+					if (!eq(*markerIt, prevValue)) {
 						// segment ended: store segment from $startMarkerIndex to $markerIndex-1
 						Segment<Value> seg(
 							raw.markers->at(chr)[startMarkerIndex].pos,
@@ -913,6 +919,29 @@ void SegmentedSampleSet<AlleleSpecificCopyNumberValue>::_write(fstream& file)
 	}
 }
 
+// Exactly the same as specialization for AlleleSpecificCopyNumberValue
+// TODO: avoid redundancy?
+template <> inline
+void SegmentedSampleSet<AlleleSpecificIntegerCopyNumberValue>::_write(fstream& file)
+{
+	const char delim = Base::delim;
+	
+	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "stateA" << delim << "stateB" << endl;
+	
+	SamplesIterator it, end = samples.end();
+	for (it = samples.begin(); it != end; ++it) {
+		ChromosomesIterator chrIt, chrEnd = (*it)->end();
+		size_t chr = 1;
+		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
+			DataIterator segIt, segEnd = chrIt->end();
+			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
+				file << (*it)->name << delim << chr << delim << segIt->start << delim << segIt->end << delim << segIt->nelem << delim << segIt->value.a << delim << segIt->value.b << endl;
+			}
+			++chr;
+		}
+	}
+}
+
 template <typename V>
 void SegmentedSampleSet<V>::sort()
 {
@@ -951,21 +980,23 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 				for (refIt = ref.samples.begin(); refIt != refEnd; ++refIt) {
 					// determine lower and upper bounds
 					SegmentedChromosome* refChrom = (**refIt)[chri];
-					//position lower = (2-diceThreshold)/diceThreshold * (segIt->start - 1) + 1;
-					//position upper = diceThreshold/(2-diceThreshold) * (segIt->start - 1) + 1;
-					//size_t lowerIndex = ref.find(*refIt, chri, lower);
-					//size_t upperIndex = ref.find(*refIt, chri, upper) + 1;
-					//if (upperIndex >= refChrom->size()) upperIndex = refChrom->size()-1;
-					size_t lowerIndex = 0, upperIndex = refChrom->size()-1;
-					cout << "Index: " << lowerIndex << ", " << upperIndex << endl;
+					position_diff lower = 2*(diceThreshold-1)/diceThreshold*segIt->end + (2-diceThreshold)/diceThreshold*(segIt->start - 1) + 1;
+					if (lower < 0) lower = 0;
+					position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*segIt->end + diceThreshold/(2-diceThreshold)*(segIt->start - 1) + 1;
+					//cout << segIt->start << " " << segIt->end << " " << lower << " " << upper << endl;
+					size_t lowerIndex = ref.find(*refIt, chri, lower);
+					size_t upperIndex = ref.find(*refIt, chri, upper) + 1;
+					if (upperIndex >= refChrom->size()) upperIndex = refChrom->size()-1;
+					//size_t lowerIndex = 0, upperIndex = refChrom->size()-1;
+					//cout << "Index: " << lowerIndex << ", " << upperIndex << endl;
 					for (size_t i = lowerIndex; i <= upperIndex; ++i) {
 						// calculate Dice coefficient
-						long intersection = min(refChrom->at(i).end, segIt->end) - max(refChrom->at(i).start, segIt->start) + 1;
-						cout << segIt->start << " " << refChrom->at(i).start << " " << intersection << endl;
+						position_diff intersection = min(refChrom->at(i).end, segIt->end) - max(refChrom->at(i).start, segIt->start) + 1;
+						//cout << segIt->start << " " << refChrom->at(i).start << " " << intersection << endl;
 						if (intersection > 0) {
 							float dice = 2 * float(intersection) / (refChrom->at(i).length() + segIt->length());
 							if (dice > diceThreshold) {
-								cout << "Filter: " << segIt->start << " " << refChrom->at(i).start << " " << dice << endl;
+								//cout << "Filter: " << segIt->start << " " << refChrom->at(i).start << " " << dice << endl;
 								// Mark segment for deletion
 								segIt->nelem = 0;
 								filterSegment = true;
@@ -1079,6 +1110,17 @@ void SplitRawSampleSet<AlleleSpecificCopyNumberValue>::readSampleValue(istringst
 	value.a = atof(s.c_str());
 	getline(stream, s, delim);
 	value.b = atof(s.c_str());
+	sample->addToChromosome(chromIndex, value);
+}
+
+template <> inline
+void SplitRawSampleSet<AlleleSpecificIntegerCopyNumberValue>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
+	typename Base::Value value;
+	string s;
+	getline(stream, s, delim);
+	value.a = atoi(s.c_str());
+	getline(stream, s, delim);
+	value.b = atoi(s.c_str());
 	sample->addToChromosome(chromIndex, value);
 }
 
