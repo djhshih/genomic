@@ -26,13 +26,13 @@ class Segment
 public:
 	position start;
 	position end;
-	position nelem;
+	position count;
 	V value;
 	position length() {
 		return end - start + 1;
 	}
 	Segment() {}
-	Segment(position startPos, position endPos, unsigned long numElements, V segValue) : start(startPos), end(endPos), nelem(numElements), value(segValue) {}
+	Segment(position startPos, position endPos, unsigned long numElements, V segValue) : start(startPos), end(endPos), count(numElements), value(segValue) {}
 	static bool compare(const Segment& a, const Segment& b) {
 		return a.start < b.start; 
 	}
@@ -210,11 +210,10 @@ public:
 	virtual ~SampleSet() {
 		if (file.is_open()) file.close();
 	}
-	void setIO(char _delim='\t', size_t _headerLine=1, size_t _nSkippedLines=0, bool _mergeSamples=false) {
+	void setIO(char _delim='\t', size_t _headerLine=1, size_t _nSkippedLines=0) {
 		delim = _delim;
 		headerLine = _headerLine;
 		nSkippedLines = _nSkippedLines;
-		mergeSamples = _mergeSamples;
 	};
 	void read(const vector<string>& fileNames, const string& markersFileName, bool isSorted=false) {
 		read(fileNames, markersFileName, markersFileName, isSorted);
@@ -425,15 +424,23 @@ private:
 	void _write(fstream& file);
 	
 	void readSegment(fstream& file, Segment<V>& seg) {
-		file >> seg.start >> seg.end >> seg.nelem >> seg.value;
+		file >> seg.start >> seg.end;
+		if (!positionsOnly) {
+			file >> seg.count >> seg.value;
+		}
 	}
 	
 	size_t _find(SegmentedChromosome& array, position x);
 	
 public:
-	SegmentedSampleSet() {}
-	SegmentedSampleSet(marker::Set* markerSet) : SampleSet(markerSet) {}
+	SegmentedSampleSet() {
+		_setIO();
+	}
+	SegmentedSampleSet(marker::Set* markerSet) : SampleSet(markerSet) {
+		_setIO();
+	}
 	SegmentedSampleSet(SegmentedSampleSet& segmented) {
+		_setIO();
 		byNames = segmented.byNames;
 		// TODO
 	}
@@ -474,6 +481,17 @@ public:
 	}
 	
 	void filter(SegmentedSampleSet& ref, float diceThreshold);
+	
+protected:
+	bool mergeSamples;
+	bool positionsOnly;
+	
+private:
+	void _setIO() {
+		mergeSamples = false;
+		positionsOnly = false;
+	}
+	
 };
 
 template <typename V>
@@ -483,7 +501,12 @@ public:
 	typedef SegmentedSampleSet<V> Base;
 public:
 	ReferenceSegmentedSampleSet() {
-		Base::Base::mergeSamples = true;
+		_setIO();
+	}
+private:
+	void _setIO() {
+		Base::mergeSamples = true;
+		Base::positionsOnly = true;
 	}
 };
 
@@ -508,11 +531,15 @@ public:
 public:
 	// set dataColumn to 5
 	PicnicSampleSet() : Base(5) {
-		Base::Base::delim = ',';
-		Base::Base::headerLine = 0;
+		_setIO();
 	}
 	data::Type type() {
 		return data::picnic;
+	}
+private:
+	void _setIO() {
+		Base::Base::delim = ',';
+		Base::Base::headerLine = 0;
 	}
 };
 
@@ -767,8 +794,8 @@ SegmentedSampleSet<V>::SegmentedSampleSet(RawSampleSet<V>& raw)
 template <typename V>
 void SegmentedSampleSet<V>::_read(fstream& file)
 {
-	const char delim = Base::delim;
-	const size_t nSkippedLines = Base::nSkippedLines, headerLine = Base::headerLine;
+	//const char delim = Base::delim;
+	//const size_t nSkippedLines = Base::nSkippedLines, headerLine = Base::headerLine;
 	
 	// assume M x 6 data matrix
 	// columns: sample, chr, start, end, markers, value
@@ -785,8 +812,9 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 			// create segment at specified chromosome
 			Segment<V> seg;
 			readSegment(file, seg);
+			if (mergeSamples) sampleName = "";
 			create(sampleName)->addToChromosome(chromName, seg);
-			//trace("%s %s %d %d %d %f\n", sampleName.c_str(), chromName.c_str(), seg.start, seg.end, seg.nelem, seg.value);
+			//trace("%s %s %d %d %d %f\n", sampleName.c_str(), chromName.c_str(), seg.start, seg.end, seg.count, seg.value);
 		} else {
 			// discard line
 			getline(file, line);
@@ -808,7 +836,7 @@ void SegmentedSampleSet<V>::_write(fstream& file)
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
 			DataIterator segIt, segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
-				file << (*it)->name << delim << chr << delim << segIt->start << delim << segIt->end << delim << segIt->nelem << delim << segIt->value << endl;
+				file << (*it)->name << delim << chr << delim << segIt->start << delim << segIt->end << delim << segIt->count << delim << segIt->value << endl;
 			}
 			++chr;
 		}
@@ -887,7 +915,7 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 							if (dice > diceThreshold) {
 								//cout << "Filter: " << segIt->start << " " << refChrom->at(i).start << " " << dice << endl;
 								// Mark segment for deletion
-								segIt->nelem = 0;
+								segIt->count = 0;
 								filterSegment = true;
 								break;
 							}
@@ -916,8 +944,8 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 			DataIterator segIt;
 			const DataIterator segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
-				if (segIt->nelem > 0) {
-					Segment<V> seg(segIt->start, segIt->end, segIt->nelem, segIt->value);
+				if (segIt->count > 0) {
+					Segment<V> seg(segIt->start, segIt->end, segIt->count, segIt->value);
 					sample->addToChromosome(chri, seg);
 				}
 			}
