@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 		string sample;
 		samplesFile >> sample;
 		if (sample != "") {
-			fileNames.push_back(sample);
+			fileNames.push_back(name::filepath(samplesFileName) + sample);
 			cout << sample << endl;
 		}
 	}

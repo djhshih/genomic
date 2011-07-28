@@ -152,6 +152,7 @@ namespace name
 	string common(const string& a, const string& b);
 	string fileext(const string& s);
 	string filestem(const string& s);
+	string filepath(const string& s);
 }
 
 #endif

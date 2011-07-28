@@ -210,10 +210,11 @@ public:
 	virtual ~SampleSet() {
 		if (file.is_open()) file.close();
 	}
-	void setIO(char _delim='\t', size_t _headerLine=1, size_t _nSkippedLines=0) {
+	void setIO(char _delim='\t', size_t _headerLine=1, size_t _nSkippedLines=0, bool _mergeSamples=false) {
 		delim = _delim;
 		headerLine = _headerLine;
 		nSkippedLines = _nSkippedLines;
+		mergeSamples = _mergeSamples;
 	};
 	void read(const vector<string>& fileNames, const string& markersFileName, bool isSorted=false) {
 		read(fileNames, markersFileName, markersFileName, isSorted);
@@ -275,6 +276,7 @@ protected:
 	char delim;
 	size_t nSkippedLines;
 	size_t headerLine;
+	bool mergeSamples;
 	
 	string fileName;
 	marker::Set* markers;
@@ -426,20 +428,7 @@ private:
 		file >> seg.start >> seg.end >> seg.nelem >> seg.value;
 	}
 	
-	size_t _find(SegmentedChromosome& array, position x) {
-		// Initialize left and right beyond array bounds
-		size_t left = -1, right = array.size();
-		while (left + 1 != right) {
-			// Check middle of remaining subarray
-			size_t i = (left + right) / 2;
-			if (x < array[i].start) right = i;      // in the left half
-			if (x == array[i].start) return i;      // found
-			if (x > array[i].start) left = i;       // in the left half
-		}
-		// x is not found in the array
-		// return index of the value that is greatest value lower than the query
-		return ( (left == -1) ? 0 : left );
-	}
+	size_t _find(SegmentedChromosome& array, position x);
 	
 public:
 	SegmentedSampleSet() {}
@@ -487,6 +476,17 @@ public:
 	void filter(SegmentedSampleSet& ref, float diceThreshold);
 };
 
+template <typename V>
+class ReferenceSegmentedSampleSet : public SegmentedSampleSet<V>
+{
+public:
+	typedef SegmentedSampleSet<V> Base;
+public:
+	ReferenceSegmentedSampleSet() {
+		Base::Base::mergeSamples = true;
+	}
+};
+
 template <typename V> 
 class SplitRawSampleSet : public RawSampleSet<V>
 {
@@ -508,7 +508,8 @@ public:
 public:
 	// set dataColumn to 5
 	PicnicSampleSet() : Base(5) {
-		setIO(',', 0, 0);
+		Base::Base::delim = ',';
+		Base::Base::headerLine = 0;
 	}
 	data::Type type() {
 		return data::picnic;
@@ -529,17 +530,6 @@ class CnagSampleSet : public RawSampleSet<CopyNumberValue>
 
 /* Template implementation */
 /* Required to be in the same file as the definitions */
-
-template <> inline
-data::Type RawSampleSet<AlleleSpecificCopyNumberValue>::type() {
-	return data::raw_ascn;
-}
-
-template <> inline
-data::Type SegmentedSampleSet<AlleleSpecificCopyNumberValue>::type() {
-	return data::segmented_ascn;
-}
-
 
 template <typename V>
 RawSampleSet<V>::RawSampleSet(SegmentedSampleSet<V>& set)
@@ -618,26 +608,6 @@ void RawSampleSet<V>::readSampleValues(istringstream& stream, size_t sampleStart
 	}
 }
 
-template <> inline
-void RawSampleSet<AlleleSpecificCopyNumberValue>::readSampleNames(istringstream& stream) {
-	while (!stream.eof()) {
-		string sampleName1, sampleName2;
-		stream >> sampleName1 >> sampleName2;
-		create(name::common(sampleName1, sampleName2));
-	}
-}
-
-template <> inline
-void RawSampleSet<AlleleSpecificCopyNumberValue>::readSampleValues(istringstream& stream, size_t sampleStart, const string& chromName) {
-	size_t i = sampleStart;
-	Value value;
-	while (!stream.eof()) {
-		stream >> value.a >> value.b;
-		// create point at specified chromosome
-		samples[++i]->addToChromosome(chromName, value);
-	}
-}
-
 template <typename V>
 void RawSampleSet<V>::_write(fstream& file)
 {
@@ -678,54 +648,6 @@ void RawSampleSet<V>::writeSampleValues(fstream& file, size_t chr, size_t marker
 	const SamplesIterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
 		file << delim << (**it)[chr]->at(markerIndex);
-	}
-	file << endl;
-}
-
-template <> inline
-void RawSampleSet<AlleleSpecificCopyNumberValue>::writeSampleNames(fstream& file, const char delim) {
-	// print sample names
-	SamplesIterator it;
-	const SamplesIterator end = samples.end();
-	for (it = samples.begin(); it != end; ++it) {
-		file << delim << (**it).name << ".A" << delim << (**it).name << ".B";
-	}
-	file << endl;
-}
-
-// Exactly same as AlleleSpecificCopyNumberValue
-template <> inline
-void RawSampleSet<AlleleSpecificIntegerCopyNumberValue>::writeSampleNames(fstream& file, const char delim) {
-	// print sample names
-	SamplesIterator it;
-	const SamplesIterator end = samples.end();
-	for (it = samples.begin(); it != end; ++it) {
-		file << delim << (**it).name << ".A" << delim << (**it).name << ".B";
-	}
-	file << endl;
-}
-
-template <> inline
-void RawSampleSet<AlleleSpecificCopyNumberValue>::writeSampleValues(fstream& file, size_t chr, size_t markerIndex, const char delim) {
-	// iterate through samples to print values, selected the specified chromosome and marker
-	SamplesIterator it;
-	const SamplesIterator end = samples.end();
-	for (it = samples.begin(); it != end; ++it) {
-		const Value& value = (**it)[chr]->at(markerIndex);
-		file << delim << value.a << delim << value.b;
-	}
-	file << endl;
-}
-
-// Exactly same as AlleleSpecificCopyNumberValue
-template <> inline
-void RawSampleSet<AlleleSpecificIntegerCopyNumberValue>::writeSampleValues(fstream& file, size_t chr, size_t markerIndex, const char delim) {
-	// iterate through samples to print values, selected the specified chromosome and marker
-	SamplesIterator it;
-	const SamplesIterator end = samples.end();
-	for (it = samples.begin(); it != end; ++it) {
-		const Value& value = (**it)[chr]->at(markerIndex);
-		file << delim << value.a << delim << value.b;
 	}
 	file << endl;
 }
@@ -872,11 +794,6 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 	}
 }
 
-template <> inline
-void SegmentedSampleSet<AlleleSpecificCopyNumberValue>::readSegment(fstream& file, Segment<AlleleSpecificCopyNumberValue>& seg) {
-	file >> seg.start >> seg.end >> seg.nelem >> seg.value.a >> seg.value.b;
-}
-
 template <typename V>
 void SegmentedSampleSet<V>::_write(fstream& file)
 {
@@ -898,50 +815,6 @@ void SegmentedSampleSet<V>::_write(fstream& file)
 	}
 }
 
-template <> inline
-void SegmentedSampleSet<AlleleSpecificCopyNumberValue>::_write(fstream& file)
-{
-	const char delim = Base::delim;
-	
-	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "stateA" << delim << "stateB" << endl;
-	
-	SamplesIterator it, end = samples.end();
-	for (it = samples.begin(); it != end; ++it) {
-		ChromosomesIterator chrIt, chrEnd = (*it)->end();
-		size_t chr = 1;
-		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
-			DataIterator segIt, segEnd = chrIt->end();
-			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
-				file << (*it)->name << delim << chr << delim << segIt->start << delim << segIt->end << delim << segIt->nelem << delim << segIt->value.a << delim << segIt->value.b << endl;
-			}
-			++chr;
-		}
-	}
-}
-
-// Exactly the same as specialization for AlleleSpecificCopyNumberValue
-// TODO: avoid redundancy?
-template <> inline
-void SegmentedSampleSet<AlleleSpecificIntegerCopyNumberValue>::_write(fstream& file)
-{
-	const char delim = Base::delim;
-	
-	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "stateA" << delim << "stateB" << endl;
-	
-	SamplesIterator it, end = samples.end();
-	for (it = samples.begin(); it != end; ++it) {
-		ChromosomesIterator chrIt, chrEnd = (*it)->end();
-		size_t chr = 1;
-		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
-			DataIterator segIt, segEnd = chrIt->end();
-			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
-				file << (*it)->name << delim << chr << delim << segIt->start << delim << segIt->end << delim << segIt->nelem << delim << segIt->value.a << delim << segIt->value.b << endl;
-			}
-			++chr;
-		}
-	}
-}
-
 template <typename V>
 void SegmentedSampleSet<V>::sort()
 {
@@ -955,6 +828,22 @@ void SegmentedSampleSet<V>::sort()
 			std::sort(chrIt->begin(), chrIt->end(), &Segment<Value>::compare);
 		}
 	}
+}
+
+template <typename V>
+size_t SegmentedSampleSet<V>::_find(SegmentedChromosome& array, position x) {
+	// Initialize left and right beyond array bounds
+	size_t left = -1, right = array.size();
+	while (left + 1 != right) {
+		// Check middle of remaining subarray
+		size_t i = (left + right) / 2;
+		if (x < array[i].start) right = i;      // in the left half
+		if (x == array[i].start) return i;      // found
+		if (x > array[i].start) left = i;       // in the left half
+	}
+	// x is not found in the array
+	// return index of the value that is greatest value lower than the query
+	return ( (left == -1) ? 0 : left );
 }
 
 template <typename V>
@@ -1102,27 +991,18 @@ void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base:
 	sample->addToChromosome(chromIndex, value);
 }
 
-template <> inline
-void SplitRawSampleSet<AlleleSpecificCopyNumberValue>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
-	typename Base::Value value;
-	string s;
-	getline(stream, s, delim);
-	value.a = atof(s.c_str());
-	getline(stream, s, delim);
-	value.b = atof(s.c_str());
-	sample->addToChromosome(chromIndex, value);
-}
 
-template <> inline
-void SplitRawSampleSet<AlleleSpecificIntegerCopyNumberValue>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
-	typename Base::Value value;
-	string s;
-	getline(stream, s, delim);
-	value.a = atoi(s.c_str());
-	getline(stream, s, delim);
-	value.b = atoi(s.c_str());
-	sample->addToChromosome(chromIndex, value);
-}
+//// Template Specialization
+
+// Use the same specialization for AlleleSpecificCopyNumberValue and AlleleSpecificIntegerCopyNumberValue
+
+#define SPECIALIZATION_TYPE AlleleSpecificCopyNumberValue
+#include "Sample_AlleleSpecific_specialization.h"
+#undef SPECIALIZATION_TYPE
+
+#define SPECIALIZATION_TYPE AlleleSpecificIntegerCopyNumberValue
+#include "Sample_AlleleSpecific_specialization.h"
+#undef SPECIALIZATION_TYPE
 
 
 #endif

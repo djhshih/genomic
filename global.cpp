@@ -37,4 +37,15 @@ namespace name
 			(end == string::npos) ? (s.length() - start + 1) : (end - start)
 		);
 	}
+	
+	string filepath(const string& s) {
+		size_t start = 0;
+		size_t end = s.find_last_of('/');
+		if (end == string::npos) {
+			return "./";
+		} else {
+			return s.substr(start, end+1);
+		}
+	}
+		
 }
