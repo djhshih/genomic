@@ -1,7 +1,7 @@
 #include "global.h"
 
-size_t nAutosomes = 22;
-size_t nChromosomes = 24;
+chromid nAutosomes = 22;
+chromid nChromosomes = 24;
 
 namespace name
 {

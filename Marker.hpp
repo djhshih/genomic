@@ -11,6 +11,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include "global.h"
+
 namespace marker
 {
 
@@ -18,10 +20,10 @@ namespace marker
 	{
 	public:
 		string name;
-		size_t chromosome;
+		chromid chromosome;
 		position pos;
 		Marker() {}
-		Marker(string markerName, size_t markerChromosome, position markerPosition)
+		Marker(string markerName, chromid markerChromosome, position markerPosition)
 		: name(markerName), chromosome(markerChromosome), pos(markerPosition) {}
 		static bool compare(const Marker& a, const Marker& b) {
 			return a.pos < b.pos;

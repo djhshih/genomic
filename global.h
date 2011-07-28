@@ -14,6 +14,7 @@ using namespace std;
 
 typedef int IntegerCopyNumberValue;
 typedef float CopyNumberValue;
+typedef unsigned int chromid;
 
 template <typename T>
 inline bool eq(T a, T b, T epsilon=numeric_limits<T>::epsilon()) {
@@ -70,9 +71,9 @@ typedef unsigned long position;
 typedef signed long position_diff;
 
 // Number of human autosomes
-extern size_t nAutosomes;
+extern chromid nAutosomes;
 // Number of human chromosomes: 22 autosomes + 2 sex chromosomes
-extern size_t nChromosomes;
+extern chromid nChromosomes;
 
 namespace data
 {
@@ -87,12 +88,12 @@ namespace mapping
 	class ChromosomesMap
 	{
 	private:
-		map<string, size_t> index;
+		map<string, chromid> index;
 	public:
 		ChromosomesMap() {
 			// Map numeric values of chromosomes and alternatives prefixed with chr
 			char s[6];
-			for (size_t i = 1; i <= nChromosomes; ++i) {
+			for (chromid i = 1; i <= nChromosomes; ++i) {
 				sprintf(s, "%d", i); index[s] = i;
 				sprintf(s, "chr%d", i);
 				index[s] = i;
@@ -103,12 +104,12 @@ namespace mapping
 			index["Y"] = 24;
 			index["chrY"] = 24;
 		}	
-		size_t operator[] (const string& chr) {
+		chromid operator[] (const string& chr) {
 			return index[chr];
 		}
 		void print() {
-			map<string, size_t>::const_iterator end = index.end();
-			for (map<string, size_t>::iterator it = index.begin(); it != end; ++it) {
+			map<string, chromid>::const_iterator end = index.end();
+			for (map<string, chromid>::iterator it = index.begin(); it != end; ++it) {
 				cout << it->first << " -> " << it->second << endl;
 			}
 		}
