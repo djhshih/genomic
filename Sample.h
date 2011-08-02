@@ -1025,11 +1025,11 @@ void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base:
 // Use the same specialization for AlleleSpecificCopyNumberValue and AlleleSpecificIntegerCopyNumberValue
 
 #define SPECIALIZATION_TYPE AlleleSpecificCopyNumberValue
-#include "Sample_AlleleSpecific_specialization.h"
+#include "Sample_AlleleSpecific_special.h"
 #undef SPECIALIZATION_TYPE
 
 #define SPECIALIZATION_TYPE AlleleSpecificIntegerCopyNumberValue
-#include "Sample_AlleleSpecific_specialization.h"
+#include "Sample_AlleleSpecific_special.h"
 #undef SPECIALIZATION_TYPE
 
 

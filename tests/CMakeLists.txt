@@ -1,5 +1,8 @@
 
-include_directories(${Boost_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR})
+set(CMAKE_BUILD_TYPE Debug)
+
+include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
+include_directories(${Boost_INCLUDE_DIRS})
 
 set(genomicTest_SRCS genomicTest.cpp ../global.cpp ../Sample.cpp)
 

@@ -3,6 +3,12 @@
 chromid nAutosomes = 22;
 chromid nChromosomes = 24;
 
+
+namespace mapping {
+	ChromosomesMap chromosome;
+	ExtensionMap extension;
+}
+
 namespace name
 {
 	string common(const string& a, const string& b) {

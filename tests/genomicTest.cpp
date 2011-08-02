@@ -2,6 +2,7 @@
 #define BOOST_TEST_MODULE "Unit Tests for genomic"
 #include <boost/test/unit_test.hpp>
 
+#include "config.h"
 #include "../global.h"
 #include "../Sample.h"
 #include "FilesDiff.hpp"

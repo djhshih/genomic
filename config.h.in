@@ -1,0 +1,3 @@
+#define genomic_VERSION_MAJOR @genomic_VERSION_MAJOR@
+#define genomic_VERSION_MINOR @genomic_VERSION_MINOR@
+#define genomic_DEBUG @genomic_DEBUG@
