@@ -27,7 +27,7 @@ set(genomic_SRCS genomic.cpp global.cpp Sample.cpp)
 add_executable(genomic ${genomic_SRCS})
 target_link_libraries(genomic boost_program_options)
 
-install_targets(./bin genomic)
+install_targets(/bin genomic)
 
 add_subdirectory(tests)
 add_subdirectory(examples)
