@@ -1,0 +1,50 @@
+pkgname=genomic-git
+_pkgname=genomic
+pkgver=20110812
+pkgrel=1
+pkgdesc="A tool for copy number analysis"
+arch=('i686' 'x86_64')
+url="http://kwan.ignorelist.com"
+license=('GPL3')
+depends=('boost')
+makedepends=('cmake' 'git')
+provides=($_pkgname)
+conflicts=($_pkgname)
+source=()
+md5sums=()
+
+_gitroot="ssh://git@kwan.ignorelist.com:2244/~/genomic"
+_gitname="genomic"
+_gitbranch="master"
+
+build() {
+	cd $srcdir
+	msg "Retrieving files from Git repository..."
+
+	if [ -d $_gitname ] ; then
+		cd $_gitname && git pull origin
+		msg "The local files are updated."
+	elif [ -d "../../../$_gitname" ] ; then
+		# clone from local repository
+		git clone -b $_gitbranch "../../../$_gitname" $_gitname
+		cd $_gitname
+	else
+		# clone from remote repository
+		git clone -b $_gitbranch $_gitroot $_gitname
+		cd $_gitname
+	fi
+
+	msg "Git checkout done or server timeout"
+	msg "Start building..."
+
+	rm -rf build && mkdir build
+	cd build
+	
+	cmake -DCMAKE_INSTALL_PREFIX=/usr ../
+}
+
+package() {
+	cd ${srcdir}/${_gitname}/build
+	make DESTDIR=${pkgdir} install
+}
+
