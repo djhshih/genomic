@@ -1,9 +1,3 @@
-#include "genomic.h"
-#include "Sample.h"
-
-#include <boost/program_options.hpp>
-namespace po = boost::program_options;
-
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -11,6 +5,11 @@ namespace po = boost::program_options;
 #include <map>
 #include <stdexcept>
 using namespace std;
+
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+
+#include "genomic.hpp"
 
 // helper function to print vectors
 template <typename T>

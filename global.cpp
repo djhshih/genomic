@@ -1,4 +1,4 @@
-#include "global.h"
+#include "global.hpp"
 
 chromid nAutosomes = 22;
 chromid nChromosomes = 24;

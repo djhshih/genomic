@@ -1,4 +1,4 @@
-#include "Sample.h"
+#include "Sample.hpp"
 
 void GenericSampleSet::_read(fstream& file)
 {

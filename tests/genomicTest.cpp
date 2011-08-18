@@ -3,8 +3,8 @@
 #include <boost/test/unit_test.hpp>
 
 #include "config.h"
-#include "../global.h"
-#include "../Sample.h"
+#include "../global.hpp"
+#include "../Sample.hpp"
 #include "FilesDiff.hpp"
 
 #include <fstream>

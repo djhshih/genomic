@@ -1,4 +1,3 @@
-
 #ifndef genomic_Marker_h
 #define genomic_Marker_h
 
@@ -11,7 +10,7 @@
 #include <sstream>
 #include <algorithm>
 
-#include "global.h"
+#include "global.hpp"
 
 namespace marker
 {
@@ -22,9 +21,10 @@ namespace marker
 		string name;
 		chromid chromosome;
 		position pos;
-		Marker() {}
+		bool flag;
+		Marker() : flag(false) {}
 		Marker(string markerName, chromid markerChromosome, position markerPosition)
-		: name(markerName), chromosome(markerChromosome), pos(markerPosition) {}
+		: flag(false), name(markerName), chromosome(markerChromosome), pos(markerPosition) {}
 		static bool compare(const Marker& a, const Marker& b) {
 			return a.pos < b.pos;
 		}
@@ -39,8 +39,6 @@ namespace marker
 	public:
 		typedef vector<Marker> ChromosomeMarkers;
 		typedef vector<ChromosomeMarkers> GenomeMarkers;
-		typedef typename GenomeMarkers::iterator ChromosomesIterator;
-		typedef typename ChromosomeMarkers::iterator MarkersIterator;
 		string platform;
 		Set(const string& markerSetPlatform)
 		: refCount(1), set(nChromosomes), unsortedChromIndex(0),
@@ -61,10 +59,10 @@ namespace marker
 		const size_t size() const {
 			return set.size();
 		}
-		ChromosomesIterator begin() {
+		GenomeMarkers::const_iterator begin() {
 			return set.begin();
 		}
-		ChromosomesIterator end() {
+		GenomeMarkers::const_iterator end() {
 			return set.end();
 		}
 		void setIO(char _delim, size_t _headerLine, size_t _nSkippedLines) {
@@ -128,8 +126,7 @@ namespace marker
 		void distribute() {
 			if (unsortedChromIndex > 0) {
 				// Move markers from the first chromosome onto appropriate chromosomes
-				MarkersIterator it;
-				const MarkersIterator end = set[unsortedChromIndex].end();
+				ChromosomeMarkers::const_iterator it, end = set[unsortedChromIndex].end();
 				for (it = set[unsortedChromIndex].begin(); it != end; ++it) {
 					set[it->chromosome-1].push_back(*it);
 				}
@@ -141,8 +138,8 @@ namespace marker
 		}
 		
 		void sort() {
-			ChromosomesIterator it;
-			const ChromosomesIterator end = set.end();
+			GenomeMarkers::iterator it;
+			GenomeMarkers::const_iterator end = set.end();
 			for (it = set.begin(); it != end; ++it) {
 				std::sort(it->begin(), it->end(), &Marker::compare);
 			}
@@ -151,11 +148,33 @@ namespace marker
 		bool empty() {
 			bool isEmpty = true;
 			GenomeMarkers::iterator it;
-			const GenomeMarkers::iterator end = set.end();
+			GenomeMarkers::const_iterator end = set.end();
 			for (it = set.begin(); it != end; ++it) {
 				isEmpty &= it->empty();
 			}
 			return isEmpty;
+		}
+		
+		void filter(const Set& ref) {
+			// construct hash containing all marker names found in ref
+			GenomeMarkers::const_iterator it, end = ref.set.end();
+			for (it = ref.set.begin(); it != end; ++it) {
+				ChromosomeMarkers::const_iterator markerIt, markerEnd = it->end();
+				for (markerIt = it->begin(); markerIt != markerEnd; ++markerIt) {
+					
+				}
+			}
+			
+			
+			
+			// iterate through chromosomes in this->set and ref.set in parallel
+			const size_t numChroms = set.size();
+			for (size_t i = 0; i < numChroms; i++) {
+				if (i < ref.set.size()) {
+					// only need to filter if ref.size contains current chromosome
+					
+				}
+			}
 		}
 		
 	private:
@@ -179,7 +198,7 @@ namespace marker
 		}
 		void clear() {
 			GenomeMarkers::iterator it;
-			const GenomeMarkers::iterator end = set.end();
+			GenomeMarkers::const_iterator end = set.end();
 			for (it = set.begin(); it != end; ++it) {
 				it->clear();
 			}
