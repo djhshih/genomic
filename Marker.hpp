@@ -10,6 +10,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include <boost/unordered_map.hpp>
+
 #include "global.hpp"
 
 namespace marker
@@ -155,26 +157,47 @@ namespace marker
 			return isEmpty;
 		}
 		
+		// flag markers found in ref
 		void filter(const Set& ref) {
+			typedef boost::unordered_set<std::string> uset;
+			
 			// construct hash containing all marker names found in ref
+			
+			// determine total number of reference markers
 			GenomeMarkers::const_iterator it, end = ref.set.end();
+			size_t numRefMarkers = 0;
+			for (it = ref.set.begin(); it != end; ++it) {
+				numRefMarkers += it->size();
+			}
+			
+			// initialize hash with at least enough buckets to hold all markers,
+			//  multipled by factor to for expected load factor of 0.7
+			uset refMarkers(numRefMarkers * 1.5);
+			
+			// populate hash
 			for (it = ref.set.begin(); it != end; ++it) {
 				ChromosomeMarkers::const_iterator markerIt, markerEnd = it->end();
 				for (markerIt = it->begin(); markerIt != markerEnd; ++markerIt) {
-					
+					refMarkers.insert(markerIt->name);
 				}
 			}
 			
+			// flag markers in this->set that are found in refMarkers
 			
-			
-			// iterate through chromosomes in this->set and ref.set in parallel
-			const size_t numChroms = set.size();
-			for (size_t i = 0; i < numChroms; i++) {
-				if (i < ref.set.size()) {
-					// only need to filter if ref.size contains current chromosome
-					
+			end = set.end();
+			size_t filterCount = 0;
+			for (it = set.begin(); it != end; ++it) {
+				ChromosomeMarkers::iterator markerIt;
+				ChromosomeMarkers::const_iterator markerEnd = it->end();
+				uset::const_iterator refMarkerEnd = refMarkers.end();
+				for (markerIt = it->begin(); markerIt != markerEnd; ++markerIt) {
+					if (refMarkers.find(markerIt->name) != refMarkerEnd) {
+						markerIt->flag = true;
+						++filterCount;
+					}
 				}
 			}
+			trace("Number of markers filtered: %d", filterCount);
 		}
 		
 	private:
