@@ -10,7 +10,7 @@
 #include <sstream>
 #include <algorithm>
 
-#include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 
 #include "global.hpp"
 
@@ -35,6 +35,7 @@ namespace marker
 		}
 	};
 
+	//TODO store Marker as pointers
 	class Set
 	{
 		friend class Manager;
@@ -157,6 +158,20 @@ namespace marker
 			return isEmpty;
 		}
 		
+		// TODO make more efficient
+		void clean() {
+			GenomeMarkers::iterator it;
+			GenomeMarkers::const_iterator end = set.end();
+			for (it = set.begin(); it != end; ++it) {
+				ChromosomeMarkers::iterator chromIt;
+				ChromosomeMarkers::const_iterator chromEnd = set[unsortedChromIndex].end();
+				for (chromIt = it->begin(); chromIt < chromEnd; ++chromIt) {
+					// VERY INEFFICIENT!
+					if (chromIt->flag) it->erase(chromIt);
+				}
+			}
+		}
+		
 		// flag markers found in ref
 		void filter(const Set& ref) {
 			typedef boost::unordered_set<std::string> uset;
@@ -164,9 +179,9 @@ namespace marker
 			// construct hash containing all marker names found in ref
 			
 			// determine total number of reference markers
-			GenomeMarkers::const_iterator it, end = ref.set.end();
+			GenomeMarkers::const_iterator end = ref.set.end();
 			size_t numRefMarkers = 0;
-			for (it = ref.set.begin(); it != end; ++it) {
+			for (GenomeMarkers::const_iterator it = ref.set.begin(); it != end; ++it) {
 				numRefMarkers += it->size();
 			}
 			
@@ -175,7 +190,7 @@ namespace marker
 			uset refMarkers(numRefMarkers * 1.5);
 			
 			// populate hash
-			for (it = ref.set.begin(); it != end; ++it) {
+			for (GenomeMarkers::const_iterator it = ref.set.begin(); it != end; ++it) {
 				ChromosomeMarkers::const_iterator markerIt, markerEnd = it->end();
 				for (markerIt = it->begin(); markerIt != markerEnd; ++markerIt) {
 					refMarkers.insert(markerIt->name);
@@ -186,7 +201,7 @@ namespace marker
 			
 			end = set.end();
 			size_t filterCount = 0;
-			for (it = set.begin(); it != end; ++it) {
+			for (GenomeMarkers::iterator it = set.begin(); it != end; ++it) {
 				ChromosomeMarkers::iterator markerIt;
 				ChromosomeMarkers::const_iterator markerEnd = it->end();
 				uset::const_iterator refMarkerEnd = refMarkers.end();
@@ -197,6 +212,7 @@ namespace marker
 					}
 				}
 			}
+			
 			trace("Number of markers filtered: %d", filterCount);
 		}
 		

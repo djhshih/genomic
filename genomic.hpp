@@ -2,6 +2,6 @@
 #define _genomic_h_
 
 #include "global.hpp"
-#include "Sample.hpp"
+#include "SampleSets.hpp"
 
 #endif

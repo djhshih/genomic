@@ -6,10 +6,10 @@
 #include <string>
 #include <cstdio>
 #include <iostream>
-#include <cmath>
-#include <limits>
 
 using namespace std;
+
+#include "typedefs.h"
 
 #include "config.h"
 #if genomic_DEBUG == 1
@@ -18,65 +18,6 @@ using namespace std;
 #define trace(...)
 #endif
 
-
-typedef int IntegerCopyNumberValue;
-typedef float CopyNumberValue;
-typedef unsigned int chromid;
-
-typedef unsigned long position;
-typedef signed long position_diff;
-
-
-struct AlleleSpecificCopyNumberValue
-{
-	CopyNumberValue a, b;
-};
-
-struct AlleleSpecificIntegerCopyNumberValue
-{
-	IntegerCopyNumberValue a, b;
-};
-
-template <typename T>
-inline bool eq(T a, T b, T epsilon=numeric_limits<T>::epsilon()) {
-	// essentially equal
-	//return abs(a - b) <= ( (abs(a) > abs(b) ? abs(b) : abs(a)) * epsilon );
-	return abs(a - b) <= epsilon;
-}
-
-inline CopyNumberValue operator-(const AlleleSpecificCopyNumberValue& x, const AlleleSpecificCopyNumberValue& y) {
-	return abs(x.a - y.a) + abs(x.b - y.b);
-}
-inline bool operator!=(const AlleleSpecificCopyNumberValue& x, const AlleleSpecificCopyNumberValue& y) {
-	return !(eq(x.a, y.a) && eq(x.b, y.b));
-}
-inline bool operator==(const AlleleSpecificCopyNumberValue& x, const AlleleSpecificCopyNumberValue& y) {
-	return eq(x.a, y.a) && eq(x.b, y.b);
-}
-inline istream& operator>>(istream& is, AlleleSpecificCopyNumberValue& x)  {
-	return is >> x.a >> x.b;
-}
-
-inline IntegerCopyNumberValue operator-(const AlleleSpecificIntegerCopyNumberValue& x, const AlleleSpecificIntegerCopyNumberValue& y) {
-	return abs(x.a - y.a) + abs(x.b - y.b);
-}
-inline bool operator!=(const AlleleSpecificIntegerCopyNumberValue& x, const AlleleSpecificIntegerCopyNumberValue& y) {
-	return !(x.a == y.a && y.b == y.b);
-}
-inline bool operator==(const AlleleSpecificIntegerCopyNumberValue& x, const AlleleSpecificIntegerCopyNumberValue& y) {
-	return x.a == y.a && x.b == y.b;
-}
-inline istream& operator>>(istream& is, AlleleSpecificIntegerCopyNumberValue& x)  {
-	return is >> x.a >> x.b;
-}
-
-inline bool eq(const AlleleSpecificIntegerCopyNumberValue& a, const AlleleSpecificIntegerCopyNumberValue& b) {
-	return a == b;
-}
-
-inline bool eq(const AlleleSpecificCopyNumberValue& a, AlleleSpecificCopyNumberValue& b) {
-	return a == b;
-}
 
 // Number of human autosomes
 extern chromid nAutosomes;

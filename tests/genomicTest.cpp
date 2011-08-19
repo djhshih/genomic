@@ -4,7 +4,7 @@
 
 #include "config.h"
 #include "../global.hpp"
-#include "../Sample.hpp"
+#include "../SampleSets.hpp"
 #include "FilesDiff.hpp"
 
 #include <fstream>
@@ -167,6 +167,24 @@ BOOST_AUTO_TEST_CASE(InputOutput_Picnic)
 }
 
 BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Filter)
+{
+	BOOST_TEST_MESSAGE("SegmentedSampleSet filter");
+	
+	FilesDiff diff;
+	
+	SegmentedSampleSet<CopyNumberValue> set1, set2;
+	set1.read("segfilt1a.in");
+	set2.read("segfilt1b.in");
+	
+	string out_seg = "segfilt1.out", ans_seg = "segfilt1.ans";
+	
+	set1.filter(set2, 0.8);
+	set1.write(out_seg);
+	
+	BOOST_CHECK_EQUAL(diff.different(out_seg, ans_seg), 0);
+}
+
+BOOST_AUTO_TEST_CASE(RawSampleSet_Filter)
 {
 	BOOST_TEST_MESSAGE("SegmentedSampleSet filter");
 	

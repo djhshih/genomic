@@ -4,7 +4,7 @@ set(CMAKE_BUILD_TYPE Debug)
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 
-set(genomicTest_SRCS genomicTest.cpp ../global.cpp ../Sample.cpp)
+set(genomicTest_SRCS genomicTest.cpp ../global.cpp ../GenericSampleSet.cpp)
 
 add_executable(genomicTest ${genomicTest_SRCS})
 target_link_libraries(genomicTest boost_unit_test_framework)
