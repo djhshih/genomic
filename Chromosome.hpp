@@ -56,7 +56,7 @@ public:
 	T& operator[](size_t i) {
 		return items[i];
 	}
-	size_t size() {
+	const size_t size() const {
 		return items.size();
 	}
 	iterator begin() {
@@ -73,6 +73,9 @@ public:
 	}
 	void clear() {
 		items.clear();
+	}
+	void resize(size_t n) {
+		items.resize(n);
 	}
 };
 

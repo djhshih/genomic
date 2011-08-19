@@ -163,11 +163,15 @@ namespace marker
 			GenomeMarkers::iterator it;
 			GenomeMarkers::const_iterator end = set.end();
 			for (it = set.begin(); it != end; ++it) {
-				ChromosomeMarkers::iterator chromIt;
-				ChromosomeMarkers::const_iterator chromEnd = set[unsortedChromIndex].end();
-				for (chromIt = it->begin(); chromIt < chromEnd; ++chromIt) {
+				ChromosomeMarkers::iterator chromIt = it->begin();
+				while (chromIt != it->end()) {
 					// VERY INEFFICIENT!
-					if (chromIt->flag) it->erase(chromIt);
+					if (chromIt->flag) {
+						//trace("Erasing %s...\n", chromIt->name.c_str());
+						it->erase(chromIt);
+					} else {
+						++chromIt;
+					}
 				}
 			}
 		}
@@ -213,7 +217,7 @@ namespace marker
 				}
 			}
 			
-			trace("Number of markers filtered: %d", filterCount);
+			trace("Number of markers filtered: %d\n", filterCount);
 		}
 		
 	private:

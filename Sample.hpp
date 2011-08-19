@@ -42,6 +42,15 @@ public:
 	void clear() {
 		items.clear();
 	}
+	const size_t size() const {
+		items.size();
+	}
+	Chromosome* at(size_t chromIndex) {
+		return this->operator[](chromIndex);
+	}
+	Chromosome* at(const std::string& chromName) {
+		return this->operator[](chromName);
+	}
 	Chromosome* operator[](size_t chromIndex) {
 		if (chromIndex < items.size()) {
 			return &(items[chromIndex]);

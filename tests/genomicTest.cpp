@@ -186,20 +186,30 @@ BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Filter)
 
 BOOST_AUTO_TEST_CASE(RawSampleSet_Filter)
 {
-	BOOST_TEST_MESSAGE("SegmentedSampleSet filter");
+	BOOST_TEST_MESSAGE("RawSampleSet filter");
 	
 	FilesDiff diff;
 	
-	SegmentedSampleSet<CopyNumberValue> set1, set2;
-	set1.read("segfilt1a.in");
-	set2.read("segfilt1b.in");
+	const unsigned ncases = 3;
+	const char* set1fnames[] = {"cnfilt1a.in", "cnfilt2a.in", "cnfilt3a.in"};
+	const char* set2fnames[] = {"cnfilt1b.in", "cnfilt2b.in", "cnfilt3b.in"};
+	const char* outfnames[] = {"cnfilt1.out", "cnfilt2.out", "cnfilt3.out"};
+	const char* ansfnames[] = {"cnfilt1.ans", "cnfilt2.ans", "cnfilt3.ans"};
 	
-	string out_seg = "segfilt1.out", ans_seg = "segfilt1.ans";
+	for (unsigned i = 0; i < ncases; i++) {
 	
-	set1.filter(set2, 0.8);
-	set1.write(out_seg);
-	
-	BOOST_CHECK_EQUAL(diff.different(out_seg, ans_seg), 0);
+		RawSampleSet<CopyNumberValue> set1, set2;
+		set1.read(set1fnames[i]);
+		set2.read(set2fnames[i]);
+		
+		string out = outfnames[i], ans = ansfnames[i];
+		
+		set1.filter(set2);
+		set1.write(out);
+		
+		BOOST_CHECK_EQUAL(diff.different(out, ans), 0);
+		
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

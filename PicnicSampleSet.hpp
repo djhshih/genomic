@@ -1,6 +1,10 @@
 #ifndef genomic_PicnicSampleSet_h
 #define genomic_PicnicSampleSet_h
 
+#include "typedefs.h"
+
+template <typename V> class SplitRawSampleSet;
+
 class PicnicSampleSet : public SplitRawSampleSet<AlleleSpecificIntegerCopyNumberValue>
 {
 public:

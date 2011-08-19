@@ -108,59 +108,62 @@ public:
 		// flag markers for removal
 		markers->filter(refMarkers);
 		
-		if (samples.size() == 0) return;
+		if (samples.size() > 0) {
 		
-		// Create copy of samples with only unflagged markers
-		
-		// Shallow copy current samples (copy pointers)
-		Samples oldSamples = samples;
-		
-		samples.clear();
-		byNames.clear();
-		
-		samples.resize(oldSamples.size());
-		for (size_t sampleIndex = 0; sampleIndex < oldSamples.size(); ++sampleIndex) {
-			// iterate through chromosomes
-			for (size_t chromIndex = 0; chromIndex < oldSamples[0].size(); ++chromIndex) {
-				// resize chromosome to be as big as chromosome from old sample
-				samples[sampleIndex]->resizeChromosome(chromIndex, oldSamples[sampleIndex][chromIndex]->size());
-			}
-		}
-		
-		const size_t chromEnd = markers->size();
-		vector<size_t> validMarkersCounts(chromEnd);
-		for (size_t chromIndex = 0; chromIndex < chromEnd; ++chromIndex) {
-			const size_t numMarkers = (*markers)[chromIndex].size();
-			validMarkersCounts[chromIndex] = 0;
-			for (size_t markerIndex = 0; markerIndex < numMarkers; ++markerIndex) {
-				// only copy unflagged markers
-				if (!(*markers)[chromIndex][markerIndex].flag) {
-					// copy marker values from oldSamples
-					const size_t numSamples = oldSamples.size();
-					for (size_t sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex) {
-						samples[sampleIndex][chromIndex][validMarkersCounts[chromIndex]] = oldSamples[sampleIndex][chromIndex]->at(markerIndex);
-					}
-					++validMarkersCounts[chromIndex];
+			// Create copy of samples with only unflagged markers
+			
+			// Shallow copy current samples (copy pointers)
+			Samples oldSamples = samples;
+			
+			samples.clear();
+			byNames.clear();
+			
+			samples.resize(oldSamples.size());
+			for (size_t sampleIndex = 0; sampleIndex < oldSamples.size(); ++sampleIndex) {
+				// iterate through chromosomes
+				for (size_t chromIndex = 0; chromIndex < oldSamples[0]->size(); ++chromIndex) {
+					// resize chromosome to be as big as chromosome from old sample
+					samples[sampleIndex]->resizeChromosome(chromIndex, (*oldSamples[sampleIndex])[chromIndex]->size());
 				}
 			}
-		}
-		
-		// resize new sample chromosomes
-		SamplesIterator it, end = samples.end();
-		for (it = samples.begin(); it != end; ++it) {
+			
+			const size_t chromEnd = markers->size();
+			vector<size_t> validMarkersCounts(chromEnd);
 			for (size_t chromIndex = 0; chromIndex < chromEnd; ++chromIndex) {
-				(**it).resizeChromosome(chromIndex, validMarkersCounts[chromIndex]);
+				const size_t numMarkers = (*markers)[chromIndex].size();
+				validMarkersCounts[chromIndex] = 0;
+				for (size_t markerIndex = 0; markerIndex < numMarkers; ++markerIndex) {
+					// only copy unflagged markers
+					if (!(*markers)[chromIndex][markerIndex].flag) {
+						// copy marker values from oldSamples
+						const size_t numSamples = oldSamples.size();
+						for (size_t sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex) {
+							(*samples[sampleIndex])[chromIndex]->at(validMarkersCounts[chromIndex]) = (*oldSamples[sampleIndex])[chromIndex]->at(markerIndex);
+						}
+						++validMarkersCounts[chromIndex];
+					}
+				}
 			}
+			
+			// resize new sample chromosomes
+			SamplesIterator it, end = samples.end();
+			for (it = samples.begin(); it != end; ++it) {
+				for (size_t chromIndex = 0; chromIndex < chromEnd; ++chromIndex) {
+					(**it).resizeChromosome(chromIndex, validMarkersCounts[chromIndex]);
+				}
+			}
+			
+			// clear old samples
+			end = oldSamples.end();
+			for (it = oldSamples.begin(); it != end; ++it) {
+				delete (*it);
+			}
+			
 		}
 		
 		// remove flagged markers
 		markers->clean();
 		
-		// clear old samples
-		end = oldSamples.end();
-		for (it = oldSamples.begin(); it != end; ++it) {
-			delete (*it);
-		}
 	}
 };
 
