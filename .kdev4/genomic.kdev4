@@ -5,41 +5,24 @@ BuildItems=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x
 BuildDirs[$e]=$HOME/projects/genomic/build,$HOME/projects/genomic/build/debug
 CMakeDir=/usr/share/cmake-2.8/Modules
 Current CMake Binary=file:///usr/bin/cmake
-CurrentBuildDir=file:///home/davids/projects/genomic/build/debug
+CurrentBuildDir=file:///home/katana/projects/genomic/build/debug
 CurrentBuildType=Debug
 CurrentInstallDir=file:///usr/local
 Extra Arguments=
 ProjectRootRelative=./
 
 [Launch]
-Launch Configurations=Launch Configuration 0,Launch Configuration 1
-
-[Launch][Launch Configuration 0]
-Configured Launch Modes=execute
-Configured Launchers=nativeAppLauncher
-Name=New Native Application Configuration
-Type=Native Application
-
-[Launch][Launch Configuration 0][Data]
-Arguments=
-Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x03\x00\x00\x00\x0e\x00g\x00e\x00n\x00o\x00m\x00i\x00c\x00\x00\x00\n\x00t\x00e\x00s\x00t\x00s\x00\x00\x00\x16\x00g\x00e\x00n\x00o\x00m\x00i\x00c\x00T\x00e\x00s\x00t)
-Dependency Action=Build
-EnvironmentGroup=default
-Executable=
-External Terminal=konsole --noclose --workdir %workdir -e %exe
-Project Target=genomic,tests,genomicTest
-Use External Terminal=false
-Working Directory=
-isExecutable=false
+Launch Configurations=Launch Configuration 1,Launch Configuration 2
 
 [Launch][Launch Configuration 1]
-Configured Launch Modes=execute
-Configured Launchers=nativeAppLauncher
-Name=New Native Application Configuration
+Configured Launch Modes=debug
+Configured Launchers=gdb
+Name=genomic
 Type=Native Application
 
 [Launch][Launch Configuration 1][Data]
 Arguments=
+Configured from ProjectItem=genomic,genomic
 Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x02\x00\x00\x00\x0e\x00g\x00e\x00n\x00o\x00m\x00i\x00c\x00\x00\x00\x0e\x00g\x00e\x00n\x00o\x00m\x00i\x00c)
 Dependency Action=Build
 EnvironmentGroup=default
@@ -47,7 +30,26 @@ Executable=
 External Terminal=konsole --noclose --workdir %workdir -e %exe
 Project Target=genomic,genomic
 Use External Terminal=false
-Working Directory=
+Working Directory=file:///home/katana/projects/genomic/build/
+isExecutable=false
+
+[Launch][Launch Configuration 2]
+Configured Launch Modes=debug
+Configured Launchers=gdb
+Name=genomicTest
+Type=Native Application
+
+[Launch][Launch Configuration 2][Data]
+Arguments=
+Configured from ProjectItem=genomic,tests,genomicTest
+Dependencies=@Variant(\x00\x00\x00\t\x00\x00\x00\x00\x01\x00\x00\x00\x0b\x00\x00\x00\x00\x03\x00\x00\x00\x0e\x00g\x00e\x00n\x00o\x00m\x00i\x00c\x00\x00\x00\n\x00t\x00e\x00s\x00t\x00s\x00\x00\x00\x16\x00g\x00e\x00n\x00o\x00m\x00i\x00c\x00T\x00e\x00s\x00t)
+Dependency Action=Build
+EnvironmentGroup=default
+Executable=
+External Terminal=konsole --noclose --workdir %workdir -e %exe
+Project Target=genomic,tests,genomicTest
+Use External Terminal=false
+Working Directory=file:///home/katana/projects/genomic/build/debug/tests
 isExecutable=false
 
 [MakeBuilder]

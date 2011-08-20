@@ -111,6 +111,8 @@ public:
 					sset.write(outFileName);
 				}
 				
+				//TODO add other formats
+				
 			} else {
 				throw runtime_error("Error: no input format specified");
 			}
@@ -124,7 +126,7 @@ public:
 class Filter : public Command {
 public:
 	Filter() 
-	: Command("filter segmentation file") {
+	: Command("filter file based on reference") {
 		
 		// Delcare options
 		opts.add_options()
@@ -170,9 +172,9 @@ int main(int argc, char **argv)
 		} else {
 			string s = argv[1];
 			
-			if (s == "--help") {
+			if (s == "--help" || s == "-h") {
 				printUsage = true;
-			} else if (s == "--version") {
+			} else if (s == "--version" || s == "-v") {
 				printVersion = true;
 			} else {
 			

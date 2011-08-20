@@ -13,6 +13,11 @@
 #include "CopyNumberValue.hpp"
 #include "SampleSet.hpp"
 
+
+// samples can be rearranged => RawSampleSet store samples as pointers
+// chromosomes are not ever rearranged => Sample stores chromosomes as objects
+// data can be sorted => store segment data as pointers, but raw data can be stored as values
+
 extern marker::Manager marker::manager;
 
 template <typename T> class LinearChromosome;
@@ -123,7 +128,7 @@ public:
 				// iterate through chromosomes
 				for (size_t chromIndex = 0; chromIndex < oldSamples[0]->size(); ++chromIndex) {
 					// resize chromosome to be as big as chromosome from old sample
-					samples[sampleIndex]->resizeChromosome(chromIndex, (*oldSamples[sampleIndex])[chromIndex]->size());
+					samples[sampleIndex]->resizeChromosome(chromIndex, (*oldSamples[sampleIndex])[chromIndex].size());
 				}
 			}
 			
@@ -134,11 +139,11 @@ public:
 				validMarkersCounts[chromIndex] = 0;
 				for (size_t markerIndex = 0; markerIndex < numMarkers; ++markerIndex) {
 					// only copy unflagged markers
-					if (!(*markers)[chromIndex][markerIndex].flag) {
+					if (!(*markers)[chromIndex][markerIndex]->flag) {
 						// copy marker values from oldSamples
 						const size_t numSamples = oldSamples.size();
 						for (size_t sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex) {
-							(*samples[sampleIndex])[chromIndex]->at(validMarkersCounts[chromIndex]) = (*oldSamples[sampleIndex])[chromIndex]->at(markerIndex);
+							(*samples[sampleIndex])[chromIndex][validMarkersCounts[chromIndex]] = (*oldSamples[sampleIndex])[chromIndex][markerIndex];
 						}
 						++validMarkersCounts[chromIndex];
 					}
@@ -215,8 +220,8 @@ void RawSampleSet<V>::_read(fstream& file)
 					// ignore unknown chromosome: continue to next line
 					if (chr == 0) continue;
 					// create marker
-					marker::Marker marker(markerName, chr, pos);
-					markers->at(chr-1).push_back(marker);
+					marker::Marker* marker = new marker::Marker(markerName, chr, pos);
+					markers->addToChromosome(chr-1, marker);
 				}
 				
 				readSampleValues(stream, sampleStart, chromName);
@@ -263,7 +268,7 @@ void RawSampleSet<V>::_write(fstream& file)
 		for (size_t markerIndex = 0; markerIndex < markers->at(chr).size(); ++markerIndex) {
 			
 			// print marker information
-			file << markers->at(chr)[markerIndex].name << delim << markers->at(chr)[markerIndex].chromosome << delim << markers->at(chr)[markerIndex].pos;
+			file << markers->at(chr)[markerIndex]->name << delim << markers->at(chr)[markerIndex]->chromosome << delim << markers->at(chr)[markerIndex]->pos;
 			
 			writeSampleValues(file, chr, markerIndex, delim);
 		}
@@ -287,11 +292,12 @@ void RawSampleSet<V>::writeSampleValues(fstream& file, size_t chr, size_t marker
 	SamplesIterator it;
 	const SamplesIterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
-		file << delim << (**it)[chr]->at(markerIndex);
+		file << delim << (**it)[chr][markerIndex];
 	}
 	file << endl;
 }
 
+// TODO make more efficient!
 template <typename V>
 void RawSampleSet<V>::sort()
 {
@@ -309,7 +315,7 @@ void RawSampleSet<V>::sort()
 		vector<RawChromosome> samplesChromosomeCopy;
 		vector< pair<position, size_t> > order;
 		for (size_t j = 0; j < markers->at(chri).size(); ++j) {
-			order.push_back( make_pair(markers->at(chri)[j].pos, j) );
+			order.push_back( make_pair(markers->at(chri)[j]->pos, j) );
 			
 			chromosomeMarkers.push_back(markers->at(chri)[j]);
 			
@@ -333,7 +339,7 @@ void RawSampleSet<V>::sort()
 			
 			// Iterate through samples, set the corresponding marker in the current chromosome
 			for (size_t s = 0; s < samples.size(); ++s) {
-				samples[s]->chromosome(chri)->at(j) = samplesChromosomeCopy[s][index];
+				(*samples[s])[chri][j] = samplesChromosomeCopy[s][index];
 			}
 		}
 		

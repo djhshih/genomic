@@ -154,8 +154,8 @@ SegmentedSampleSet<V>::SegmentedSampleSet(RawSampleSet<V>& raw)
 					if (!eq(*markerIt, prevValue)) {
 						// segment ended: store segment from $startMarkerIndex to $markerIndex-1
 						Segment<Value> seg(
-							raw.markers->at(chr)[startMarkerIndex].pos,
-							raw.markers->at(chr)[markerIndex-1].pos,
+							raw.markers->at(chr)[startMarkerIndex]->pos,
+							raw.markers->at(chr)[markerIndex-1]->pos,
 							(markerIndex-1) - startMarkerIndex + 1,
 							prevValue
 						);
@@ -171,8 +171,8 @@ SegmentedSampleSet<V>::SegmentedSampleSet(RawSampleSet<V>& raw)
 				// handling is same whether last segment is the last marker alone or
 				// 	laste segment ends on the last marker
 				Segment<Value> seg(
-					raw.markers->at(chr)[startMarkerIndex].pos,
-					raw.markers->at(chr)[markerIndex-1].pos,
+					raw.markers->at(chr)[startMarkerIndex]->pos,
+					raw.markers->at(chr)[markerIndex-1]->pos,
 					(markerIndex-1) - startMarkerIndex + 1,
 					prevValue
 				);
@@ -288,22 +288,22 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 				bool filterSegment = false;
 				for (refIt = ref.samples.begin(); refIt != refEnd; ++refIt) {
 					// determine lower and upper bounds
-					SegmentedChromosome* refChrom = (**refIt)[chri];
+					SegmentedChromosome& refChrom = (**refIt)[chri];
 					position_diff lower = 2*(diceThreshold-1)/diceThreshold*segIt->end + (2-diceThreshold)/diceThreshold*(segIt->start - 1) + 1;
 					if (lower < 0) lower = 0;
 					position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*segIt->end + diceThreshold/(2-diceThreshold)*(segIt->start - 1) + 1;
 					//cout << segIt->start << " " << segIt->end << " " << lower << " " << upper << endl;
 					size_t lowerIndex = ref.find(*refIt, chri, lower);
 					size_t upperIndex = ref.find(*refIt, chri, upper) + 1;
-					if (upperIndex >= refChrom->size()) upperIndex = refChrom->size()-1;
+					if (upperIndex >= refChrom.size()) upperIndex = refChrom.size()-1;
 					//size_t lowerIndex = 0, upperIndex = refChrom->size()-1;
 					//cout << "Index: " << lowerIndex << ", " << upperIndex << endl;
 					for (size_t i = lowerIndex; i <= upperIndex; ++i) {
 						// calculate Dice coefficient
-						position_diff intersection = min(refChrom->at(i).end, segIt->end) - max(refChrom->at(i).start, segIt->start) + 1;
+						position_diff intersection = min(refChrom[i].end, segIt->end) - max(refChrom[i].start, segIt->start) + 1;
 						//cout << segIt->start << " " << refChrom->at(i).start << " " << intersection << endl;
 						if (intersection > 0) {
-							float dice = 2 * float(intersection) / (refChrom->at(i).length() + segIt->length());
+							float dice = 2 * float(intersection) / (refChrom[i].length() + segIt->length());
 							if (dice > diceThreshold) {
 								//cout << "Filter: " << segIt->start << " " << refChrom->at(i).start << " " << dice << endl;
 								// Mark segment for deletion

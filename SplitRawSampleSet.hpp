@@ -45,13 +45,9 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 	// assume M makers and N samples
 	// no headerLine
 	
-	marker::Set::ChromosomeMarkers* allMarkers = Base::Base::markers->unsortedChromosome();
-	if (allMarkers == NULL) {
-		throw logic_error("Markers should be populated on an unsorted chromosome prior to reading SplitRawSampleSet data");
-	}
-	
-	marker::Set::ChromosomeMarkers::iterator markerIt = allMarkers->begin();
-	marker::Set::ChromosomeMarkers::const_iterator markerEnd = allMarkers->end();
+	marker::Set::ChromosomeMarkers& allMarkers = Base::Base::markers->unsortedChromosome();
+	marker::Set::ChromosomeMarkers::iterator markerIt = allMarkers.begin();
+	marker::Set::ChromosomeMarkers::const_iterator markerEnd = allMarkers.end();
 	
 	// Use fileName without extension as sampleName
 	string sampleName = name::filestem(Base::fileName);
@@ -77,7 +73,7 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 				throw runtime_error("Number of markers do not match the number of values for sample");
 			}
 			
-			readSampleValue(stream, sample, markerIt->chromosome-1, delim);
+			readSampleValue(stream, sample, (*markerIt)->chromosome-1, delim);
 			
 			// next marker
 			++markerIt;

@@ -24,12 +24,16 @@ namespace marker
 		chromid chromosome;
 		position pos;
 		bool flag;
+		
 		Marker() : flag(false) {}
+		
 		Marker(string markerName, chromid markerChromosome, position markerPosition)
 		: flag(false), name(markerName), chromosome(markerChromosome), pos(markerPosition) {}
+		
 		static bool compare(const Marker& a, const Marker& b) {
 			return a.pos < b.pos;
 		}
+		
 		static bool pcompare(Marker* a, Marker* b) {
 			return a->pos < b->pos;
 		}
@@ -39,25 +43,34 @@ namespace marker
 	class Set
 	{
 		friend class Manager;
+		typedef boost::unordered_set<std::string> uset;
 	public:
-		typedef vector<Marker> ChromosomeMarkers;
+		typedef vector<Marker*> ChromosomeMarkers;
 		typedef vector<ChromosomeMarkers> GenomeMarkers;
+		
 		string platform;
+		
 		Set(const string& markerSetPlatform)
 		: refCount(1), set(nChromosomes), unsortedChromIndex(0),
 			platform(markerSetPlatform) {
 		}
+		
+		~Set() {
+			clear();
+		}
+		
 		ChromosomeMarkers& at(size_t i) {
 			return set[i];
 		}
 		ChromosomeMarkers& operator[](size_t i) {
 			return set[i];
 		}
-		ChromosomeMarkers* unsortedChromosome() {
+		ChromosomeMarkers& unsortedChromosome() {
 			if (unsortedChromIndex > 0) {
-				return &set[unsortedChromIndex];
+				return set[unsortedChromIndex];
+			} else {
+				throw logic_error("Unsorted chromosome has yet been initialized.");
 			}
-			return NULL;
 		}
 		const size_t size() const {
 			return set.size();
@@ -68,6 +81,11 @@ namespace marker
 		GenomeMarkers::const_iterator end() {
 			return set.end();
 		}
+		
+		void addToChromosome(size_t chromIndex, Marker* marker) {
+			set[chromIndex].push_back(marker);
+		}
+		
 		void setIO(char _delim, size_t _headerLine, size_t _nSkippedLines) {
 			delim = _delim;
 			headerLine = _headerLine;
@@ -109,7 +127,7 @@ namespace marker
 						// ignore unknown chromosome: continue to next line
 						if (chr == 0) continue;
 						// create marker
-						marker::Marker marker(markerName, chr, pos);
+						marker::Marker* marker = new Marker(markerName, chr, pos);
 						
 						if (doSort) {
 							// add marker onto appropriate chromosome
@@ -131,7 +149,7 @@ namespace marker
 				// Move markers from the first chromosome onto appropriate chromosomes
 				ChromosomeMarkers::const_iterator it, end = set[unsortedChromIndex].end();
 				for (it = set[unsortedChromIndex].begin(); it != end; ++it) {
-					set[it->chromosome-1].push_back(*it);
+					set[(*it)->chromosome-1].push_back(*it);
 				}
 				// Remove extra chromosome
 				set[unsortedChromIndex].clear();
@@ -144,7 +162,7 @@ namespace marker
 			GenomeMarkers::iterator it;
 			GenomeMarkers::const_iterator end = set.end();
 			for (it = set.begin(); it != end; ++it) {
-				std::sort(it->begin(), it->end(), &Marker::compare);
+				std::sort(it->begin(), it->end(), &Marker::pcompare);
 			}
 		}
 		
@@ -166,7 +184,7 @@ namespace marker
 				ChromosomeMarkers::iterator chromIt = it->begin();
 				while (chromIt != it->end()) {
 					// VERY INEFFICIENT!
-					if (chromIt->flag) {
+					if ((*chromIt)->flag) {
 						//trace("Erasing %s...\n", chromIt->name.c_str());
 						it->erase(chromIt);
 					} else {
@@ -176,12 +194,45 @@ namespace marker
 			}
 		}
 		
+		void filter(const std::vector<std::string>& refMarkers) {
+			uset hash;
+			hashMarkers(refMarkers, hash);
+			filter(hash);
+		}
+		
 		// flag markers found in ref
 		void filter(const Set& ref) {
-			typedef boost::unordered_set<std::string> uset;
+			uset hash;
+			hashMarkers(ref, hash);
+			filter(hash);
+		}
+		
+	private:
+		
+		GenomeMarkers set;
+		size_t unsortedChromIndex;
+		size_t refCount;
+		
+		char delim;
+		size_t nSkippedLines;
+		size_t headerLine;
+		
+		// construct hash containing all marker names found in markerNames
+		void hashMarkers(const std::vector<std::string>& markerNames, uset& hash) {
+			if (markerNames.size() == 0) return;
+			// initialize hash with at least enough buckets to hold all markers,
+			//  multipled by factor to for expected load factor of 0.7
+			hash.rehash(markerNames.size() * 1.5);
 			
-			// construct hash containing all marker names found in ref
-			
+			// populate hash
+			std::vector<std::string>::const_iterator it, end = markerNames.end();
+			for (it = markerNames.begin(); it != end; ++it) {
+				hash.insert(*it);
+			}
+		}
+		
+		// construct hash containing all marker names found in ref
+		void hashMarkers(const Set& ref, uset& hash) {
 			// determine total number of reference markers
 			GenomeMarkers::const_iterator end = ref.set.end();
 			size_t numRefMarkers = 0;
@@ -191,27 +242,28 @@ namespace marker
 			
 			// initialize hash with at least enough buckets to hold all markers,
 			//  multipled by factor to for expected load factor of 0.7
-			uset refMarkers(numRefMarkers * 1.5);
+			hash.rehash(numRefMarkers * 1.5);
 			
 			// populate hash
 			for (GenomeMarkers::const_iterator it = ref.set.begin(); it != end; ++it) {
 				ChromosomeMarkers::const_iterator markerIt, markerEnd = it->end();
 				for (markerIt = it->begin(); markerIt != markerEnd; ++markerIt) {
-					refMarkers.insert(markerIt->name);
+					hash.insert((*markerIt)->name);
 				}
 			}
-			
+		}
+		
+		void filter(const uset& refMarkersHash) {
 			// flag markers in this->set that are found in refMarkers
-			
-			end = set.end();
+			GenomeMarkers::const_iterator end = set.end();
 			size_t filterCount = 0;
 			for (GenomeMarkers::iterator it = set.begin(); it != end; ++it) {
 				ChromosomeMarkers::iterator markerIt;
 				ChromosomeMarkers::const_iterator markerEnd = it->end();
-				uset::const_iterator refMarkerEnd = refMarkers.end();
+				uset::const_iterator refMarkerEnd = refMarkersHash.end();
 				for (markerIt = it->begin(); markerIt != markerEnd; ++markerIt) {
-					if (refMarkers.find(markerIt->name) != refMarkerEnd) {
-						markerIt->flag = true;
+					if (refMarkersHash.find((*markerIt)->name) != refMarkerEnd) {
+						(*markerIt)->flag = true;
 						++filterCount;
 					}
 				}
@@ -219,15 +271,6 @@ namespace marker
 			
 			trace("Number of markers filtered: %d\n", filterCount);
 		}
-		
-	private:
-		GenomeMarkers set;
-		size_t unsortedChromIndex;
-		size_t refCount;
-		
-		char delim;
-		size_t nSkippedLines;
-		size_t headerLine;
 		
 		void ref() {
 			++refCount;
@@ -243,6 +286,11 @@ namespace marker
 			GenomeMarkers::iterator it;
 			GenomeMarkers::const_iterator end = set.end();
 			for (it = set.begin(); it != end; ++it) {
+				ChromosomeMarkers::iterator markerIt;
+				ChromosomeMarkers::const_iterator markerEnd = it->end();
+				for (markerIt = it->begin(); markerIt != markerEnd; ++markerIt) {
+					delete (*markerIt);
+				}
 				it->clear();
 			}
 			unsortedChromIndex = 0;

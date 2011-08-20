@@ -43,7 +43,7 @@ void RawSampleSet<SPECIALIZATION_TYPE>::writeSampleValues(fstream& file, size_t 
 	SamplesIterator it;
 	const SamplesIterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
-		const Value& value = (**it)[chr]->at(markerIndex);
+		const Value& value = (**it)[chr][markerIndex];
 		file << delim << value.a << delim << value.b;
 	}
 	file << endl;

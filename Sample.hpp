@@ -45,22 +45,23 @@ public:
 	const size_t size() const {
 		items.size();
 	}
-	Chromosome* at(size_t chromIndex) {
+	Chromosome& at(size_t chromIndex) {
 		return this->operator[](chromIndex);
 	}
-	Chromosome* at(const std::string& chromName) {
+	Chromosome& at(const std::string& chromName) {
 		return this->operator[](chromName);
 	}
-	Chromosome* operator[](size_t chromIndex) {
+	Chromosome& operator[](size_t chromIndex) {
 		if (chromIndex < items.size()) {
-			return &(items[chromIndex]);
+			return items[chromIndex];
+		} else {
+			throw logic_error("Chromosome index is out of bound.");
 		}
-		return NULL;
 	}
-	Chromosome* operator[](const std::string& chromName) {
+	Chromosome& operator[](const std::string& chromName) {
 		size_t k = mapping::chromosome[chromName];
-		if (k != 0) return &(items[k-1]);
-		return NULL;
+		if (k != 0) return items[k-1];
+		throw logic_error("Chromosome name is not found.");
 	}
 	typename Chromosomes::iterator begin() {
 		return items.begin();
