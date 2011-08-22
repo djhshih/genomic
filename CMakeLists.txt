@@ -31,3 +31,4 @@ install(TARGETS genomic RUNTIME DESTINATION bin)
 
 add_subdirectory(tests)
 add_subdirectory(examples)
+add_subdirectory(graphic)
