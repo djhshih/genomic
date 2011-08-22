@@ -30,19 +30,6 @@ bool Window::init() {
 	// set title bar
 	SDL_WM_SetCaption("Window", NULL);
 	
-	// initialize SDL_ttf
-	/*
-	if (TTF_Init() != 0) {
-		std::cerr << "Failed to initialize SDL_ttf: " << TTF_GetError() << std::endl;
-		return false;
-	}
-	TTF_Font *font = TTF_OpenFont("/usr/share/fonts/TTF/Vera.ttf", 10);
-	if (font == NULL) {
-		std::cerr << "Cannot open font: " << TTF_GetError() << std::endl;
-		return false;
-	}
-	*/
-	
 	if (font.Error()) {
 		std::cerr << "Failed to load font" << std::endl;
 	}
@@ -64,9 +51,6 @@ bool Window::init() {
 	glLoadIdentity();
 	
 	glEnable(GL_TEXTURE_2D);
-	
-	//glEnable(GL_BLEND);
-	//glEnable(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	return true;
 }
@@ -109,26 +93,11 @@ void Window::render() {
 		glLoadIdentity();
 	}
 	
-	//glTranslatef(0.5, 0.5, 0);
 	// must call glColor before glRasterPos
 	glColor3f(0, 0, 0);
 	glRasterPos2f(0.1, 0.9);
 	font.FaceSize(12);
-	font.Render("text");
-	//font.Render("A journey of a thousand miles begins with a single step.");
-	
-	// render string
-	//glRasterPos2f(0.1, 0.5);
-	//glColor3f(0, 0, 0);
-	//glutBitmapString(GLUT_BITMAP_HELVETICA_10, (const unsigned char*)"A journey of a thousand miles begins with a single step.");
-	
-	/*
-	// causes crash
-	SDL_Color text_color = {0, 0, 0};
-	SDL_Surface *text = TTF_RenderText_Shaded(font, "A journey of a thousand miles begins with a single step.", text_color, text_color);
-	*/
-	
-		
+	font.Render("A journey of a thousand miles begins with a single step.");
 		
 	SDL_GL_SwapBuffers();
 }
