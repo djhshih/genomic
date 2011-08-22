@@ -1,0 +1,99 @@
+
+#include <SDL/SDL.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+
+class Window
+{
+public:
+	
+	Window() : surface(NULL), active(true), width(640), height(480), color(32) {}
+	
+	~Window() {
+		SDL_FreeSurface(surface);
+		SDL_Quit();
+	}
+	
+	int exec();
+	
+private:
+	bool init();
+	void render();
+	void onLoop();
+	void onEvent(SDL_Event*);
+	
+private:
+	unsigned width, height, color;
+	bool active;
+	SDL_Surface* surface;
+};
+
+int Window::exec() {
+	if (!init()) return -1;
+	
+	SDL_Event event;
+	while (active) {
+		while (SDL_PollEvent(&event)) {
+			onEvent(&event);
+		}
+		onLoop();
+		render();
+	}
+	
+	return 0;
+}
+
+bool Window::init() {
+	if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+			return false;
+	}
+	
+	surface = SDL_SetVideoMode(width, height, color, SDL_HWSURFACE | SDL_GL_DOUBLEBUFFER | SDL_OPENGL);
+	if (surface == NULL) {
+		return false;
+	}
+	
+	glClearColor(0, 0, 0, 0);
+	
+	glViewport(0, 0, width, height);
+	
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	// left, right, bottom, top, near, far
+	glOrtho(0, width, height, 0, 1, -1);
+	
+	glMatrixMode(GL_MODELVIEW);
+	glEnable(GL_TEXTURE_2D);
+	glLoadIdentity();
+	
+	return true;
+}
+
+void Window::render() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
+	
+	glBegin(GL_QUADS);
+	glColor3f(1, 0, 0); glVertex3f(0, 0, 0);
+	glColor3f(0, 1, 0); glVertex3f(width, 0, 0);
+	glColor3f(0, 0, 1); glVertex3f(width, height, 0);
+	glColor3f(1, 1, 1); glVertex3f(0, height, 0);
+	glEnd();
+	
+	SDL_GL_SwapBuffers();
+}
+
+void Window::onEvent(SDL_Event* event) {
+	if (event->type == SDL_QUIT) {
+		active = false;
+	}
+}
+
+void Window::onLoop() {
+	
+}
+
+int main(int argc, char* argv[]) {
+	Window w;
+	return w.exec();
+}
