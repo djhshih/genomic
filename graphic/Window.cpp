@@ -52,6 +52,9 @@ bool Window::init() {
 	
 	glEnable(GL_TEXTURE_2D);
 	
+	
+	graph = new Graph(*this);
+	
 	return true;
 }
 
@@ -68,6 +71,7 @@ void Window::render() {
 	glColor3f(1, 1, 1); glVertex3f(0, 1, 0);
 	glEnd();
 	
+	/*
 	const int n = 10;
 	
 	GLuint list = glGenLists(2);
@@ -92,13 +96,21 @@ void Window::render() {
 		glCallList(list+1);
 		glLoadIdentity();
 	}
+	*/
 	
 	// must call glColor before glRasterPos
 	glColor3f(0, 0, 0);
 	glRasterPos2f(0.1, 0.9);
-	font.FaceSize(12);
-	font.Render("A journey of a thousand miles begins with a single step.");
-		
+	renderText("A journey of a thousand miles begins with a single step.");
+	
+	if (graph != NULL) {
+		glTranslatef(0.2, 0.5, 0);
+		glScalef(0.7, 0.4, 1);
+		glColor3f(0.5, 0.5, 0.5);
+		glCallList(graph->begin());
+		glLoadIdentity();
+	}
+	
 	SDL_GL_SwapBuffers();
 }
 

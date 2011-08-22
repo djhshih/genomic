@@ -7,18 +7,32 @@
 #include <GL/gl.h>
 #include <FTGL/ftgl.h>
 
+#include "Graph.hpp"
+
+class Graph;
+
 class Window
 {
 public:
 	
-	Window() : surface(NULL), active(true), width(640), height(480), color(32), font("/usr/share/fonts/TTF/Vera.ttf") {}
+	Window()
+	: surface(NULL), active(true),
+	  width(640), height(480), color(32),
+	  font("/usr/share/fonts/TTF/Vera.ttf"),
+	  graph(NULL)
+	{}
 	
 	~Window() {
 		SDL_FreeSurface(surface);
 		SDL_Quit();
+		delete graph;
 	}
 	
 	int exec();
+	void renderText(const char *text, unsigned int size=10) {
+		font.FaceSize(size);
+		font.Render(text);
+	}
 	
 private:
 	bool init();
@@ -31,6 +45,8 @@ private:
 	bool active;
 	SDL_Surface *surface;
 	FTGLPixmapFont font;
+	
+	Graph *graph;
 };
 
 #endif
