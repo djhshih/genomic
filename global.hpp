@@ -92,7 +92,7 @@ namespace mapping
 namespace compare
 {
 	template <typename T1, typename T2>
-	bool pair(pair<T1, T2> a, pair<T1, T2> b) {
+	bool pair(const pair<T1, T2>& a, const pair<T1, T2>& b) {
 		return a.first < b.first;
 	}
 }

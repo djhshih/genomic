@@ -1,5 +1,8 @@
 #include "Window.hpp"
 
+std::vector<Graph::xtype> g_x;
+std::vector<Graph::ytype> g_y;
+
 int Window::exec() {
 	if (!init()) return -1;
 	
@@ -33,6 +36,7 @@ bool Window::init() {
 	if (font.Error()) {
 		std::cerr << "Failed to load font" << std::endl;
 	}
+	ftlayout.SetFont(&font);
 	
 	// set background colour
 	glClearColor(0, 0, 0, 0);
@@ -52,8 +56,18 @@ bool Window::init() {
 	
 	glEnable(GL_TEXTURE_2D);
 	
-	
 	graph = new Graph(*this);
+	
+	Graph::ytype y = 0;
+	g_x.reserve(1000);
+	g_y.reserve(1000);
+	for (std::size_t i = 0; i < 1000; ++i) {
+		g_x.push_back(std::rand() % 10000);
+		y += double(std::rand()) / RAND_MAX * 0.1  - 0.05;
+		g_y.push_back(y);
+		//std::cout << g_x[g_x.size()-1] << ", " << g_y[g_y.size()-1] << std::endl;
+	}
+	std::sort(g_x.begin(), g_x.end());
 	
 	return true;
 }
@@ -65,9 +79,9 @@ void Window::render() {
 	glLoadIdentity();
 	
 	glBegin(GL_QUADS);
-	glColor3f(1, 0, 0); glVertex3f(0, 0, 0);
-	glColor3f(0, 1, 0); glVertex3f(1, 0, 0);
-	glColor3f(0, 0, 1); glVertex3f(1, 1, 0);
+	glColor3f(1, 0.9, 0.9); glVertex3f(0, 0, 0);
+	glColor3f(0.9, 1, 0.9); glVertex3f(1, 0, 0);
+	glColor3f(0.9, 0.9, 1); glVertex3f(1, 1, 0);
 	glColor3f(1, 1, 1); glVertex3f(0, 1, 0);
 	glEnd();
 	
@@ -99,17 +113,21 @@ void Window::render() {
 	*/
 	
 	// must call glColor before glRasterPos
-	glColor3f(0, 0, 0);
-	glRasterPos2f(0.1, 0.9);
-	renderText("A journey of a thousand miles begins with a single step.");
+	glColor3f(0.2, 0, 0);
+	renderText("A journey of a thousand miles begins with a single step.", 0.5, 0.95);
 	
 	if (graph != NULL) {
-		glTranslatef(0.2, 0.5, 0);
-		glScalef(0.7, 0.4, 1);
-		glColor3f(0.5, 0.5, 0.5);
+		glTranslatef(0.15, 0.15, 0);
+		glScalef(0.7, 0.7, 1);
+		glColor3f(0.2, 0.2, 0.2);
+		
 		glCallList(graph->begin());
+		graph->plot(g_x, g_y);
+		
 		glLoadIdentity();
+		
 	}
+	
 	
 	SDL_GL_SwapBuffers();
 }
