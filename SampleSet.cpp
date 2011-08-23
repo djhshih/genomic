@@ -5,8 +5,10 @@ void SampleSet::read(const vector<string>& fileNames, const string& markersFileN
 	
 	// Read markers, do not sort markers yet
 	markers = marker::manager.create(platform);
-	markers->setIO(delim, headerLine, nSkippedLines);
-	markers->read(markersFileName, platform, false);
+	if (!markersFileName.empty()) {
+		markers->setIO(delim, headerLine, nSkippedLines);
+		markers->read(markersFileName, platform, false);
+	}
 	
 	vector<string>::const_iterator it, end = fileNames.end();
 	for (it = fileNames.begin(); it < end; ++it) {
@@ -15,7 +17,7 @@ void SampleSet::read(const vector<string>& fileNames, const string& markersFileN
 	}
 	
 	// Sort after all samples have been read
-	markers->distribute();
+	if (!markersFileName.empty()) markers->distribute();
 	if (!isSorted) sort();
 }
 

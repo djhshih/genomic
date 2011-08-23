@@ -27,7 +27,7 @@ extern chromid nChromosomes;
 namespace data
 {
 	enum Type {
-		generic, raw, segmented, raw_ascn, segmented_ascn, dchip, cnag, picnic, penncnv
+		invalid, generic, raw, segmented, raw_ascn, segmented_ascn, dchip, cnag, picnic, penncnv
 	};
 };
 
@@ -69,7 +69,10 @@ namespace mapping
 	class ExtensionMap
 	{
 	private:
-		map<string, data::Type> type;
+		typedef map<string, data::Type> ext2type;
+		typedef map<data::Type, string> type2ext;
+		ext2type type;
+		type2ext ext;
 	public:
 		ExtensionMap() {
 			type["cn"] = data::raw;
@@ -80,9 +83,28 @@ namespace mapping
 			type["cnag"] = data::cnag;
 			type["picnic"] = data::picnic;
 			type["penncnv"] = data::penncnv;
+			
+			// create reverse mapping
+			ext2type::const_iterator it, end = type.end();
+			for (it = type.begin(); it != end; ++it) {
+				ext.insert( make_pair(it->second, it->first) );
+			}
 		}
 		data::Type operator[] (const string& ext) {
-			return type[ext];
+			ext2type::const_iterator it = type.find(ext);
+			if (it == type.end()) {
+				return data::invalid;
+			} else {
+				return it->second;
+			}
+		}
+		const string& operator[] (data::Type type) {
+			type2ext::const_iterator it = ext.find(type);
+			if (it == ext.end()) {
+				return ext[data::invalid];
+			} else {
+				return it->second;
+			}
 		}
 	};
 	extern ExtensionMap extension;

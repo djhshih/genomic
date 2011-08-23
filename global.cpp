@@ -30,7 +30,7 @@ namespace name
 	string fileext(const string& s) {
 		size_t start = s.find_last_of('.');
 		return s.substr(
-			(start == string::npos) ? 0 : start + 1
+			(start == string::npos || start == s.size()-1) ? 0 : start + 1
 		);
 	}
 	

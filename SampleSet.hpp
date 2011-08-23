@@ -11,6 +11,9 @@
 
 class GenericSampleSet;
 
+//TODO use boost::spirit for parsing
+//TODO allow use of input delimiter other than whitespace in all functions
+
 class SampleSet
 {
 	friend class GenericSampleSet;
@@ -35,6 +38,10 @@ public:
 		delim = _delim;
 		headerLine = _headerLine;
 		nSkippedLines = _nSkippedLines;
+	}
+	
+	void read(const vector<string>& fileNames, bool isSorted=false) {
+		read(fileNames, "", isSorted);
 	}
 	
 	void read(const vector<string>& fileNames, const string& markersFileName, bool isSorted=false) {

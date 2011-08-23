@@ -16,12 +16,6 @@
 #include "CopyNumberValue.hpp"
 #include "Segment.hpp"
 
-
-//TODO use boost::spirit for parsing
-//TODO allow use of input delimiter other than whitespace in all functions
-//TODO improve sorting (enable skipping): used up 50GB of RAM on 3 picnic samples!
-
-
 template <typename Chromosome>
 class Sample
 {

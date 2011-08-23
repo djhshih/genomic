@@ -180,8 +180,12 @@ template <typename V>
 RawSampleSet<V>::RawSampleSet(SegmentedSampleSet<V>& set)
 {
 	//TODO
-	// N.B. throw error if set.markers does not exist
-	//   Marker information in set is required for creating RawSampleSet
+	
+	if (set.markers == NULL) {
+		throw runtime_error("Marker information is required for converting from SegmentedSampleSet to RawSampleSet.");
+	}
+	
+	throw runtime_error("RawSampleSet(SegmentedSampleSet<V>&) has not been implemented.");
 }
 
 template <typename V>
@@ -297,7 +301,6 @@ void RawSampleSet<V>::writeSampleValues(fstream& file, size_t chr, size_t marker
 	file << endl;
 }
 
-// TODO make more efficient!
 template <typename V>
 void RawSampleSet<V>::sort()
 {
