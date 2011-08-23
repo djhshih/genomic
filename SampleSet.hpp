@@ -51,6 +51,7 @@ public:
 		read(fileName, platform, append);
 	}
 	
+	// N.B. If platform name is specified explicitly by user, the marker file should be already sorted!
 	void read(const string& fileName, const string& platform, bool append=false);
 	
 	void read(fstream& file, const string& platform, const string& fileName, bool append=false);

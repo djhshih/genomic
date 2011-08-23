@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <stdexcept>
 
+#include "typedefs.h"
 #include "global.hpp"
 #include "Chromosome.hpp"
 #include "CopyNumberValue.hpp"
@@ -45,13 +46,13 @@ public:
 	const size_t size() const {
 		items.size();
 	}
-	Chromosome& at(size_t chromIndex) {
+	Chromosome& at(chromid chromIndex) {
 		return this->operator[](chromIndex);
 	}
 	Chromosome& at(const std::string& chromName) {
 		return this->operator[](chromName);
 	}
-	Chromosome& operator[](size_t chromIndex) {
+	Chromosome& operator[](chromid chromIndex) {
 		if (chromIndex < items.size()) {
 			return items[chromIndex];
 		} else {
@@ -59,7 +60,7 @@ public:
 		}
 	}
 	Chromosome& operator[](const std::string& chromName) {
-		size_t k = mapping::chromosome[chromName];
+		chromid k = mapping::chromosome[chromName];
 		if (k != 0) return items[k-1];
 		throw logic_error("Chromosome name is not found.");
 	}
@@ -69,29 +70,29 @@ public:
 	typename Chromosomes::iterator end() {
 		return items.end();
 	}
-	Chromosome* chromosome(size_t chromIndex) {
+	Chromosome* chromosome(chromid chromIndex) {
 		if (chromIndex < items.size()) {
 			return &(items[chromIndex]);
 		}
 		return NULL;
 	}
 	Chromosome* chromosome(const std::string& chromName) {
-		size_t k = mapping::chromosome[chromName];
+		chromid k = mapping::chromosome[chromName];
 		if (k != 0) return &(items[k-1]);
 		return NULL;
 	}
-	void addToChromosome(size_t chromIndex, const T& item) {
+	void addToChromosome(chromid chromIndex, const T& item) {
 		if (chromIndex < items.size()) {
 			items[chromIndex].push_back(item);
 		}
 	}
 	void addToChromosome(const std::string& chromName, const T& item) {
-		size_t k = mapping::chromosome[chromName];
+		chromid k = mapping::chromosome[chromName];
 		if (k != 0) {
 			items[k-1].push_back(item);
 		}
 	}
-	void resizeChromosome(size_t chromIndex, size_t n) {
+	void resizeChromosome(chromid chromIndex, size_t n) {
 		if (chromIndex < items.size()) {
 			items[chromIndex].resize(n);
 		}

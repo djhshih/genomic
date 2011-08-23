@@ -321,19 +321,16 @@ void RawSampleSet<V>::sort()
 		samplesChromosomeCopy.clear();
 		order.clear();
 		
-		// reserve space
-		chromosomeMarkers.reserve(numMarkers);
-		samplesChromosomeCopy.reserve(numMarkers);
+		// copy original data
+		markers->copyChromosome(chri, chromosomeMarkers);
+		samplesChromosomeCopy.reserve(samples.size());
+		for (size_t s = 0; s < samples.size(); ++s) {
+			samplesChromosomeCopy.push_back((*samples[s])[chri]);
+		}
+		// create order vector
 		order.reserve(numMarkers);
-		
 		for (size_t j = 0; j < numMarkers; ++j) {
 			order.push_back( make_pair(currentMarkers[j]->pos, j) );
-			
-			chromosomeMarkers.push_back(currentMarkers[j]);
-			
-			for (size_t s = 0; s < samples.size(); ++s) {
-				samplesChromosomeCopy.push_back(*(samples[s]->chromosome(chri)));
-			}
 		}
 		
 		// Sort on the order vector instead of the original vector<Markers*>,

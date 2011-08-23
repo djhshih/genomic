@@ -100,7 +100,6 @@ public:
 					
 					PicnicSampleSet pset;
 					pset.read(fileNames, markersFileName, true);
-					//pset.write("output.picnic.ascn");
 					
 					string outFileName = "output.segas";
 					if (vm.count("output")) {

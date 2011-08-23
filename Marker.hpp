@@ -13,6 +13,7 @@
 
 #include <boost/unordered_set.hpp>
 
+#include "typedefs.h"
 #include "global.hpp"
 
 namespace marker
@@ -40,7 +41,6 @@ namespace marker
 		}
 	};
 
-	//TODO store Marker as pointers
 	class Set
 	{
 		friend class Manager;
@@ -60,11 +60,19 @@ namespace marker
 			clear();
 		}
 		
-		ChromosomeMarkers& at(size_t i) {
+		ChromosomeMarkers& at(chromid i) {
 			return set[i];
 		}
-		ChromosomeMarkers& operator[](size_t i) {
+		ChromosomeMarkers& operator[](chromid i) {
 			return set[i];
+		}
+		void copyChromosome(chromid chromIndex, ChromosomeMarkers& dest) {
+			dest.clear();
+			dest.reserve(set[chromIndex].size());
+			ChromosomeMarkers::const_iterator it, end = set[chromIndex].end();
+			for (it = set[chromIndex].begin(); it != end; ++it) {
+				dest.push_back(*it);
+			}
 		}
 		ChromosomeMarkers& unsortedChromosome() {
 			if (unsortedChromIndex > 0) {
@@ -83,7 +91,7 @@ namespace marker
 			return set.end();
 		}
 		
-		void addToChromosome(size_t chromIndex, Marker* marker) {
+		void addToChromosome(chromid chromIndex, Marker* marker) {
 			set[chromIndex].push_back(marker);
 		}
 		
