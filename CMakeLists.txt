@@ -22,7 +22,7 @@ find_package(Boost REQUIRED)
 
 include_directories(${PROJECT_BINARY_DIR} ${BOOST_INCLUDES})
 
-set(genomic_SRCS genomic.cpp global.cpp GenericSampleSet.cpp)
+set(genomic_SRCS genomic.cpp global.cpp SampleSet.cpp GenericSampleSet.cpp Marker.cpp)
 
 add_executable(genomic ${genomic_SRCS})
 target_link_libraries(genomic boost_program_options)

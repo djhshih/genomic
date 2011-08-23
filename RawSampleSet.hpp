@@ -304,6 +304,8 @@ void RawSampleSet<V>::sort()
 	marker::Set* markers = Base::markers;
 	
 	// Construct order vector for obtaining a sorted index of markers
+	marker::Set::ChromosomeMarkers chromosomeMarkers;
+	vector<RawChromosome> samplesChromosomeCopy;
 	vector< pair<position, size_t> > order;
 	
 	for (size_t chri = 0; chri < markers->size(); ++chri) {	
@@ -311,13 +313,23 @@ void RawSampleSet<V>::sort()
 		// Construct order vector for obtaining a sorted index of markers
 		// Additionally, replicate the markers on the curent chromosome;
 		//               replicate the chromosome for all samples
-		marker::Set::ChromosomeMarkers chromosomeMarkers;
-		vector<RawChromosome> samplesChromosomeCopy;
-		vector< pair<position, size_t> > order;
-		for (size_t j = 0; j < markers->at(chri).size(); ++j) {
-			order.push_back( make_pair(markers->at(chri)[j]->pos, j) );
+		
+		marker::Set::ChromosomeMarkers& currentMarkers = markers->at(chri);
+		size_t numMarkers = currentMarkers.size();
+		
+		chromosomeMarkers.clear();
+		samplesChromosomeCopy.clear();
+		order.clear();
+		
+		// reserve space
+		chromosomeMarkers.reserve(numMarkers);
+		samplesChromosomeCopy.reserve(numMarkers);
+		order.reserve(numMarkers);
+		
+		for (size_t j = 0; j < numMarkers; ++j) {
+			order.push_back( make_pair(currentMarkers[j]->pos, j) );
 			
-			chromosomeMarkers.push_back(markers->at(chri)[j]);
+			chromosomeMarkers.push_back(currentMarkers[j]);
 			
 			for (size_t s = 0; s < samples.size(); ++s) {
 				samplesChromosomeCopy.push_back(*(samples[s]->chromosome(chri)));
@@ -332,10 +344,10 @@ void RawSampleSet<V>::sort()
 		//   contains each sorted index
 		
 		// Sort the markers on current chromosome, and each sample
-		for (size_t j = 0; j < markers->at(chri).size(); ++j) {
+		for (size_t j = 0; j < numMarkers; ++j) {
 			size_t index = order[j].second;
 			// Set the marker to the corresponding sorted marker
-			markers->at(chri)[j] = chromosomeMarkers[index];
+			currentMarkers[j] = chromosomeMarkers[index];
 			
 			// Iterate through samples, set the corresponding marker in the current chromosome
 			for (size_t s = 0; s < samples.size(); ++s) {
