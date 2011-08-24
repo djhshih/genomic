@@ -11,6 +11,7 @@ namespace po = boost::program_options;
 
 #include "genomic.hpp"
 
+
 string progname = "genomic";
 
 // helper function to print vectors
@@ -20,6 +21,17 @@ ostream& operator<<(ostream& os, const vector<T>& v) {
 	return os;
 }
 
+class missing_optional : public std::runtime_error {
+public:
+	explicit missing_optional(const string& what_arg)
+	: std::runtime_error("Unspecified optional: " + what_arg) {}
+};
+
+class missing_argument : public std::runtime_error {
+public:
+	explicit missing_argument(const string& what_arg)
+	: std::runtime_error("Missing argument: " + what_arg) {}
+};
 
 class Command {
 public:
@@ -80,63 +92,153 @@ public:
 		
 		switch (inputType) {
 			
-		case data::picnic:
-			
-			const data::Type defaultOutType = data::segmented_ascn;
-	
-			const string& markersFileName = inputFileNames[0];
-			const string& samplesFileName = inputFileNames[1];
-			
-			cout << "Input files: " << inputFileNames << endl;
+			case data::picnic: {
+				
+				const data::Type defaultOutType = data::segmented_ascn;
+		
+				const string& markersFileName = inputFileNames[0];
+				const string& samplesFileName = inputFileNames[1];
+				
+				cout << "Input files: " << inputFileNames << endl;
 
-			ifstream samplesFile(samplesFileName.c_str());
-			if (!samplesFile.is_open()) {
-				throw runtime_error("Failed to open samples file.");
+				ifstream samplesFile(samplesFileName.c_str());
+				if (!samplesFile.is_open()) {
+					throw runtime_error("Failed to open samples file.");
+				}
+				
+				vector<string> fileNames;
+				while (!samplesFile.eof()) {
+					string sample;
+					samplesFile >> sample;
+					if (sample != "") {
+						fileNames.push_back(name::filepath(samplesFileName) + sample);
+						cout << sample << endl;
+					}
+				}
+					
+				PicnicSampleSet pset;
+				pset.read(fileNames, markersFileName, true);
+				
+				switch (outputType) {
+					case data::segmented:
+					case data::segmented_ascn: {
+						SegmentedSampleSet<PicnicSampleSet::Value> sset(pset);
+						sset.write(outputFileName);
+						break;
+					}
+					case data::raw:
+					case data::raw_ascn: {
+						pset.write(outputFileName);
+						break;
+					}
+					default:
+						throw invalid_conversion("Unsupported output type.");
+				}
+				
+				break;
 			}
 			
-			vector<string> fileNames;
-			while (!samplesFile.eof()) {
-				string sample;
-				samplesFile >> sample;
-				if (sample != "") {
-					fileNames.push_back(name::filepath(samplesFileName) + sample);
-					cout << sample << endl;
-				}
+			case data::dchip: {
+				
+				throw logic_error("Conversion not implemented");
+				break;
+			}
+			
+			case data::penncnv: {
+				
+				throw logic_error("Conversion not implemented");
+				break;
 			}
 				
-			PicnicSampleSet pset;
-			pset.read(fileNames, markersFileName, true);
-			
-			switch (outputType) {
-			case data::segmented:
-			case data::segmented_ascn:
-				SegmentedSampleSet<PicnicSampleSet::Value> sset(pset);
-				sset.write(outputFileName);
+			case data::cnag: {
+					
+				throw logic_error("Conversion not implemented");
 				break;
-			case data::raw:
-			case data::raw_ascn:
-				pset.write(outputFileName);
-				break;
-			default:
-				throw runtime_error("Invalid output type.");
 			}
 					
-			break;
-					
-		case data::segmented:
-		
-			SegmentedSampleSet<CopyNumberValue> set;
-			set.read(outputFileNames)
+			case data::segmented: {
 			
-			SampleSet* out = newSampleSet(outputType, set);
-			out->write(outputFileName);
-			delete out;
+				SegmentedSampleSet<CopyNumberValue> set;
+				set.read(inputFileNames);
+				
+				switch (outputType) {
+					case data::segmented:
+						set.write(outputFileName);
+						break;
+					case data::raw: {
+						RawSampleSet<CopyNumberValue> out(set);
+						out.write(outputFileName);
+						break;
+					}
+					default:
+						throw invalid_conversion("Unsupported output type.");
+				}
+				
+				break;
+			}
 			
-			break;
-					
-		case data::raw:
+			case data::segmented_ascn: {
+				
+				SegmentedSampleSet<AlleleSpecificCopyNumberValue> set;
+				set.read(inputFileNames);
+				
+				switch (outputType) {
+					case data::segmented_ascn:
+						set.write(outputFileName);
+						break;
+					case data::raw: {
+						RawSampleSet<AlleleSpecificCopyNumberValue> out(set);
+						out.write(outputFileName);
+						break;
+					}
+					default:
+						throw invalid_conversion("Unsupported output type.");
+				}
+				
+				break;
+			}
+						
+			case data::raw: {
+				
+				RawSampleSet<CopyNumberValue> set;
+				set.read(inputFileNames);
+				
+				switch (outputType) {
+					case data::raw:
+						set.write(outputFileName);
+						break;
+					case data::segmented: {
+						SegmentedSampleSet<CopyNumberValue> out(set);
+						out.write(outputFileName);
+						break;
+					}
+					default:
+						throw invalid_conversion("Unsupported output type.");
+				}
+				
+				break;
+			}
 			
-			break;
+			case data::raw_ascn: {
+				
+				RawSampleSet<AlleleSpecificCopyNumberValue> set;
+				set.read(inputFileNames);
+				
+				switch (outputType) {
+					case data::raw:
+						set.write(outputFileName);
+						break;
+					case data::segmented: {
+						SegmentedSampleSet<AlleleSpecificCopyNumberValue> out(set);
+						out.write(outputFileName);
+						break;
+					}
+					default:
+						throw invalid_conversion("Unsupported output type.");
+				}
+				
+				break;
+			}
 					
 		}
 		
@@ -148,6 +250,7 @@ private:
 	string outputFileName;
 	data::Type inputType, outputType;
 
+	/*
 	SampleSet* newSampleSet(data::Type type, SampleSet* set) {
 		SampleSet* out;
 		switch (type) {
@@ -166,6 +269,7 @@ private:
 		}
 		return out;
 	}
+	*/
 	
 	void getOptions() {
 		
@@ -179,6 +283,9 @@ private:
 			inputType = mapping::extension[ vm["from"].as<string>() ];
 		} else {
 			inputType = mapping::extension[ name::fileext(inputFileNames[0]) ];
+		}
+		if (inputType == data::invalid) {
+			throw invalid_argument("Invalid input format type.");
 		}
 		
 		data::Type defaultOutputType = data::invalid;
@@ -200,7 +307,7 @@ private:
 				defaultOutputType = data::raw_ascn;
 				break;
 		}
-				
+		
 		if (vm.count("output")) {
 			outputFileName = vm["output"].as<string>();
 		} else {
@@ -214,6 +321,9 @@ private:
 			outputType = mapping::extension[ vm["to"].as<string>() ];
 		} else {
 			outputType = mapping::extension[ name::fileext(outputFileName) ];
+		}
+		if (outputType == data::invalid) {
+			throw invalid_argument("Invalid output format type.");
 		}
 	}
 	
@@ -285,7 +395,7 @@ int main(int argc, char **argv)
 				
 				if (!command) {
 					string err;
-					err += "ERROR: '" + s + "' is unrecognized command";
+					err += "Error: '" + s + "' is an unrecognized command.";
 					throw runtime_error(err);
 				}
 				
@@ -323,7 +433,7 @@ int main(int argc, char **argv)
 				<< endl;
 		}
 	
-	} catch (exception& e) {
+	} catch (const exception& e) {
 		cout << e.what() << endl;
 		ret = 1;
 	}

@@ -1,6 +1,8 @@
 #ifndef genomic_GenericSampleSet_h
 #define genomic_GenericSampleSet
 
+#include <stdexcept>
+
 #include "SampleSet.hpp"
 #include "RawSampleSet.hpp"
 #include "SegmentedSampleSet.hpp"
@@ -51,6 +53,13 @@ public:
 		}
 		return 0;
 	}
+};
+
+class invalid_conversion : public std::logic_error
+{
+public:
+	explicit invalid_conversion(const string& what_arg)
+	: std::logic_error("Invalid conversion. " + what_arg) {}
 };
 
 #endif

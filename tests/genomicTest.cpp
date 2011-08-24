@@ -166,6 +166,52 @@ BOOST_AUTO_TEST_CASE(InputOutput_Picnic)
 	BOOST_CHECK_EQUAL(diff.different(out_seg, ans_seg), 0);
 }
 
+BOOST_AUTO_TEST_CASE(RawSampleSet_CopyConstructor)
+{
+	BOOST_TEST_MESSAGE("RawSampleSet copy constructor");
+	
+	FilesDiff diff;
+	
+	string fn_in = "raw1.in";
+	string fn_copy = "raw1.copy";
+	string fn_copy2 = "raw1.copy2";
+	
+	typedef RawSampleSet<CopyNumberValue> SampleSetType;
+	
+	SampleSetType* set = new SampleSetType();
+	set->read(fn_in);
+	set->write(fn_copy);
+	
+	SampleSetType copy(*set);
+	delete set;
+	copy.write(fn_copy2);
+	
+	BOOST_CHECK_EQUAL(diff.different(fn_copy, fn_copy2), 0);
+}
+
+BOOST_AUTO_TEST_CASE(SegmentedSampleSet_CopyConstructor)
+{
+	BOOST_TEST_MESSAGE("SegmentedSampleSet copy constructor");
+	
+	FilesDiff diff;
+	
+	string fn_in = "seg1.in";
+	string fn_copy = "seg1.copy";
+	string fn_copy2 = "seg1.copy2";
+	
+	typedef SegmentedSampleSet<CopyNumberValue> SampleSetType;
+	
+	SampleSetType* set = new SampleSetType();
+	set->read(fn_in);
+	set->write(fn_copy);
+	
+	SampleSetType copy(*set);
+	delete set;
+	copy.write(fn_copy2);
+	
+	BOOST_CHECK_EQUAL(diff.different(fn_copy, fn_copy2), 0);
+}
+
 BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Filter)
 {
 	BOOST_TEST_MESSAGE("SegmentedSampleSet filter");

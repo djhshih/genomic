@@ -19,7 +19,7 @@ void GenericSampleSet::_read(fstream& file)
 		case data::segmented_ascn:
 			rep = new SegmentedSampleSet<AlleleSpecificCopyNumberValue>(markers);
 		default:
-			throw runtime_error("Cannot determine file type from file name extension");
+			throw invalid_conversion("Cannot determine file type from file name extension.");
 	}
 	rep->_read(file);
 }
@@ -47,7 +47,7 @@ void GenericSampleSet::_write(fstream& file)
 						delete tmp;
 						break;
 					default:
-						throw runtime_error("Conversion not supported");
+						throw invalid_conversion("Conversion not supported.");
 				}
 				break;
 			case data::raw_ascn:
@@ -58,7 +58,7 @@ void GenericSampleSet::_write(fstream& file)
 						delete tmp;
 						break;
 					default:
-						throw runtime_error("Conversion not supported");
+						throw invalid_conversion("Conversion not supported.");
 				}
 				break;
 			case data::segmented:
@@ -69,7 +69,7 @@ void GenericSampleSet::_write(fstream& file)
 						delete tmp;
 						break;
 					default:
-						throw runtime_error("Conversion not supported");
+						throw invalid_conversion("Conversion not supported.");
 				}
 				break;
 			case data::segmented_ascn:
@@ -80,11 +80,11 @@ void GenericSampleSet::_write(fstream& file)
 						delete tmp;
 						break;
 					default:
-						throw runtime_error("Conversion not supported");
+						throw invalid_conversion("Conversion not supported.");
 				}
 				break;
 			default:
-				throw runtime_error("Cannot determine file type from file name extension");
+				throw invalid_conversion("Cannot determine file type from file name extension.");
 		}
 	}
 	

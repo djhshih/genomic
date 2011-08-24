@@ -57,12 +57,20 @@ public:
 	SegmentedSampleSet(marker::Set* markerSet) : SampleSet(markerSet) {
 		_setIO();
 	}
-	SegmentedSampleSet(SegmentedSampleSet& segmented) {
+	SegmentedSampleSet(const SegmentedSampleSet& segmented)
+	: SampleSet(segmented.markers), samples(segmented.samples) {
 		_setIO();
-		byNames = segmented.byNames;
-		// TODO
+		byNames.clear();
+		// duplicate samples
+		for (size_t i = 0; i < samples.size(); ++i) {
+			samples[i] = new SegmentedSample( *(samples[i]) );
+			byNames[samples[i]->name] = samples[i];
+		}
+		// ref the marker
+		marker::manager.ref(markers);
+		//markers = marker::manager.create(raw.markers.platform);
 	}
-	SegmentedSampleSet(RawSampleSet<V>& raw);
+	SegmentedSampleSet(const RawSampleSet<V>& raw);
 	~SegmentedSampleSet() {
 		clear();
 	}
@@ -70,10 +78,10 @@ public:
 		return data::segmented;
 	}
 	void clear() {
-		SamplesIterator i, end = samples.end();
-		for (i = samples.begin(); i != end; ++i) {
+		typename Samples::iterator it, end = samples.end();
+		for (it = samples.begin(); it != end; ++it) {
 			// delete object pointed to by Sample* pointer
-			delete (*i);
+			delete (*it);
 		}
 		samples.clear();
 		byNames.clear();
@@ -120,15 +128,15 @@ private:
 /* Template implementation */
 
 template <typename V>
-SegmentedSampleSet<V>::SegmentedSampleSet(RawSampleSet<V>& raw)
+SegmentedSampleSet<V>::SegmentedSampleSet(const RawSampleSet<V>& raw)
 {
 	clear();
 	// use iterators to avoid assuming RawSampleSet stores data in vectors
 	// however, need to assume that markers are stored in vectors, for looking up marker information
 	
-	typedef typename RawSampleSet<V>::Samples::iterator RawSamplesIterator;
-	typedef typename RawSampleSet<V>::ChromosomesIterator RawChromosomesIterator;
-	typedef typename RawSampleSet<V>::DataIterator RawDataIterator;
+	typedef typename RawSampleSet<V>::Samples::const_iterator RawSamplesIterator;
+	typedef typename RawSampleSet<V>::RawSample::Chromosomes::const_iterator RawChromosomesIterator;
+	typedef typename RawSampleSet<V>::RawChromosome::const_iterator RawDataIterator;
 	
 	// iterate through samples in $raw
 	RawSamplesIterator it, end = raw.samples.end();
@@ -308,7 +316,6 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 								//cout << "Filter: " << segIt->start << " " << refChrom->at(i).start << " " << dice << endl;
 								// Mark segment for deletion
 								segIt->flag = true;
-								//segIt->count = 0;
 								filterSegment = true;
 								break;
 							}
@@ -328,6 +335,7 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 	samples.clear();
 	byNames.clear();
 	end = oldSamples.end();
+	size_t filteredCount = 0;
 	for (it = oldSamples.begin(); it != end; ++it) {
 		SegmentedSample* sample = create((*it)->name);
 		ChromosomesIterator chrIt;
@@ -337,11 +345,11 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 			DataIterator segIt;
 			const DataIterator segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
-				//if (segIt->count > 0) {
 				// only copy unflagged segments
 				if (!segIt->flag) {
 					Segment<V> seg(segIt->start, segIt->end, segIt->count, segIt->value);
 					sample->addToChromosome(chri, seg);
+					++filteredCount;
 				}
 			}
 			++chri;
@@ -351,6 +359,7 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 	}
 	oldSamples.clear();
 	
+	trace("Number of segments filtered: %d\n", filteredCount);
 }
 
 

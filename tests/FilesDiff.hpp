@@ -20,7 +20,7 @@ public:
 		if (file1.is_open()) file2.close();
 		if (file1.is_open()) file2.close();
 	}
-	int different(string&fileName1, string& fileName2) {
+	int different(const string&fileName1, const string& fileName2) {
 		file1.open(fileName1.c_str(), ios::in);
 		file2.open(fileName2.c_str(), ios::in);
 		if (!file1.is_open() || !file2.is_open()) {

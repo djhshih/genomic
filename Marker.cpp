@@ -145,7 +145,7 @@ namespace marker {
 	void Set::filter(const uset& refMarkersHash) {
 		// flag markers in this->set that are found in refMarkers
 		GenomeMarkers::const_iterator end = set.end();
-		size_t filterCount = 0;
+		size_t filteredCount = 0;
 		for (GenomeMarkers::iterator it = set.begin(); it != end; ++it) {
 			ChromosomeMarkers::iterator markerIt;
 			ChromosomeMarkers::const_iterator markerEnd = it->end();
@@ -153,12 +153,12 @@ namespace marker {
 			for (markerIt = it->begin(); markerIt != markerEnd; ++markerIt) {
 				if (refMarkersHash.find((*markerIt)->name) != refMarkerEnd) {
 					(*markerIt)->flag = true;
-					++filterCount;
+					++filteredCount;
 				}
 			}
 		}
 		
-		trace("Number of markers filtered: %d\n", filterCount);
+		trace("Number of markers filtered: %d\n", filteredCount);
 	}
 	
 	void Set::clear() {

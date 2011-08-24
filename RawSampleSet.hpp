@@ -16,7 +16,8 @@
 
 // samples can be rearranged => RawSampleSet store samples as pointers
 // chromosomes are not ever rearranged => Sample stores chromosomes as objects
-// data can be sorted => store segment data as pointers, but raw data can be stored as values
+// data can be sorted => segment data should be stored as pointers, but raw data can be stored as values
+
 
 extern marker::Manager marker::manager;
 
@@ -62,10 +63,19 @@ private:
 public:
 	RawSampleSet() {}
 	RawSampleSet(marker::Set* markerSet) : SampleSet(markerSet) {}
-	RawSampleSet(RawSampleSet& raw) {
-		// TODO
+	RawSampleSet(const RawSampleSet& raw)
+	: SampleSet(raw.markers), samples(raw.samples)  {
+		byNames.clear();
+		// duplicate samples
+		for (size_t i = 0; i < samples.size(); ++i) {
+			samples[i] = new RawSample( *(samples[i]) );
+			byNames[samples[i]->name] = samples[i];
+		}
+		// ref the marker
+		marker::manager.ref(markers);
+		//markers = marker::manager.create(raw.markers.platform);
 	}
-	RawSampleSet(SegmentedSampleSet<V>& segmented);
+	RawSampleSet(const SegmentedSampleSet<V>& segmented);
 	~RawSampleSet() {
 		clear();
 	}
@@ -82,6 +92,7 @@ public:
 		byNames.clear();
 		marker::manager.unref(markers);
 	}
+	
 	RawSample* create(const string& sampleName) {
 		RawSample* sam = byNames[sampleName];
 		if (sam == NULL) {
@@ -90,17 +101,22 @@ public:
 			samples.push_back(sam);
 			// register name
 			byNames[sampleName] = sam;
+		} else {
+			// sample already exists: not supported
+			throw runtime_error("Duplicate sample names are not permitted in RawSampleSet.");
 		}
 		return sam;
 	}
+	
 	void sort();
+	
 	size_t size() {
 		return samples.size();
 	}
 	
 	void filter(const RawSampleSet& ref) {
 		if (ref.markers == NULL) {
-			throw logic_error("Markers in reference set are missing");
+			throw logic_error("Markers in reference set are missing.");
 		}
 		filter(*ref.markers);
 	}
@@ -177,7 +193,7 @@ public:
 /* Template implementation */
 
 template <typename V>
-RawSampleSet<V>::RawSampleSet(SegmentedSampleSet<V>& set)
+RawSampleSet<V>::RawSampleSet(const SegmentedSampleSet<V>& set)
 {
 	//TODO
 	

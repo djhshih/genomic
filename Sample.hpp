@@ -28,9 +28,18 @@ private:
 	// vector of segments vectors for each Chromosome
 	Chromosomes items;
 public:
-	Sample(const std::string& sampleName) : name(sampleName), items(nChromosomes) {
+	
+	Sample(const std::string& sampleName) : name(sampleName) {
 		// always allocate for all chromosomes
+		items.reserve(nChromosomes);
+		for (chromid i = 0; i < nChromosomes; ++i) {
+			items.push_back(Chromosome(i));
+		}
 	}
+	
+	//Sample(const Sample& sample)
+	//: name(sample.name), platform(sample.platform), items(sample.items) {}
+	
 	~Sample() {
 		clear();
 	}
@@ -62,6 +71,12 @@ public:
 		return items.begin();
 	}
 	typename Chromosomes::iterator end() {
+		return items.end();
+	}
+	typename Chromosomes::const_iterator begin() const {
+		return items.begin();
+	}
+	typename Chromosomes::const_iterator end() const {
 		return items.end();
 	}
 	Chromosome* chromosome(chromid chromIndex) {

@@ -23,7 +23,7 @@ void SampleSet::read(const vector<string>& fileNames, const string& markersFileN
 
 void SampleSet::read(const string& fileName, const string& platform, bool append) {
 	file.open(fileName.c_str(), ios::in);
-	if (!file.is_open()) throw runtime_error("Failed to open input file");
+	if (!file.is_open()) throw runtime_error("Failed to open input file.");
 	read(file, platform, fileName, append);
 	file.close();
 	trace("Read file %s\n", fileName.c_str());

@@ -188,6 +188,17 @@ namespace marker
 			return set;
 		}
 		
+		void ref(Set* set) {
+			if (set != NULL) ref(set->platform);
+		}
+		
+		void ref(const string& markerSetPlatform) {
+			iterator it = sets.find(markerSetPlatform);
+			if (it != sets.end()) {
+				it->second->ref();
+			}
+		}
+		
 		void unref(Set* set) {
 			if (set != NULL) unref(set->platform);
 		}
