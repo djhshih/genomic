@@ -15,6 +15,7 @@
 
 #include "typedefs.h"
 #include "global.hpp"
+#include "Properties.hpp"
 
 namespace marker
 {
@@ -95,10 +96,8 @@ namespace marker
 			set[chromIndex].push_back(marker);
 		}
 		
-		void setIO(char _delim, size_t _headerLine, size_t _nSkippedLines) {
-			delim = _delim;
-			headerLine = _headerLine;
-			nSkippedLines = _nSkippedLines;
+		void setIO(const PropertiesIO& io) {
+			this->io = io;
 		}
 		
 		void read(const string& fileName, const string& platform, bool doSort=true);
@@ -131,9 +130,7 @@ namespace marker
 		size_t unsortedChromIndex;
 		size_t refCount;
 		
-		char delim;
-		size_t nSkippedLines;
-		size_t headerLine;
+		PropertiesIO io;
 		
 		// construct hash containing all marker names found in markerNames
 		void hashMarkers(const std::vector<std::string>& markerNames, uset& hash);

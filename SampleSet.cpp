@@ -6,7 +6,7 @@ void SampleSet::read(const vector<string>& fileNames, const string& markersFileN
 	// Read markers, do not sort markers yet
 	markers = marker::manager.create(platform);
 	if (!markersFileName.empty()) {
-		markers->setIO(delim, headerLine, nSkippedLines);
+		markers->setIO(io);
 		markers->read(markersFileName, platform, false);
 	}
 	

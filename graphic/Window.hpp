@@ -11,8 +11,6 @@
 
 #include "Graph.hpp"
 
-class Graph;
-
 namespace text {
 	enum Align {
 		left, right, center
@@ -22,13 +20,15 @@ namespace text {
 	};
 }
 
+class Graph;
+
 class Window
 {
 public:
 	
 	Window()
 	: surface(NULL), active(true),
-	  width(640), height(480), color(32),
+	  width(1024), height(748), color(32),
 	  font("/usr/share/fonts/TTF/Vera.ttf"),
 	  graph(NULL)
 	{}

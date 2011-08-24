@@ -39,8 +39,8 @@ public:
 template <typename V>
 void SplitRawSampleSet<V>::_read(fstream& file)
 {
-	const char delim = Base::Base::delim;
-	const size_t nSkippedLines = Base::Base::nSkippedLines, headerLine = Base::Base::headerLine;
+	const char delim = Base::Base::io.delim;
+	const size_t nSkippedLines = Base::Base::io.nSkippedLines, headerLine = Base::Base::io.headerLine;
 	
 	// assume M makers and N samples
 	// no headerLine

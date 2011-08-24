@@ -19,6 +19,7 @@ namespace marker {
 			set.resize(set.size()+1);
 		}
 		
+		const char delim = io.delim;
 		size_t lineCount = 0;
 		string line;
 		position pos;
@@ -27,7 +28,7 @@ namespace marker {
 			getline(file, line);
 			
 			if (file.eof()) break;
-			if (++lineCount > nSkippedLines && lineCount != headerLine) {
+			if (++lineCount > io.nSkippedLines && lineCount != io.headerLine) {
 					istringstream stream(line);
 					//stream >> markerName >> chromName >> pos;
 					getline(stream, markerName, delim);

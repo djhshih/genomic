@@ -19,8 +19,8 @@ public:
 	}
 private:
 	void _setIO() {
-		Base::Base::delim = ',';
-		Base::Base::headerLine = 0;
+		Base::Base::io.delim = ',';
+		Base::Base::io.headerLine = 0;
 	}
 };
 

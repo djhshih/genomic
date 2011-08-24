@@ -1,7 +1,7 @@
 #include "Window.hpp"
 
-std::vector<Graph::xtype> g_x;
-std::vector<Graph::ytype> g_y;
+std::vector<Graph::x_type> g_x;
+std::vector<Graph::y_type> g_y;
 
 int Window::exec() {
 	if (!init()) return -1;
@@ -38,8 +38,28 @@ bool Window::init() {
 	}
 	ftlayout.SetFont(&font);
 	
+	
+	SDL_GL_SetAttribute(SDL_GL_RED_SIZE,        8);
+	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE,      8);
+	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,       8);
+	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE,      8);
+
+
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,      16);
+	SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE,     32);
+
+	SDL_GL_SetAttribute(SDL_GL_ACCUM_RED_SIZE,  8);
+	SDL_GL_SetAttribute(SDL_GL_ACCUM_GREEN_SIZE,    8);
+	SDL_GL_SetAttribute(SDL_GL_ACCUM_BLUE_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_ACCUM_ALPHA_SIZE,    8);
+
+	// anti-aliasing
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS,  1);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,  4);
+	
+	
 	// set background colour
-	glClearColor(0, 0, 0, 0);
+	glClearColor(1, 1, 1, 1);
 	
 	glViewport(0, 0, width, height);
 	
@@ -58,7 +78,7 @@ bool Window::init() {
 	
 	graph = new Graph(*this);
 	
-	Graph::ytype y = 0;
+	Graph::y_type y = 0;
 	g_x.reserve(1000);
 	g_y.reserve(1000);
 	for (std::size_t i = 0; i < 1000; ++i) {
@@ -78,12 +98,14 @@ void Window::render() {
 	// reset the view
 	glLoadIdentity();
 	
+	/*
 	glBegin(GL_QUADS);
 	glColor3f(1, 0.9, 0.9); glVertex3f(0, 0, 0);
 	glColor3f(0.9, 1, 0.9); glVertex3f(1, 0, 0);
 	glColor3f(0.9, 0.9, 1); glVertex3f(1, 1, 0);
 	glColor3f(1, 1, 1); glVertex3f(0, 1, 0);
 	glEnd();
+	*/
 	
 	/*
 	const int n = 10;
@@ -117,9 +139,8 @@ void Window::render() {
 	renderText("A journey of a thousand miles begins with a single step.", 0.5, 0.95);
 	
 	if (graph != NULL) {
-		glTranslatef(0.15, 0.15, 0);
+		glTranslatef(0.2, 0.2, 0);
 		glScalef(0.7, 0.7, 1);
-		glColor3f(0.2, 0.2, 0.2);
 		
 		glCallList(graph->begin());
 		graph->plot(g_x, g_y);

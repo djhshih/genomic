@@ -17,7 +17,7 @@ void SegmentedSampleSet<SPECIALIZATION_TYPE>::readSegment(fstream& file, Segment
 template <> inline
 void SegmentedSampleSet<SPECIALIZATION_TYPE>::_write(fstream& file)
 {
-	const char delim = Base::delim;
+	const char delim = Base::io.delim;
 	
 	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "stateA" << delim << "stateB" << endl;
 	

@@ -47,7 +47,7 @@ protected:
 private:
 	std::map<string, RawSample*> byNames;
 	
-	RawSampleSet* clone() {
+	RawSampleSet* clone() const {
 		return new RawSampleSet(*this);
 	}
 	
@@ -207,8 +207,8 @@ RawSampleSet<V>::RawSampleSet(const SegmentedSampleSet<V>& set)
 template <typename V>
 void RawSampleSet<V>::_read(fstream& file)
 {
-	const char delim = Base::delim;
-	const size_t nSkippedLines = Base::nSkippedLines, headerLine = Base::headerLine;
+	const char delim = Base::io.delim;
+	const size_t nSkippedLines = Base::io.nSkippedLines, headerLine = Base::io.headerLine;
 	marker::Set* markers = Base::markers;
 	
 	// assume M x (3+N) data matrix with M makers and N samples
@@ -276,7 +276,7 @@ void RawSampleSet<V>::readSampleValues(istringstream& stream, size_t sampleStart
 template <typename V>
 void RawSampleSet<V>::_write(fstream& file)
 {
-	const char delim = Base::delim;
+	const char delim = Base::io.delim;
 	marker::Set* markers = Base::markers;
 	
 	file << "marker" << delim << "chromosome" << delim << "position";

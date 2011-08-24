@@ -34,7 +34,7 @@ private:
 	Samples samples;
 	std::map<string, SegmentedSample*> byNames;
 	
-	SegmentedSampleSet* clone() {
+	SegmentedSampleSet* clone() const {
 		return new SegmentedSampleSet(*this);
 	}
 	
@@ -204,7 +204,7 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 	string line, sampleName, chromName;
 	Segment<Value>* seg;
 	while (true) {
-		if (++lineCount > nSkippedLines && lineCount != headerLine) {
+		if (++lineCount > io.nSkippedLines && lineCount != io.headerLine) {
 			file >> sampleName >> chromName;
 			if (file.eof()) break;
 			// ignore unknown chromosome: continue to next line
@@ -225,7 +225,7 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 template <typename V>
 void SegmentedSampleSet<V>::_write(fstream& file)
 {
-	const char delim = Base::delim;
+	const char delim = Base::io.delim;
 	
 	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "state" << endl;
 	

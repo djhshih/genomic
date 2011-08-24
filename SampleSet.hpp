@@ -8,6 +8,7 @@
 #include "global.hpp"
 #include "Sample.hpp"
 #include "Marker.hpp"
+#include "Properties.hpp"
 
 class GenericSampleSet;
 
@@ -22,22 +23,21 @@ class SampleSet
 	
 public:
 	
-	SampleSet() : markers(NULL) {
-		setIO();
-	}
+	SampleSet() : markers(NULL) {}
 	
-	SampleSet(marker::Set* markerSet) : markers(markerSet) {
-		setIO();
+	SampleSet(marker::Set* markerSet) : markers(markerSet) {}
+	
+	SampleSet(const SampleSet& other)
+	: io(other.io), markers(other.markers), fileName(other.fileName) {
+		marker::manager.ref(markers);
 	}
 	
 	virtual ~SampleSet() {
 		if (file.is_open()) file.close();
 	}
 	
-	void setIO(char _delim='\t', size_t _headerLine=1, size_t _nSkippedLines=0) {
-		delim = _delim;
-		headerLine = _headerLine;
-		nSkippedLines = _nSkippedLines;
+	void setIO(const PropertiesIO& io) {
+		this->io = io;
 	}
 	
 	void read(const vector<string>& fileNames, bool isSorted=false) {
@@ -77,10 +77,7 @@ public:
 	
 protected:
 	
-	char delim;
-	size_t nSkippedLines;
-	size_t headerLine;
-	bool mergeSamples;
+	PropertiesIO io;
 	
 	string fileName;
 	marker::Set* markers;
@@ -91,7 +88,7 @@ private:
 	//  file IO is the responsibiliity of the base class
 	virtual void _read(fstream& file) = 0;
 	virtual void _write(fstream& file) = 0;
-	virtual SampleSet* clone() = 0;
+	virtual SampleSet* clone() const = 0;
 	
 };
 

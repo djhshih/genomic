@@ -1,6 +1,7 @@
 #ifndef genomic_GenericSampleSet_h
 #define genomic_GenericSampleSet
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "SampleSet.hpp"
@@ -21,29 +22,40 @@ private:
 	// N.B. can only point to derived classes of SampleSet other than this class
 	SampleSet* rep;
 	
-	SampleSet* clone() {
+	SampleSet* clone() const {
 		return new GenericSampleSet(*this);
 	}
 	
 	void _read(fstream& file);
 	void _write(fstream& file);
+	
 public:
+	
 	GenericSampleSet() : rep(NULL) {}
-	GenericSampleSet(const GenericSampleSet& gset) {
-		rep = gset.rep->clone();
+	
+	GenericSampleSet(const GenericSampleSet& other)
+	: rep(other.clone()) {}
+	
+	GenericSampleSet& operator= (GenericSampleSet other) {
+		// pass other by value to automatically create temporary copy
+		std::swap(rep, other.rep);
 	}
+	
 	~GenericSampleSet() {
 		clear();
 	}
+	
 	void clear() {
 		delete rep;
 		rep = NULL;
 	}
+	
 	void sort() {
 		if (rep != NULL) {
 			rep->sort();
 		}
 	}
+	
 	data::Type type() {
 		return data::generic;
 	}
