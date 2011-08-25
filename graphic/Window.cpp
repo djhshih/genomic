@@ -2,6 +2,7 @@
 
 std::vector<Graph::x_type> g_x;
 std::vector<Graph::y_type> g_y;
+std::vector<Graph::y_type> g_y2;
 
 int Window::exec() {
 	if (!init()) return -1;
@@ -84,16 +85,21 @@ bool Window::init() {
 	/// set up graph
 	graph = new Graph(*this);
 	
-	Graph::y_type y = 0;
+	Graph::y_type y = 0, y2 = 0;
 	g_x.reserve(1000);
 	g_y.reserve(1000);
 	for (std::size_t i = 0; i < 1000; ++i) {
 		g_x.push_back(std::rand() % 10000);
 		y += double(std::rand()) / RAND_MAX * 0.1  - 0.05;
 		g_y.push_back(y);
+		y2 += double(std::rand()) / RAND_MAX * 0.1  - 0.05;
+		g_y2.push_back(y2);
 		//std::cout << g_x[g_x.size()-1] << ", " << g_y[g_y.size()-1] << std::endl;
 	}
 	std::sort(g_x.begin(), g_x.end());
+	
+	graph->add(g_x, g_y);
+	graph->add(g_x, g_y2);
 	
 	return true;
 }
@@ -149,7 +155,8 @@ void Window::render() {
 		glScalef(0.7, 0.7, 1);
 		
 		glCallList(graph->begin());
-		graph->plot(g_x, g_y);
+		graph->plot();
+		//graph->plot(g_x, g_y);
 		
 		glLoadIdentity();
 		

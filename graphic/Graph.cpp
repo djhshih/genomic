@@ -1,6 +1,8 @@
 #include "Graph.hpp"
 
 void Graph::init() {
+	post();
+	
 	lists = glGenLists(nlists);
 	
 	char buf[20];
@@ -81,9 +83,12 @@ void Graph::init() {
 	
 	glEndList();
 	
+	
 	//jumpTo(3000, 5000, ystart, yend);
 	moveTo(1000, 2000, ystart, yend);
 	easeTo(7000, 7500, ystart, yend);
+	easeTo(0, 10000, ystart, yend);
+	
 }
 
 void Graph::drawTicksX() {
@@ -127,18 +132,12 @@ void Graph::drawTicksY() {
 	glTranslatef(axisOffset, 0, 0);
 }
 
-void Graph::plot(const std::vector<x_type>& x, const std::vector<y_type>& y) {
-	
+void Graph::plot() {
 	update();
 	
 	/// x axis
 	if (draws.xaxis) {
 		drawTicksX();
-	}
-	
-	if (x.size() == 0) return;
-	if (x.size() != y.size()) {
-		throw std::runtime_error("x and y cannot differ in size");
 	}
 	
 	/// y axis
@@ -157,6 +156,29 @@ void Graph::plot(const std::vector<x_type>& x, const std::vector<y_type>& y) {
 		glVertex2f(width+bgOverflow, zero_yf);
 		glEnd();
 	}
+	
+	/// data
+	plotlist::const_iterator it, end = plots.end();
+	for (it = plots.begin(); it != end; ++it) {
+		// call plotting function
+		(*it)();
+	}
+	
+}
+
+void Graph::add(const std::vector<x_type>& x, const std::vector<y_type>& y) {
+	if (x.size() == 0 || y.size() == 0) {
+		throw std::runtime_error("x and y cannot be empty");
+	}
+	if (x.size() != y.size()) {
+		throw std::runtime_error("x and y cannot differ in size");
+	}
+	
+	// push pointer to member function onto plots queue, with parameters bound
+	plots.push_back( boost::bind(&Graph::plot, this, x, y) );
+}
+
+void Graph::plot(const std::vector<x_type>& x, const std::vector<y_type>& y) {
 	
 	float rangexf = float(xend-xstart);
 	float rangeyf = float(yend-ystart);
