@@ -7,6 +7,7 @@ void Graph::init() {
 	
 	glNewList(lists, GL_COMPILE);
 	
+	
 	/// background
 	{
 		glColor3f(0.95, 0.95, 0.95);
@@ -23,16 +24,16 @@ void Graph::init() {
 		glColor3f(1, 1, 1);
 		glLineWidth(2);
 		
-		for (x_type x = xbegin; x <= xend; x+=xtickmajor) {
-			float xf = double(x-xbegin)/(xend-xbegin) * width;
+		for (x_type x = xstart; x <= xend; x+=xtickmajor) {
+			float xf = double(x-xstart)/(xend-xstart) * width;
 			glBegin(GL_LINES);
 			glVertex2f(xf, -bgOverflow);
 			glVertex2f(xf, height+bgOverflow);
 			glEnd();
 		}
 		
-		for (y_type y = ybegin; y <= yend; y+=ytickmajor) {
-			float yf = float(y-ybegin)/(yend-ybegin) * height;
+		for (y_type y = ystart; y <= yend; y+=ytickmajor) {
+			float yf = float(y-ystart)/(yend-ystart) * height;
 			glBegin(GL_LINES);
 			glVertex2f(-bgOverflow, yf);
 			glVertex2f(width+bgOverflow, yf);
@@ -74,67 +75,65 @@ void Graph::init() {
 		// title
 		parent.renderText("Relative copy number", -titleOffset, height/2, 90, 18);
 		
-		// ticks and labels
-		for (y_type y = ybegin; y <= yend; y+=ytickmajor) {
-			float yf = float(y-ybegin)/(yend-ybegin) * height;
-			glBegin(GL_LINES);
-			glVertex2f(tickSize, yf);
-			glVertex2f(-tickSize, yf);
-			glEnd();
-			std::sprintf(buf, "%.1f", y);
-			parent.renderText(buf, -(tickSize+labelOffset*0.5), yf, 0, 18, text::right);
-		}
-		
 		glTranslatef(axisOffset, 0, 0);
 	}
 	
-	/// reference line
-	{
-		glColor3f(0.8, 0.8, 0.8);
-		glLineWidth(3);
-		
-		glBegin(GL_LINES);
-		y_type zero_yf = -ybegin/float(yend-ybegin) * height;
-		glVertex2f(-bgOverflow, zero_yf);
-		glVertex2f(width+bgOverflow, zero_yf);
-		glEnd();
-	}
 	
 	glEndList();
 	
-	//jumpTo(3000, 5000, ybegin, yend);
-	moveTo(1000, 2000, ybegin, yend);
-	easeTo(7000, 7500, ybegin, yend);
+	//jumpTo(3000, 5000, ystart, yend);
+	moveTo(1000, 2000, ystart, yend);
+	easeTo(7000, 7500, ystart, yend);
+}
+
+void Graph::drawTicksX() {
+	glTranslatef(0, -axisOffset, 0);
+	
+	glColor3f(.3, .3, .3);
+	glLineWidth(2);
+	
+	// ticks and labels
+	char buf[20];
+	for (x_type x = xstart; x <= xend; x+=xtickmajor) {
+		float xf = double(x-xstart)/(xend-xstart) * width;
+		glBegin(GL_LINES);
+		glVertex2f(xf, tickSize);
+		glVertex2f(xf, -tickSize);
+		glEnd();
+		std::sprintf(buf, "%d", x);
+		parent.renderText(buf, xf, -(tickSize+labelOffset), 0, 18);
+	}
+	glTranslatef(0, axisOffset, 0);
+}
+
+void Graph::drawTicksY() {
+	glTranslatef(-axisOffset, 0, 0);
+	
+	glColor3f(.3, .3, .3);
+	glLineWidth(2);
+	
+	// ticks and labels
+	char buf[20];
+	for (y_type y = ystart; y <= yend; y+=ytickmajor) {
+		float yf = float(y-ystart)/(yend-ystart) * height;
+		glBegin(GL_LINES);
+		glVertex2f(tickSize, yf);
+		glVertex2f(-tickSize, yf);
+		glEnd();
+		std::sprintf(buf, "%.1f", y);
+		parent.renderText(buf, -(tickSize+labelOffset*0.5), yf, 0, 18, text::right);
+	}
+	
+	glTranslatef(axisOffset, 0, 0);
 }
 
 void Graph::plot(const std::vector<x_type>& x, const std::vector<y_type>& y) {
-	
-	//scrollX();
-	//easeToX(3000, 5000);
 	
 	update();
 	
 	/// x axis
 	if (draws.xaxis) {
-		char buf[20];
-		
-		glColor3f(.3, .3, .3);
-		glLineWidth(2);
-			
-		glTranslatef(0, -axisOffset, 0);
-			
-		// ticks and labels
-		for (x_type x = xbegin; x <= xend; x+=xtickmajor) {
-			float xf = double(x-xbegin)/(xend-xbegin) * width;
-			glBegin(GL_LINES);
-			glVertex2f(xf, tickSize);
-			glVertex2f(xf, -tickSize);
-			glEnd();
-			std::sprintf(buf, "%d", x);
-			parent.renderText(buf, xf, -(tickSize+labelOffset), 0, 18);
-		}
-		
-		glTranslatef(0, axisOffset, 0);
+		drawTicksX();
 	}
 	
 	if (x.size() == 0) return;
@@ -142,24 +141,41 @@ void Graph::plot(const std::vector<x_type>& x, const std::vector<y_type>& y) {
 		throw std::runtime_error("x and y cannot differ in size");
 	}
 	
-	float rangexf = float(xend-xbegin);
-	float rangeyf = float(yend-ybegin);
+	/// y axis
+	if (draws.yaxis) {
+		drawTicksY();
+	}
+	
+	/// reference line
+	if (draws.reference_line) {
+		glColor3f(0.8, 0.8, 0.8);
+		glLineWidth(3);
+		
+		glBegin(GL_LINES);
+		y_type zero_yf = -ystart/float(yend-ystart) * height;
+		glVertex2f(-bgOverflow, zero_yf);
+		glVertex2f(width+bgOverflow, zero_yf);
+		glEnd();
+	}
+	
+	float rangexf = float(xend-xstart);
+	float rangeyf = float(yend-ystart);
 	
 	/// data lines
-	{
+	if (draws.data_lines) {
 		glLineWidth(2);
 		glColor3f(.6, .6, .6);
 		glPointSize(1);
 		glBegin(GL_LINES);
 		for (std::size_t i = 0; i < x.size()-1; ++i) {
-			if (x[i] >= xbegin && x[i+1] <= xend) {
+			if (x[i] >= xstart && x[i+1] <= xend) {
 				glVertex2f(
-					(x[i]-xbegin)/rangexf * width,
-					(y[i]-ybegin)/rangeyf * height
+					(x[i]-xstart)/rangexf * width,
+					(y[i]-ystart)/rangeyf * height
 				);
 				glVertex2f(
-					(x[i+1]-xbegin)/rangexf * width,
-					(y[i+1]-ybegin)/rangeyf * height
+					(x[i+1]-xstart)/rangexf * width,
+					(y[i+1]-ystart)/rangeyf * height
 				);
 			}
 		}
@@ -167,11 +183,11 @@ void Graph::plot(const std::vector<x_type>& x, const std::vector<y_type>& y) {
 	}
 	
 	/// data points
-	{
+	if (draws.data_points) {
 		glPointSize(2);
 		glBegin(GL_POINTS);
 		for (std::size_t i = 0; i < x.size(); ++i) {
-			if (x[i] >= xbegin && x[i] <= xend) {
+			if (x[i] >= xstart && x[i] <= xend) {
 				if (y[i] < -0.1) {
 					glColor3f(0, 0, 1);
 				} else if (y[i] > 0.1) {
@@ -180,8 +196,8 @@ void Graph::plot(const std::vector<x_type>& x, const std::vector<y_type>& y) {
 					glColor3f(0, 0, 0);
 				}
 				glVertex2f(
-					(x[i]-xbegin)/rangexf * width,
-					(y[i]-ybegin)/rangeyf * height
+					(x[i]-xstart)/rangexf * width,
+					(y[i]-ystart)/rangeyf * height
 				);
 			}
 		}

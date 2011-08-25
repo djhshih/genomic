@@ -24,16 +24,19 @@ public:
 	struct PropertiesDraw {
 		bool xaxis;
 		bool yaxis;
+		bool data_points;
+		bool data_lines; 
 		bool background;
+		bool reference_line;
 		PropertiesDraw()
-		: xaxis(true), yaxis(true), background(true) {}
+		: xaxis(true), yaxis(true), background(true), data_points(true), data_lines(true), reference_line(true) {}
 	};
 	
 	struct Area {
-		x_type xbegin, xend;
-		y_type ybegin, yend;
+		x_type xstart, xend;
+		y_type ystart, yend;
 		Area(x_type xb, x_type xe, y_type yb, y_type ye)
-		: xbegin(xb), xend(xe), ybegin(yb), yend(ye) {}
+		: xstart(xb), xend(xe), ystart(yb), yend(ye) {}
 	};
 	
 	typedef bool (Graph::*task)();
@@ -48,8 +51,8 @@ public:
 	: parent(parentWindow), nlists(1),
 	  xmin(0), xmax(10000),
 	  ymin(-2), ymax(4),
-	  xbegin(0), xend(10000), xstep(1), xintervals(10),
-	  ybegin(-2), yend(4), ystep(0.5), yintervals(6),
+	  xstart(0), xend(10000), xstep(1), xintervals(10),
+	  ystart(-2), yend(4), ystep(0.5), yintervals(6),
 	  xtickmajor(500), ytickmajor(1),
 	  tickSize(0.01),
 	  labelOffset(0.03), titleOffset(0.12), axisOffset(0.05),
@@ -64,50 +67,50 @@ public:
 	}
 	
 	void scrollX() {
-		xbegin += xstep;
+		xstart += xstep;
 		xend += xstep;
-		if (xbegin < xmin) xbegin = xmin;
+		if (xstart < xmin) xstart = xmin;
 		if (xend > xmax) xend = xmax;
 		SDL_Delay(delay);
 	}
 	
 	void scrollY() {
-		ybegin += ystep;
+		ystart += ystep;
 		yend += ystep;
-		if (ybegin < ymin) ybegin = ymin;
+		if (ystart < ymin) ystart = ymin;
 		if (yend > ymax) yend = ymax;
 		SDL_Delay(delay);
 	}
 	
-	void addTask(task t, x_type xbeginDest, x_type xendDest, y_type ybeginDest, y_type yendDest) {
-		dests.push(Area(xbeginDest, xendDest, ybeginDest, yendDest));
+	void addTask(task t, x_type xstartDest, x_type xendDest, y_type ystartDest, y_type yendDest) {
+		dests.push(Area(xstartDest, xendDest, ystartDest, yendDest));
 		tasks.push(t);
 	}
 	
-	void jumpTo(x_type xbeginDest, x_type xendDest, y_type ybeginDest, y_type yendDest) {
-		addTask(&Graph::jumpToTask, xbeginDest, xendDest, ybeginDest, yendDest);
+	void jumpTo(x_type xstartDest, x_type xendDest, y_type ystartDest, y_type yendDest) {
+		addTask(&Graph::jumpToTask, xstartDest, xendDest, ystartDest, yendDest);
 	}
 	
 	bool jumpToTask() {
-		xbegin += xbegin_change;
+		xstart += xstart_change;
 		xend += xend_change;
-		ybegin += ybegin_change;
+		ystart += ystart_change;
 		yend += yend_change;
-		if (xbegin < xmin) xbegin = xmin;
-		if (ybegin < ymin) ybegin = ymin;
+		if (xstart < xmin) xstart = xmin;
+		if (ystart < ymin) ystart = ymin;
 		if (xend > xmax) xend = xmax;
 		if (yend > ymax) yend = ymax;
 		return true;
 	}
 	
-	void moveTo(x_type xbeginDest, x_type xendDest, y_type ybeginDest, y_type yendDest) {
-		addTask(&Graph::moveToTask, xbeginDest, xendDest, ybeginDest, yendDest);
+	void moveTo(x_type xstartDest, x_type xendDest, y_type ystartDest, y_type yendDest) {
+		addTask(&Graph::moveToTask, xstartDest, xendDest, ystartDest, yendDest);
 	}
 	
 	bool moveToTask() {
-		xbegin = tween::linear(time, xbegin_src, xbegin_change, duration);
+		xstart = tween::linear(time, xstart_src, xstart_change, duration);
 		xend = tween::linear(time, xend_src, xend_change, duration);
-		ybegin = tween::linear(time, ybegin_src, ybegin_change, duration);
+		ystart = tween::linear(time, ystart_src, ystart_change, duration);
 		yend = tween::linear(time, yend_src, yend_change, duration);
 		if (++time > duration) {
 			return true;
@@ -115,14 +118,14 @@ public:
 		return false;
 	}
 	
-	void easeTo(x_type xbeginDest, x_type xendDest, y_type ybeginDest, y_type yendDest) {
-		addTask(&Graph::easeToTask, xbeginDest, xendDest, ybeginDest, yendDest);
+	void easeTo(x_type xstartDest, x_type xendDest, y_type ystartDest, y_type yendDest) {
+		addTask(&Graph::easeToTask, xstartDest, xendDest, ystartDest, yendDest);
 	}
 	
 	bool easeToTask() {
-		xbegin = tween::easeCubic(time, xbegin_src, xbegin_change, duration);
+		xstart = tween::easeCubic(time, xstart_src, xstart_change, duration);
 		xend = tween::easeCubic(time, xend_src, xend_change, duration);
-		ybegin = tween::easeCubic(time, ybegin_src, ybegin_change, duration);
+		ystart = tween::easeCubic(time, ystart_src, ystart_change, duration);
 		yend = tween::easeCubic(time, yend_src, yend_change, duration);
 		if (++time > duration) {
 			return true;
@@ -145,7 +148,7 @@ public:
 	
 	/*
 	void update() {
-		taskqueue::iterator it = tasks.begin();
+		taskqueue::iterator it = tasks.start();
 		taskqueue::const_iterator end = tasks.end();
 		while (it != end) {
 			// call function in list
@@ -166,14 +169,14 @@ public:
 		if (complete) {
 			Area dest = dests.front();
 			dests.pop();
-			xbegin_change = dest.xbegin - xbegin;
+			xstart_change = dest.xstart - xstart;
 			xend_change = dest.xend - xend;
-			ybegin_change = dest.ybegin - ybegin;
+			ystart_change = dest.ystart - ystart;
 			yend_change = dest.yend - yend;
 			
-			xbegin_src = xbegin;
+			xstart_src = xstart;
 			xend_src = xend;
-			ybegin_src = ybegin;
+			ystart_src = ystart;
 			yend_src = yend;
 			
 			time = 0;
@@ -182,22 +185,22 @@ public:
 	}
 	
 	void post() {
-		xtickmajor = (xend - xbegin) / xintervals;
-		ytickmajor = (yend - ybegin) / yintervals;
+		xtickmajor = (xend - xstart) / xintervals;
+		ytickmajor = (yend - ystart) / yintervals;
 		complete = true;
 	}
 	
 	/*
-	void easeto_x(x_type begin, x_type end) {
-		if (begin < xmin) begin = xmin;
+	void easeto_x(x_type start, x_type end) {
+		if (start < xmin) start = xmin;
 		if (end > xmax) end = xmax;
 		
-		xbegin += (begin - xbegin) / xease;
+		xstart += (start - xstart) / xease;
 		xend += (end - xend) / xease;
-		xtickmajor = (xend - xbegin) / xintervals;
+		xtickmajor = (xend - xstart) / xintervals;
 		
-		if (abs(xbegin - begin) < xease) {
-			xbegin = begin;
+		if (abs(xstart - start) < xease) {
+			xstart = start;
 			xend = end;
 			draws.xaxis = true;
 		} else {
@@ -209,6 +212,9 @@ public:
 	*/
 	
 	void plot(const std::vector<x_type>& x, const std::vector<y_type>& y);
+	
+	void drawTicksX();
+	void drawTicksY();
 	
 	GLuint begin() {
 		return lists;
@@ -222,14 +228,14 @@ private:
 	
 	void init();
 	
-	void jumpToX(x_type begin, x_type end) {
-		if (begin >= xmin) xbegin = begin;
+	void jumpToX(x_type start, x_type end) {
+		if (start >= xmin) xstart = start;
 		if (end <= xmax) xend = end;
 		post();
 	}
 	
-	void jumpToY(y_type begin, y_type end) {
-		if (begin >= ymin) ybegin = begin;
+	void jumpToY(y_type start, y_type end) {
+		if (start >= ymin) ystart = start;
 		if (end <= ymax) yend = end;
 		post();
 	}
@@ -238,11 +244,11 @@ private:
 	
 	Window &parent;
 	GLuint lists, nlists;
-	x_type xbegin, xend, xstep, xtickmajor, xease;
-	x_type xbegin_src, xbegin_change, xend_src, xend_change;
+	x_type xstart, xend, xstep, xtickmajor, xease;
+	x_type xstart_src, xstart_change, xend_src, xend_change;
 	const x_type xmin, xmax, xintervals;
-	y_type ybegin, yend, ystep, ytickmajor, yease;
-	y_type ybegin_src, ybegin_change, yend_src, yend_change;
+	y_type ystart, yend, ystep, ytickmajor, yease;
+	y_type ystart_src, ystart_change, yend_src, yend_change;
 	const y_type ymin, ymax, yintervals;
 	const float tickSize, labelOffset, titleOffset, axisOffset, bgOverflow;
 	const unsigned delay;
