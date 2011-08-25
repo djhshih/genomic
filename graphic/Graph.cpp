@@ -101,16 +101,21 @@ void Graph::init() {
 	}
 	
 	glEndList();
+	
+	//jumpTo(3000, 5000, ybegin, yend);
+	moveTo(1000, 2000, ybegin, yend);
+	easeTo(7000, 7500, ybegin, yend);
 }
 
 void Graph::plot(const std::vector<x_type>& x, const std::vector<y_type>& y) {
 	
-	//scroll_x();
+	//scrollX();
+	//easeToX(3000, 5000);
 	
-	easeto_x(3000, 5000);
+	update();
 	
 	/// x axis
-	if (skipflags ^ draw::xaxis) {
+	if (draws.xaxis) {
 		char buf[20];
 		
 		glColor3f(.3, .3, .3);

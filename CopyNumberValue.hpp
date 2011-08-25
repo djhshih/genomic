@@ -23,6 +23,13 @@ inline bool eq(T a, T b, T epsilon=std::numeric_limits<T>::epsilon()) {
 	return std::abs(a - b) <= epsilon;
 }
 
+template <typename T>
+inline bool neq(T a, T b, T epsilon=std::numeric_limits<T>::epsilon()) {
+	// essentially equal
+	//return abs(a - b) > ( (abs(a) > abs(b) ? abs(b) : abs(a)) * epsilon );
+	return std::abs(a - b) > epsilon;
+}
+
 inline CopyNumberValue operator-(const AlleleSpecificCopyNumberValue& x, const AlleleSpecificCopyNumberValue& y) {
 	return std::abs(x.a - y.a) + std::abs(x.b - y.b);
 }

@@ -19,25 +19,13 @@ int Window::exec() {
 }
 
 bool Window::init() {
+	
+	/// setup SDL
+	
 	// initialize SDL
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
 			return false;
 	}
-	
-	// set video mode
-	surface = SDL_SetVideoMode(width, height, color, SDL_HWSURFACE | SDL_GL_DOUBLEBUFFER | SDL_OPENGL);
-	if (surface == NULL) {
-		return false;
-	}
-	
-	// set title bar
-	SDL_WM_SetCaption("Window", NULL);
-	
-	if (font.Error()) {
-		std::cerr << "Failed to load font" << std::endl;
-	}
-	ftlayout.SetFont(&font);
-	
 	
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE,        8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE,      8);
@@ -55,8 +43,19 @@ bool Window::init() {
 
 	// anti-aliasing
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS,  1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,  4);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,  2);
 	
+	// set video mode
+	surface = SDL_SetVideoMode(width, height, color, SDL_HWSURFACE | SDL_GL_DOUBLEBUFFER | SDL_OPENGL);
+	if (surface == NULL) {
+		return false;
+	}
+	
+	// set title bar
+	SDL_WM_SetCaption("Window", NULL);
+	
+
+	/// setup OpenGL
 	
 	// set background colour
 	glClearColor(1, 1, 1, 1);
@@ -76,6 +75,13 @@ bool Window::init() {
 	
 	glEnable(GL_TEXTURE_2D);
 	
+	/// setup font
+	if (font.Error()) {
+		std::cerr << "Failed to load font" << std::endl;
+	}
+	ftlayout.SetFont(&font);
+	
+	/// set up graph
 	graph = new Graph(*this);
 	
 	Graph::y_type y = 0;
