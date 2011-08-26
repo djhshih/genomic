@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <cstdlib>
 
-#include "CopyNumberValue.hpp"
+#include "AlleleSpecific.hpp"
 #include "SampleSet.hpp"
 
 extern marker::Manager marker::manager;
@@ -95,13 +95,13 @@ void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base:
 
 /* Template Specialization */
 
-// Use the same specialization for AlleleSpecificCopyNumberValue and AlleleSpecificIntegerCopyNumberValue
+// Use the same specialization for alleles_cn and alleles_rcn
 
-#define SPECIALIZATION_TYPE AlleleSpecificCopyNumberValue
+#define SPECIALIZATION_TYPE alleles_cn
 #include "SplitRawSampleSet.special"
 #undef SPECIALIZATION_TYPE
 
-#define SPECIALIZATION_TYPE AlleleSpecificIntegerCopyNumberValue
+#define SPECIALIZATION_TYPE alleles_rcn
 #include "SplitRawSampleSet.special"
 #undef SPECIALIZATION_TYPE
 

@@ -158,7 +158,7 @@ public:
 					
 			case data::segmented: {
 			
-				SegmentedSampleSet<CopyNumberValue> set;
+				SegmentedSampleSet<cnvalue> set;
 				set.read(inputFileNames);
 				
 				switch (outputType) {
@@ -166,7 +166,7 @@ public:
 						set.write(outputFileName);
 						break;
 					case data::raw: {
-						RawSampleSet<CopyNumberValue> out(set);
+						RawSampleSet<cnvalue> out(set);
 						out.write(outputFileName);
 						break;
 					}
@@ -179,7 +179,7 @@ public:
 			
 			case data::segmented_ascn: {
 				
-				SegmentedSampleSet<AlleleSpecificCopyNumberValue> set;
+				SegmentedSampleSet<alleles_cn> set;
 				set.read(inputFileNames);
 				
 				switch (outputType) {
@@ -187,7 +187,7 @@ public:
 						set.write(outputFileName);
 						break;
 					case data::raw: {
-						RawSampleSet<AlleleSpecificCopyNumberValue> out(set);
+						RawSampleSet<alleles_cn> out(set);
 						out.write(outputFileName);
 						break;
 					}
@@ -200,7 +200,7 @@ public:
 						
 			case data::raw: {
 				
-				RawSampleSet<CopyNumberValue> set;
+				RawSampleSet<cnvalue> set;
 				set.read(inputFileNames);
 				
 				switch (outputType) {
@@ -208,7 +208,7 @@ public:
 						set.write(outputFileName);
 						break;
 					case data::segmented: {
-						SegmentedSampleSet<CopyNumberValue> out(set);
+						SegmentedSampleSet<cnvalue> out(set);
 						out.write(outputFileName);
 						break;
 					}
@@ -221,7 +221,7 @@ public:
 			
 			case data::raw_ascn: {
 				
-				RawSampleSet<AlleleSpecificCopyNumberValue> set;
+				RawSampleSet<alleles_cn> set;
 				set.read(inputFileNames);
 				
 				switch (outputType) {
@@ -229,7 +229,7 @@ public:
 						set.write(outputFileName);
 						break;
 					case data::segmented: {
-						SegmentedSampleSet<AlleleSpecificCopyNumberValue> out(set);
+						SegmentedSampleSet<alleles_cn> out(set);
 						out.write(outputFileName);
 						break;
 					}
@@ -255,16 +255,16 @@ private:
 		SampleSet* out;
 		switch (type) {
 			case data::segmented:
-				out = new SegmentedSampleSet<CopyNumberValue>(*set);
+				out = new SegmentedSampleSet<cnvalue>(*set);
 				break;
 			case data::segmented_ascn:
-				out = new SegmentedSampleSet<AlleleSpecificCopyNumberValue>(*set);
+				out = new SegmentedSampleSet<alleles_cn>(*set);
 				break;
 			case data::raw:
-				out = new RawSampleSet<CopyNumberValue>(*set);
+				out = new RawSampleSet<cnvalue>(*set);
 				break;
 			case data::raw_ascn:
-				out = new RawSampleSet<AlleleSpecificCopyNumberValue>(*set);
+				out = new RawSampleSet<alleles_cn>(*set);
 				break;
 		}
 		return out;

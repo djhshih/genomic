@@ -3,10 +3,10 @@
 
 #include "RawSampleSet.hpp"
 
-class DchipSampleSet : public RawSampleSet<CopyNumberValue>
+class DchipSampleSet : public RawSampleSet<cnvalue>
 {
 public:
-	typedef RawSampleSet<CopyNumberValue> Base;
+	typedef RawSampleSet<cnvalue> Base;
 public:
 	DchipSampleSet() {}
 	data::Type type() {

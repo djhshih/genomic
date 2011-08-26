@@ -11,6 +11,9 @@
 
 using namespace std;
 
+#include <boost/utility/enable_if.hpp>
+#include <boost/type_traits/is_arithmetic.hpp>
+
 #include "typedefs.h"
 
 #include "config.h"
@@ -19,6 +22,23 @@ using namespace std;
 #else
 #define trace(...)
 #endif
+
+
+#define ENABLE_IF_ARITHMETIC typename boost::enable_if<boost::is_arithmetic<T>, T>
+
+template <typename T>
+inline bool eq(T a, T b, ENABLE_IF_ARITHMETIC::type epsilon=std::numeric_limits<T>::epsilon()) {
+	// essentially equal
+	//return abs(a - b) <= ( (abs(a) > abs(b) ? abs(b) : abs(a)) * epsilon );
+	return std::abs(a - b) <= epsilon;
+}
+
+template <typename T>
+inline bool neq(T a, T b, ENABLE_IF_ARITHMETIC::type epsilon=std::numeric_limits<T>::epsilon()) {
+	// essentially equal
+	//return abs(a - b) > ( (abs(a) > abs(b) ? abs(b) : abs(a)) * epsilon );
+	return std::abs(a - b) > epsilon;
+}
 
 
 // Number of human autosomes
@@ -129,19 +149,5 @@ namespace name
 	string filepath(const string& s);
 }
 
-
-template <typename T>
-inline bool eq(T a, T b, T epsilon=std::numeric_limits<T>::epsilon()) {
-	// essentially equal
-	//return abs(a - b) <= ( (abs(a) > abs(b) ? abs(b) : abs(a)) * epsilon );
-	return std::abs(a - b) <= epsilon;
-}
-
-template <typename T>
-inline bool neq(T a, T b, T epsilon=std::numeric_limits<T>::epsilon()) {
-	// essentially equal
-	//return abs(a - b) > ( (abs(a) > abs(b) ? abs(b) : abs(a)) * epsilon );
-	return std::abs(a - b) > epsilon;
-}
 
 #endif

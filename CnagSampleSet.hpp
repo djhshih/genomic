@@ -3,10 +3,10 @@
 
 #include "RawSampleSet.hpp"
 
-class CnagSampleSet : public RawSampleSet<CopyNumberValue>
+class CnagSampleSet : public RawSampleSet<cnvalue>
 {
 public:
-	typedef RawSampleSet<CopyNumberValue> Base;
+	typedef RawSampleSet<cnvalue> Base;
 public:
 	CnagSampleSet() {}
 	data::Type type() {

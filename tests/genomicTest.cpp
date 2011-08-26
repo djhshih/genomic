@@ -32,11 +32,10 @@ struct IOFixture
 	IOTests tests;
 	const char chrComment, chrClass;
 	
-	RawSampleSet<CopyNumberValue> rset;
-	RawSampleSet<AlleleSpecificCopyNumberValue> rset_as;
-	SegmentedSampleSet<CopyNumberValue> sset;
-	SegmentedSampleSet<AlleleSpecificCopyNumberValue> sset_as;
-	
+	RawSampleSet<rvalue> rset;
+	RawSampleSet<alleles_rcn> rset_as;
+	SegmentedSampleSet<rvalue> sset;
+	SegmentedSampleSet<alleles_rcn> sset_as;
 	
 	GenericSampleSet gset;
 	
@@ -73,11 +72,11 @@ struct IOFixture
 					s = s.substr(1);
 					if (s == "RawSampleSet") {
 						sets[type].push(&rset);
-					} else if (s == "RawSampleSet<AlleleSpecificCopyNumberValue>") {
+					} else if (s == "RawSampleSet<alleles_cn>") {
 						sets[type].push(&rset_as);
 					} else if (s == "SegmentedSampleSet") {
 						sets[type].push(&sset);
-					} else if (s == "SegmentedSampleSet<AlleleSpecificCopyNumberValue>") {
+					} else if (s == "SegmentedSampleSet<alleles_cn>") {
 						sets[type].push(&sset_as);
 					} else if (s == "GenericSampleSet") {
 						sets[type].push(&gset);
@@ -176,7 +175,7 @@ BOOST_AUTO_TEST_CASE(RawSampleSet_CopyConstructor)
 	string fn_copy = "raw1.copy";
 	string fn_copy2 = "raw1.copy2";
 	
-	typedef RawSampleSet<CopyNumberValue> SampleSetType;
+	typedef RawSampleSet<rvalue> SampleSetType;
 	
 	SampleSetType* set = new SampleSetType();
 	set->read(fn_in);
@@ -199,7 +198,7 @@ BOOST_AUTO_TEST_CASE(SegmentedSampleSet_CopyConstructor)
 	string fn_copy = "seg1.copy";
 	string fn_copy2 = "seg1.copy2";
 	
-	typedef SegmentedSampleSet<CopyNumberValue> SampleSetType;
+	typedef SegmentedSampleSet<rvalue> SampleSetType;
 	
 	SampleSetType* set = new SampleSetType();
 	set->read(fn_in);
@@ -218,7 +217,7 @@ BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Filter)
 	
 	FilesDiff diff;
 	
-	SegmentedSampleSet<CopyNumberValue> set1, set2;
+	SegmentedSampleSet<rvalue> set1, set2;
 	set1.read("segfilt1a.in");
 	set2.read("segfilt1b.in");
 	
@@ -244,7 +243,7 @@ BOOST_AUTO_TEST_CASE(RawSampleSet_Filter)
 	
 	for (unsigned i = 0; i < ncases; i++) {
 	
-		RawSampleSet<CopyNumberValue> set1, set2;
+		RawSampleSet<cnvalue> set1, set2;
 		set1.read(set1fnames[i]);
 		set2.read(set2fnames[i]);
 		

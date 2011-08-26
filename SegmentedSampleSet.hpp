@@ -10,12 +10,12 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "CopyNumberValue.hpp"
+#include "AlleleSpecific.hpp"
 #include "SampleSet.hpp"
 
 template <typename V> class RawSampleSet;
 
-template <typename V = CopyNumberValue>
+template <typename V = rvalue>
 class SegmentedSampleSet : public SampleSet
 {
 	friend class GenericSampleSet;
@@ -365,13 +365,13 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 
 /* Template Specialization */
 
-// Use the same specialization for AlleleSpecificCopyNumberValue and AlleleSpecificIntegerCopyNumberValue
+// Use the same specialization for alleles_cn and alleles_rcn
 
-#define SPECIALIZATION_TYPE AlleleSpecificCopyNumberValue
+#define SPECIALIZATION_TYPE alleles_cn
 #include "SegmentedSampleSet.special"
 #undef SPECIALIZATION_TYPE
 
-#define SPECIALIZATION_TYPE AlleleSpecificIntegerCopyNumberValue
+#define SPECIALIZATION_TYPE alleles_rcn
 #include "SegmentedSampleSet.special"
 #undef SPECIALIZATION_TYPE
 

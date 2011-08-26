@@ -17,8 +17,10 @@
 #include "Area.hpp"
 #include "Tween.hpp"
 
-class Window;
 
+//TODO improve dynamic behaviour of axis
+
+class Window;
 
 class Graph
 {

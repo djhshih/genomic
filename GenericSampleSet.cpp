@@ -8,16 +8,16 @@ void GenericSampleSet::_read(fstream& file)
 	string ext = name::fileext(fileName);
 	switch (mapping::extension[ext]) {
 		case data::raw:
-			rep = new RawSampleSet<CopyNumberValue>(markers);
+			rep = new RawSampleSet<cnvalue>(markers);
 			break;
 		case data::raw_ascn:
-			rep = new RawSampleSet<AlleleSpecificCopyNumberValue>(markers);
+			rep = new RawSampleSet<alleles_cn>(markers);
 			break;
 		case data::segmented:
-			rep = new SegmentedSampleSet<CopyNumberValue>(markers);
+			rep = new SegmentedSampleSet<cnvalue>(markers);
 			break;
 		case data::segmented_ascn:
-			rep = new SegmentedSampleSet<AlleleSpecificCopyNumberValue>(markers);
+			rep = new SegmentedSampleSet<alleles_cn>(markers);
 		default:
 			throw invalid_conversion("Cannot determine file type from file name extension.");
 	}
@@ -42,7 +42,7 @@ void GenericSampleSet::_write(fstream& file)
 			case data::raw:
 				switch (rep->type()) {
 					case data::segmented:
-						tmp = new RawSampleSet<CopyNumberValue>(*static_cast<SegmentedSampleSet<CopyNumberValue>*>(rep));
+						tmp = new RawSampleSet<cnvalue>(*static_cast<SegmentedSampleSet<cnvalue>*>(rep));
 						swap(rep, tmp);
 						delete tmp;
 						break;
@@ -53,7 +53,7 @@ void GenericSampleSet::_write(fstream& file)
 			case data::raw_ascn:
 				switch (rep->type()) {
 					case data::segmented_ascn:
-						tmp = new RawSampleSet<AlleleSpecificCopyNumberValue>(*static_cast<SegmentedSampleSet<AlleleSpecificCopyNumberValue>*>(rep));
+						tmp = new RawSampleSet<alleles_cn>(*static_cast<SegmentedSampleSet<alleles_cn>*>(rep));
 						swap(rep, tmp);
 						delete tmp;
 						break;
@@ -64,7 +64,7 @@ void GenericSampleSet::_write(fstream& file)
 			case data::segmented:
 				switch (rep->type()) {
 					case data::raw:
-						tmp = new SegmentedSampleSet<CopyNumberValue>(*static_cast<RawSampleSet<CopyNumberValue>*>(rep));
+						tmp = new SegmentedSampleSet<cnvalue>(*static_cast<RawSampleSet<cnvalue>*>(rep));
 						swap(rep, tmp);
 						delete tmp;
 						break;
@@ -75,7 +75,7 @@ void GenericSampleSet::_write(fstream& file)
 			case data::segmented_ascn:
 				switch (rep->type()) {
 					case data::raw_ascn:
-						tmp = new SegmentedSampleSet<AlleleSpecificCopyNumberValue>(*static_cast<RawSampleSet<AlleleSpecificCopyNumberValue>*>(rep));
+						tmp = new SegmentedSampleSet<alleles_cn>(*static_cast<RawSampleSet<alleles_cn>*>(rep));
 						swap(rep, tmp);
 						delete tmp;
 						break;

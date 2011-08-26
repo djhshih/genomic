@@ -5,10 +5,10 @@
 
 template <typename V> class SplitRawSampleSet;
 
-class PicnicSampleSet : public SplitRawSampleSet<AlleleSpecificIntegerCopyNumberValue>
+class PicnicSampleSet : public SplitRawSampleSet<alleles_cn>
 {
 public:
-	typedef SplitRawSampleSet<AlleleSpecificIntegerCopyNumberValue> Base;
+	typedef SplitRawSampleSet<alleles_cn> Base;
 public:
 	// set dataColumn to 5
 	PicnicSampleSet() : Base(5) {

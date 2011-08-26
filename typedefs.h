@@ -1,13 +1,14 @@
 #ifndef genomic_typedefs_h
 #define genomic_typedefs_h
 
+// chromosome index
 typedef unsigned int chromid;
 
+// genomic position
 typedef unsigned long position;
-typedef signed long position_diff;
 
-typedef int IntegerCopyNumberValue;
-typedef float CopyNumberValue;
+// difference in genomic position
+typedef signed long position_diff;
 
 // copy number value
 typedef unsigned int cnvalue;
@@ -24,7 +25,7 @@ typedef float lrratio;
 // B allele frequency
 typedef float bafreq;
 
-
+// allele-specific type template
 template <typename a_type, typename b_type> struct allele_specific;
 
 // allele specific number copy information, available as LRR and BAF

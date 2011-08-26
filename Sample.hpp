@@ -13,7 +13,7 @@
 #include "typedefs.h"
 #include "global.hpp"
 #include "Chromosome.hpp"
-#include "CopyNumberValue.hpp"
+#include "AlleleSpecific.hpp"
 #include "Segment.hpp"
 
 template <typename Chromosome>
