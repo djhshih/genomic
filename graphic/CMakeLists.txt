@@ -1,12 +1,11 @@
-
 find_package(OpenGL REQUIRED)
 find_package(SDL REQUIRED)
 find_package(Freetype REQUIRED)
-# required: FTGL
-set(FTGL_LIBRARY ftgl)
+
+find_package(FTGL REQUIRED)
 
 
-include_directories(${OPENGL_INCLUDE_DIR} ${SDL_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIRS})
+include_directories(${OPENGL_INCLUDE_DIR} ${SDL_INCLUDE_DIR} ${FREETYPE_INCLUDE_DIRS} ${FTGL_INCLUDE_DIR})
 
 set(graphic_SRCS graphic.cpp Window.cpp Graph.cpp)
 

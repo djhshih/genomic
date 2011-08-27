@@ -2,6 +2,8 @@ project(genomic)
 cmake_minimum_required(VERSION 2.8)
 enable_testing()
 
+# configure project properties
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	message("Building Debug version")
 	set(genomic_DEBUG 1)
@@ -16,6 +18,10 @@ configure_file(
 	"${PROJECT_SOURCE_DIR}/config.h.in"
 	"${PROJECT_BINARY_DIR}/config.h"
 )
+
+# include custom modules
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/Modules")
+
 
 
 find_package(Boost REQUIRED)
@@ -32,3 +38,4 @@ install(TARGETS genomic RUNTIME DESTINATION bin)
 add_subdirectory(tests)
 add_subdirectory(examples)
 add_subdirectory(graphic)
+add_subdirectory(command)
