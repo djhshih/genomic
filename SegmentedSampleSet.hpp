@@ -41,10 +41,10 @@ private:
 	void _read(fstream& file);
 	void _write(fstream& file);
 	
-	void readSegment(fstream& file, Segment<V>& seg) {
-		file >> seg.start >> seg.end;
+	void readSegment(istringstream& stream, Segment<V>& seg) {
+		stream >> seg.start >> seg.end;
 		if (!positionsOnly) {
-			file >> seg.count >> seg.value;
+			stream >> seg.count >> seg.value;
 		}
 	}
 	
@@ -204,20 +204,22 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 	string line, sampleName, chromName;
 	Segment<Value>* seg;
 	while (true) {
+		getline(file, line);
+		
+		if (file.eof()) break;
 		if (++lineCount > io.nSkippedLines && lineCount != io.headerLine) {
-			file >> sampleName >> chromName;
-			if (file.eof()) break;
+			istringstream stream(line);
+			stream >> sampleName >> chromName;
 			// ignore unknown chromosome: continue to next line
 			if (mapping::chromosome[chromName] == 0) continue;
 			// create segment at specified chromosome
 			Segment<V> seg;
-			readSegment(file, seg);
+			readSegment(stream, seg);
 			if (mergeSamples) sampleName = "";
 			create(sampleName)->addToChromosome(chromName, seg);
 			//trace("%s %s %d %d %d %f\n", sampleName.c_str(), chromName.c_str(), seg.start, seg.end, seg.count, seg.value);
 		} else {
 			// discard line
-			getline(file, line);
 		}
 	}
 }

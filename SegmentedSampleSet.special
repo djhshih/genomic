@@ -7,10 +7,10 @@ data::Type SegmentedSampleSet<SPECIALIZATION_TYPE>::type() {
 }
 
 template <> inline
-void SegmentedSampleSet<SPECIALIZATION_TYPE>::readSegment(fstream& file, Segment<SPECIALIZATION_TYPE>& seg) {
-	file >> seg.start >> seg.end;
+void SegmentedSampleSet<SPECIALIZATION_TYPE>::readSegment(istringstream& stream, Segment<SPECIALIZATION_TYPE>& seg) {
+	stream >> seg.start >> seg.end;
 	if (!positionsOnly) {
-		file >> seg.count >> seg.value.a >> seg.value.b;
+		stream >> seg.count >> seg.value.a >> seg.value.b;
 	}
 }
 
