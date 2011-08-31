@@ -3,9 +3,12 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <cstdio>
 #include <algorithm>
+#include <stdexcept>
 
 #include <SDL/SDL.h>
+#include <SDL/SDL_thread.h>
 #include <GL/gl.h>
 #include <FTGL/ftgl.h>
 
@@ -20,18 +23,31 @@ namespace text {
 	};
 }
 
+//TODO fix circular dependency of Graph and Window
+//TODO   which appears to cause problems with delete graph
+
 class Graph;
+
+struct Callable
+{
+	virtual void operator()() = 0;
+};
 
 class Window
 {
 public:
+	
 	
 	Window()
 	: surface(NULL), active(true),
 	  width(1024), height(748), color(32),
 	  font("/usr/share/fonts/TTF/Vera.ttf"),
 	  graph(NULL)
-	{}
+	{
+		if (!init()) {
+			throw std::runtime_error("Failed to initialize window.");
+		}
+	}
 	
 	~Window() {
 		SDL_FreeSurface(surface);
@@ -96,7 +112,7 @@ public:
 private:
 	bool init();
 	void render();
-	void onLoop();
+	virtual void onLoop();
 	void onEvent(SDL_Event*);
 	
 private:
@@ -104,8 +120,9 @@ private:
 	bool active;
 	SDL_Surface *surface;
 	FTTextureFont font;
-	//FTPolygonFont font;
 	FTSimpleLayout ftlayout;
+	
+	Callable* callback;
 	
 	Graph *graph;
 };

@@ -5,7 +5,6 @@ std::vector<Graph::y_type> g_y;
 std::vector<Graph::y_type> g_y2;
 
 int Window::exec() {
-	if (!init()) return -1;
 	
 	SDL_Event event;
 	while (active) {
@@ -55,7 +54,7 @@ bool Window::init() {
 	// set title bar
 	SDL_WM_SetCaption("Window", NULL);
 	
-
+	
 	/// setup OpenGL
 	
 	// set background colour
@@ -162,7 +161,6 @@ void Window::render() {
 		
 	}
 	
-	
 	SDL_GL_SwapBuffers();
 }
 
@@ -173,5 +171,7 @@ void Window::onEvent(SDL_Event* event) {
 }
 
 void Window::onLoop() {
-	
+	//TODO use Boost.interprocess to communicate with a terminal application
+	//TODO use lua to parse input command strings
+	//TODO use tolua++ to call c++ function from lua
 }
