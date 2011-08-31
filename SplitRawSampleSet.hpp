@@ -98,11 +98,11 @@ void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base:
 // Use the same specialization for alleles_cn and alleles_rcn
 
 #define SPECIALIZATION_TYPE alleles_cn
-#include "SplitRawSampleSet.special"
+#include "SplitRawSampleSet_special.hpp"
 #undef SPECIALIZATION_TYPE
 
 #define SPECIALIZATION_TYPE alleles_rcn
-#include "SplitRawSampleSet.special"
+#include "SplitRawSampleSet_special.hpp"
 #undef SPECIALIZATION_TYPE
 
 #endif

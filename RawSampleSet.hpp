@@ -380,11 +380,11 @@ void RawSampleSet<V>::sort()
 // Use the same specialization for alleles_cn and alleles_rcn
 
 #define SPECIALIZATION_TYPE alleles_cn
-#include "RawSampleSet.special"
+#include "RawSampleSet_special.hpp"
 #undef SPECIALIZATION_TYPE
 
 #define SPECIALIZATION_TYPE alleles_rcn
-#include "RawSampleSet.special"
+#include "RawSampleSet_special.hpp"
 #undef SPECIALIZATION_TYPE
 
 
