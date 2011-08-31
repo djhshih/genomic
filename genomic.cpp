@@ -339,8 +339,9 @@ public:
 			("help", "print help message")
 			("input,i", po::value< vector<string> >(), "input files")
 			("output,o", po::value<string>(), "output file")
+			("dice,d", po::value<float>(), "Dice coefficient threshold")
 			;
-		popts.add("input", 3).add("output", 1);
+		popts.add("input", 2).add("output", 1);
 		
 	}
 	
@@ -350,6 +351,20 @@ public:
 			cout << opts << endl;
 			return;
 		}
+		
+		const vector<string>& inputFnames = vm["input"].as< vector<string> >();
+		SegmentedSampleSet<rvalue> set;
+		set.read(inputFnames[0]);
+		
+		ReferenceSegmentedSampleSet<rvalue> ref;
+		ref.read(inputFnames[1]);
+		
+		float diceThreshold = 0.8;
+		if (vm.count("dice")) diceThreshold = vm["dice"].as<float>();
+			
+		set.filter(ref, diceThreshold);
+		
+		set.write(vm["output"].as<string>());
 		
 	}
 	

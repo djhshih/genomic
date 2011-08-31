@@ -4,6 +4,7 @@
 #include "SampleSet.hpp"
 #include "RawSampleSet.hpp"
 #include "SegmentedSampleSet.hpp"
+#include "ReferenceSegmentedSampleSet.hpp"
 #include "SplitRawSampleSet.hpp"
 #include "GenericSampleSet.hpp"
 #include "PicnicSampleSet.hpp"
