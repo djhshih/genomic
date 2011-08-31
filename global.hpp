@@ -49,7 +49,7 @@ extern chromid nChromosomes;
 namespace data
 {
 	enum Type {
-		invalid, generic, raw, segmented, raw_ascn, segmented_ascn, dchip, cnag, picnic, penncnv
+		invalid, generic, raw, segmented, raw_ref, segmented_ref, raw_ascn, segmented_ascn, raw_lrrbaf, dchip, cnag, picnic, penncnv
 	};
 };
 
@@ -99,8 +99,11 @@ namespace mapping
 		ExtensionMap() {
 			type["cn"] = data::raw;
 			type["seg"] = data::segmented;
+			type["cnref"] = data::raw_ref;
+			type["segref"] = data::segmented_ref;
 			type["cnas"] = data::raw_ascn;
 			type["segas"] = data::segmented_ascn;
+			type["lrrbaf"] = data::raw_lrrbaf;
 			type["dchip"] = data::dchip;
 			type["cnag"] = data::cnag;
 			type["picnic"] = data::picnic;

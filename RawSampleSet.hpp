@@ -116,14 +116,14 @@ public:
 	
 	void filter(const RawSampleSet& ref) {
 		if (ref.markers == NULL) {
-			throw logic_error("Markers in reference set are missing.");
+			throw invalid_argument("Markers in reference set are missing.");
 		}
 		filter(*ref.markers);
 	}
 	
 	void filter(const marker::Set& refMarkers) {
 		if (markers == NULL) {
-			throw logic_error("Markers in sample set are missing.");
+			throw invalid_argument("Markers in sample set are missing.");
 		}
 		
 		// flag markers for removal
@@ -136,9 +136,11 @@ public:
 			// Shallow copy current samples (copy pointers)
 			Samples oldSamples = samples;
 			
+			// clear current data
 			samples.clear();
 			byNames.clear();
 			
+			// pre-allocate space
 			samples.resize(oldSamples.size());
 			for (size_t sampleIndex = 0; sampleIndex < oldSamples.size(); ++sampleIndex) {
 				// iterate through chromosomes
@@ -148,6 +150,7 @@ public:
 				}
 			}
 			
+			// copy data from unflagged markers
 			const size_t chromEnd = markers->size();
 			vector<size_t> validMarkersCounts(chromEnd);
 			for (size_t chromIndex = 0; chromIndex < chromEnd; ++chromIndex) {
@@ -166,7 +169,7 @@ public:
 				}
 			}
 			
-			// resize new sample chromosomes
+			// shrink new sample chromosomes to match new size
 			SamplesIterator it, end = samples.end();
 			for (it = samples.begin(); it != end; ++it) {
 				for (size_t chromIndex = 0; chromIndex < chromEnd; ++chromIndex) {
