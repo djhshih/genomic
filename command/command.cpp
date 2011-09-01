@@ -1,6 +1,8 @@
 
-#include "Script.hpp"
-#include "../graphic/WindowThreaded.hpp"
+#include "ScriptGraphic.hpp"
+//#include "../graphic/WindowThreaded.hpp"
+#include "../graphic/Window.hpp"
+#include "graphic.hpp"
 
 
 /*
@@ -55,14 +57,14 @@ int main(int argc, char *argv[]) {
 */
 
 
-Script script;
+ScriptGraphic script(window);
 
 int callback(void *) {
+	easeTo(2000, 6000, -2, 4);
 	script.exec();
 }
 
 int main(int argc, char *argv[]) {
-	Window w;
-	w.addThread(&callback);
-	return w.exec();
+	window.addThread(&callback);
+	return window.exec();
 }

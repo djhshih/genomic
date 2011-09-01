@@ -6,5 +6,5 @@ include_directories(${LUA_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS} ${BOOST_INCLUDE
 
 set(command_SRCS Script.cpp)
 
-add_executable(command_demo command.cpp ${command_SRCS})
-target_link_libraries(command_demo ${LUA_LIBRARIES} graphic boost_thread)
+add_executable(command_demo command.cpp graphic.cpp graphic_lua.cpp ${command_SRCS})
+target_link_libraries(command_demo ${LUA_LIBRARIES} graphic boost_thread tolua++)

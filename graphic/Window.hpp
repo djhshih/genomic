@@ -112,13 +112,19 @@ public:
 		glPopMatrix();
 	}
 	
+public:
+	
+	Graph *graph;
+	
 private:
+	
 	bool init();
 	void render();
 	virtual void onLoop();
 	void onEvent(SDL_Event*);
 	
 private:
+	
 	unsigned width, height, color;
 	bool active;
 	SDL_Surface *surface;
@@ -127,7 +133,6 @@ private:
 	
 	std::vector<SDL_Thread*> threads;
 	
-	Graph *graph;
 };
 
 #endif

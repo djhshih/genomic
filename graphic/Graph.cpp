@@ -84,10 +84,12 @@ void Graph::init() {
 	glEndList();
 	
 	
-	//jumpTo(3000, 5000, ystart, yend);
+	/*
+	jumpTo(3000, 5000, ystart, yend);
 	moveTo(1000, 2000, ystart, yend);
 	easeTo(7000, 7500, ystart, yend);
 	easeTo(0, 10000, ystart, yend);
+	*/
 	
 }
 

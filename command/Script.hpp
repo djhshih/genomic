@@ -67,7 +67,7 @@ public:
 		}
 	}
 	
-private:
+protected:
 	
 	lua_State *L;
 	
