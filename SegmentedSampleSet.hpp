@@ -297,16 +297,20 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 				const SamplesIterator refEnd = ref.samples.end();
 				bool filterSegment = false;
 				for (refIt = ref.samples.begin(); refIt != refEnd; ++refIt) {
+					
 					// determine lower and upper bounds
 					SegmentedChromosome& refChrom = (**refIt)[chri];
 					position_diff lower = 2*(diceThreshold-1)/diceThreshold*segIt->end + (2-diceThreshold)/diceThreshold*(segIt->start - 1) + 1;
 					if (lower < 0) lower = 0;
 					position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*segIt->end + diceThreshold/(2-diceThreshold)*(segIt->start - 1) + 1;
 					//cout << segIt->start << " " << segIt->end << " " << lower << " " << upper << endl;
+					
+					// find marker indices corresponding to lower and upper bounds
 					size_t lowerIndex = ref.find(*refIt, chri, lower);
 					size_t upperIndex = ref.find(*refIt, chri, upper) + 1;
 					if (upperIndex >= refChrom.size()) upperIndex = refChrom.size()-1;
-					//size_t lowerIndex = 0, upperIndex = refChrom->size()-1;
+					
+					//size_t lowerIndex = 0, upperIndex = refChrom.size()-1;
 					//cout << "Index: " << lowerIndex << ", " << upperIndex << endl;
 					for (size_t i = lowerIndex; i <= upperIndex; ++i) {
 						// calculate Dice coefficient

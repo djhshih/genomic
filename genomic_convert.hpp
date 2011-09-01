@@ -107,7 +107,7 @@ public:
 					
 			case data::segmented: {
 			
-				SegmentedSampleSet<cnvalue> set;
+				SegmentedSampleSet<rvalue> set;
 				set.read(inputFileNames);
 				
 				switch (outputType) {
@@ -115,7 +115,7 @@ public:
 						set.write(outputFileName);
 						break;
 					case data::raw: {
-						RawSampleSet<cnvalue> out(set);
+						RawSampleSet<rvalue> out(set);
 						out.write(outputFileName);
 						break;
 					}
@@ -149,7 +149,7 @@ public:
 						
 			case data::raw: {
 				
-				RawSampleSet<cnvalue> set;
+				RawSampleSet<rvalue> set;
 				set.read(inputFileNames);
 				
 				switch (outputType) {
@@ -157,7 +157,7 @@ public:
 						set.write(outputFileName);
 						break;
 					case data::segmented: {
-						SegmentedSampleSet<cnvalue> out(set);
+						SegmentedSampleSet<rvalue> out(set);
 						out.write(outputFileName);
 						break;
 					}
