@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
 }
 */
 
+/*
 Script script;
 
 int callback(void *) {
@@ -49,5 +50,19 @@ int callback(void *) {
 
 int main(int argc, char *argv[]) {
 	WindowThreaded w(&callback);
+	return w.exec();
+}
+*/
+
+
+Script script;
+
+int callback(void *) {
+	script.exec();
+}
+
+int main(int argc, char *argv[]) {
+	Window w;
+	w.addThread(&callback);
 	return w.exec();
 }

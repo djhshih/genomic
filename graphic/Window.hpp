@@ -29,15 +29,11 @@ namespace text {
 
 class Graph;
 
-struct Callable
-{
-	virtual void operator()() = 0;
-};
-
 class Window
 {
 public:
 	
+	typedef int (*thread_function)(void *);
 	
 	Window()
 	: surface(NULL), active(true),
@@ -53,6 +49,16 @@ public:
 	~Window();
 	
 	int exec();
+	
+	void addThread(thread_function function) {
+		if (function != NULL) {
+			SDL_Thread *thread = SDL_CreateThread(function, NULL);
+			if (thread == NULL) {
+				throw std::runtime_error("Failed to create thread.");
+			}
+			threads.push_back(thread);
+		}
+	}
 	
 	void renderText(const char *text, float x=0, float y=0, float angle=0, unsigned int size=10, text::Align align=text::center, text::VAlign valign=text::middle) {
 		glPushMatrix();
@@ -119,7 +125,7 @@ private:
 	FTTextureFont font;
 	FTSimpleLayout ftlayout;
 	
-	Callable* callback;
+	std::vector<SDL_Thread*> threads;
 	
 	Graph *graph;
 };
