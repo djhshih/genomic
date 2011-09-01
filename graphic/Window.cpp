@@ -4,6 +4,12 @@ std::vector<Graph::x_type> g_x;
 std::vector<Graph::y_type> g_y;
 std::vector<Graph::y_type> g_y2;
 
+Window::~Window() {
+	SDL_FreeSurface(surface);
+	SDL_Quit();
+	delete graph;
+}
+
 int Window::exec() {
 	
 	SDL_Event event;

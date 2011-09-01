@@ -15,7 +15,6 @@ extern "C" {
 
 // Scripting engine
 
-
 class Script
 {
 public:

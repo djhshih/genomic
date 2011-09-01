@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <algorithm>
 #include <stdexcept>
+#include <vector>
 
 #include <SDL/SDL.h>
 #include <SDL/SDL_thread.h>
@@ -49,11 +50,7 @@ public:
 		}
 	}
 	
-	~Window() {
-		SDL_FreeSurface(surface);
-		SDL_Quit();
-		delete graph;
-	}
+	~Window();
 	
 	int exec();
 	
