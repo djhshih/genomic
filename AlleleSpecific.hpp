@@ -28,6 +28,26 @@ allele_specific_type operator-(const allele_specific_type& x, const ENABLE_IF_AL
 }
 
 template <typename allele_specific_type> inline
+bool operator<=(const allele_specific_type& x, float z) {
+	return x.a <= z;
+}
+
+template <typename allele_specific_type> inline
+bool operator>=(const allele_specific_type& x, float z) {
+	return x.a >= z;
+}
+
+inline
+bool operator<=(const alleles_rcn& x, float z) {
+	return (x.a + x.b) <= z;
+}
+
+inline
+bool operator>=(const alleles_rcn& x, float z) {
+	return (x.a + x.b) >= z;
+}
+
+template <typename allele_specific_type> inline
 bool operator!=(const allele_specific_type& x, const ENABLE_IF_ALLELE_SPECIFIC::type& y) {
 	return !( eq(x.a, y.a) && eq(y.b, y.b) );
 }

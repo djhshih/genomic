@@ -29,6 +29,9 @@ public:
 			("output,o", po::value<string>(), "output file")
 			("dice,d", po::value<float>(), "Dice coefficient threshold (only used for segmentation files) [default: 0.8]")
 			("merge,m", po::value<bool>(), "merge filtered segments with upstream/downstream segments?")
+			("aberrant,a", po::value<bool>(), "filter only aberrant segments?")
+			("state_diff", po::value<rvalue>(), "threshold for difference from reference state")
+			("ref_state", po::value<rvalue>(), "reference state")
 			;
 		popts.add("input", 1).add("reference", 1).add("output", 1);
 		
@@ -52,7 +55,8 @@ public:
 		set.read(inputFileName);
 		ReferenceSetType ref;
 		ref.read(referenceFileName);
-		set.filter(ref, diceThreshold, merge);
+		if (aberrant) set.markAberrant(refState, stateDiff);
+		set.filter(ref, diceThreshold, merge, aberrant);
 		set.write(outputFileName);
 	}
 	
@@ -138,7 +142,8 @@ private:
 	string inputFileName, referenceFileName, outputFileName;
 	data::Type inputType, referenceType;
 	float diceThreshold;
-	bool merge;
+	bool merge, aberrant;
+	float stateDiff, refState;
 	
 	void getOptions() {
 		
@@ -180,13 +185,34 @@ private:
 		if (vm.count("dice")) {
 			diceThreshold = vm["dice"].as<float>();
 		} else {
-			diceThreshold = 0.8;
+			diceThreshold = 0.5;
 		}
 		
 		if (vm.count("merge")) {
 			merge = vm["merge"].as<bool>();
 		} else {
 			merge = false;
+		}
+		
+		if (vm.count("aberrant")) {
+			aberrant = vm["aberrant"].as<bool>();
+		} else {
+			aberrant = false;
+		}
+		
+		//TODO automatically determine stateDiff and refState
+		// current settings are suitable for LRR data
+		
+		if (vm.count("state_diff")) {
+			stateDiff = vm["state_diff"].as<float>();
+		} else {
+			stateDiff = 0.2;
+		}
+		
+		if (vm.count("ref_state")) {
+			refState = vm["ref_state"].as<float>();
+		} else {
+			refState = 0;
 		}
 	}
 	

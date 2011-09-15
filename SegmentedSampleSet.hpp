@@ -112,7 +112,9 @@ public:
 		return _find(*(sample->chromosome(chromIndex)), start);
 	}
 	
-	void filter(SegmentedSampleSet& ref, float diceThreshold, bool merge);
+	void markAberrant(float refValue, float diff);
+	
+	void filter(SegmentedSampleSet& ref, float diceThreshold, bool merge, bool aberrantOnly);
 	
 protected:
 	bool mergeSamples;
@@ -279,7 +281,31 @@ size_t SegmentedSampleSet<V>::_find(SegmentedChromosome& array, position x) {
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold, bool merge=false)
+void SegmentedSampleSet<V>::markAberrant(float refValue, float diff) {
+	size_t count =  0;
+	// iterate through samples
+	SamplesIterator it, end = samples.end();
+	for (it = samples.begin(); it != end; ++it) {
+		// iterate through chromosomes
+		ChromosomesIterator chrIt, chrEnd = (*it)->end();
+		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
+			// iterate through segments on a chromosome
+			DataIterator segIt, segEnd = chrIt->end();
+			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
+				if (segIt->value <= refValue - diff || segIt->value >= refValue + diff) {
+					segIt->aberrant = true;
+					++count;
+				} else {
+					segIt->aberrant = false;
+				}
+			}
+		}
+	}
+	trace("Number of segments marked aberrant: %d\n", count);
+}
+
+template <typename V>
+void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold, bool merge=false, bool aberrantOnly=false)
 {
 	size_t filteredCount = 0;
 	Samples oldSamples;
@@ -287,53 +313,54 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold,
 	SamplesIterator it, end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
 		// iterate through chromosomes
-		ChromosomesIterator chrIt;
-		const ChromosomesIterator chrEnd = (*it)->end();
+		ChromosomesIterator chrIt, chrEnd = (*it)->end();
 		size_t chri = 0;
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
 			// iterate through segments on a chromosome
-			DataIterator segIt;
-			const DataIterator segEnd = chrIt->end();
+			DataIterator segIt, segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
-				// Compare against segments in all samples in reference set
-				SamplesIterator refIt;
-				const SamplesIterator refEnd = ref.samples.end();
-				bool filterSegment = false;
-				for (refIt = ref.samples.begin(); refIt != refEnd; ++refIt) {
-					
-					// determine lower and upper bounds
-					SegmentedChromosome& refChrom = (**refIt)[chri];
-					position_diff lower = 2*(diceThreshold-1)/diceThreshold*segIt->end + (2-diceThreshold)/diceThreshold*(segIt->start - 1) + 1;
-					if (lower < 0) lower = 0;
-					position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*segIt->end + diceThreshold/(2-diceThreshold)*(segIt->start - 1) + 1;
-					//cout << segIt->start << " " << segIt->end << " " << lower << " " << upper << endl;
-					
-					// find marker indices corresponding to lower and upper bounds
-					size_t lowerIndex = ref.find(*refIt, chri, lower);
-					size_t upperIndex = ref.find(*refIt, chri, upper) + 1;
-					if (upperIndex >= refChrom.size()) upperIndex = refChrom.size()-1;
-					
-					//size_t lowerIndex = 0, upperIndex = refChrom.size()-1;
-					//cout << "Index: " << lowerIndex << ", " << upperIndex << endl;
-					for (size_t i = lowerIndex; i <= upperIndex; ++i) {
-						// calculate Dice coefficient
-						position_diff intersection = min(refChrom[i].end, segIt->end) - max(refChrom[i].start, segIt->start) + 1;
-						//cout << segIt->start << " " << refChrom->at(i).start << " " << intersection << endl;
-						if (intersection > 0) {
-							float dice = 2 * float(intersection) / (refChrom[i].length() + segIt->length());
-							if (dice > diceThreshold) {
-								//cout << "Filter: " << segIt->start << " " << refChrom->at(i).start << " " << dice << endl;
-								// Mark segment for deletion
-								segIt->flag = true;
-								filterSegment = true;
-								trace("Filter chr%s:%d-%d in %s\n", mapping::chromosome[chri+1].c_str(), segIt->start, segIt->end, (*it)->name.c_str());
-								++filteredCount;
-								break;
+				
+				if (!aberrantOnly || segIt->aberrant) {
+					// Compare against segments in all samples in reference set
+					SamplesIterator refIt, refEnd = ref.samples.end();
+					bool filterSegment = false;
+					for (refIt = ref.samples.begin(); refIt != refEnd; ++refIt) {
+						
+						// determine lower and upper bounds
+						SegmentedChromosome& refChrom = (**refIt)[chri];
+						position_diff lower = 2*(diceThreshold-1)/diceThreshold*segIt->end + (2-diceThreshold)/diceThreshold*(segIt->start - 1) + 1;
+						if (lower < 0) lower = 0;
+						position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*segIt->end + diceThreshold/(2-diceThreshold)*(segIt->start - 1) + 1;
+						//cout << segIt->start << " " << segIt->end << " " << lower << " " << upper << endl;
+						
+						// find marker indices corresponding to lower and upper bounds
+						size_t lowerIndex = ref.find(*refIt, chri, lower);
+						size_t upperIndex = ref.find(*refIt, chri, upper) + 1;
+						if (upperIndex >= refChrom.size()) upperIndex = refChrom.size()-1;
+						
+						//size_t lowerIndex = 0, upperIndex = refChrom.size()-1;
+						//cout << "Index: " << lowerIndex << ", " << upperIndex << endl;
+						for (size_t i = lowerIndex; i <= upperIndex; ++i) {
+							// calculate Dice coefficient
+							position_diff intersection = min(refChrom[i].end, segIt->end) - max(refChrom[i].start, segIt->start) + 1;
+							//cout << segIt->start << " " << refChrom->at(i).start << " " << intersection << endl;
+							if (intersection > 0) {
+								float dice = 2 * float(intersection) / (refChrom[i].length() + segIt->length());
+								if (dice > diceThreshold) {
+									//cout << "Filter: " << segIt->start << " " << refChrom->at(i).start << " " << dice << endl;
+									// Mark segment for deletion
+									segIt->flag = true;
+									filterSegment = true;
+									trace("Filter chr%s:%d-%d in %s\n", mapping::chromosome[chri+1].c_str(), segIt->start, segIt->end, (*it)->name.c_str());
+									++filteredCount;
+									break;
+								}
 							}
 						}
+						if (filterSegment) break;
 					}
-					if (filterSegment) break;
-				}
+				}  // if (aberrantOnly && segIt->aberrant)
+				
 			}
 			++chri;
 		}
