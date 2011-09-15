@@ -59,27 +59,62 @@ namespace mapping
 	class ChromosomesMap
 	{
 	private:
-		map<string, chromid> index;
+		typedef map<string, chromid> chr2index;
+		typedef map<chromid, string> index2chr;
+		chr2index index;
+		index2chr chr;
 	public:
 		ChromosomesMap() {
 			// Map numeric values of chromosomes and alternatives prefixed with chr
 			char s[6];
 			for (chromid i = 1; i <= nChromosomes; ++i) {
 				sprintf(s, "%d", i); index[s] = i;
+				index[s] = i;
+			}
+			index["X"] = 23;
+			index["Y"] = 24;
+			//index["MT"] = 25;
+			
+			// Generate reverse mapping (while the mapping is still one-to-one)
+			chr2index::const_iterator it, end = index.end();
+			for (it = index.begin(); it != end; ++it) {
+				chr.insert( make_pair(it->second, it->first) );
+			}
+			
+			// Map alternative names for chromosomes prefixed with chr
+			for (chromid i = 1; i <= nChromosomes; ++i) {
 				sprintf(s, "chr%d", i);
 				index[s] = i;
 			}
-			// Map alternative names for chromosomes
-			index["X"] = 23;
 			index["chrX"] = 23;
-			index["Y"] = 24;
 			index["chrY"] = 24;
+			//index["chrMT"] = 25;
 		}	
+		
 		chromid operator[] (const string& chr) {
 			return index[chr];
+			/*
+			chr2index::const_iterator it = index.find(chr);
+			if (it == index.end()) {
+				return nChromosomes+1;
+			}
+			return it->second;
+			*/
 		}
+		
+		string operator[] (chromid index) {
+			return chr[index];
+			/*
+			index2chr::const_iterator it = chr.find(index);
+			if (it == chr.end()) {
+				return "";
+			}
+			return it->second;
+			*/
+		}
+		
 		void print() {
-			map<string, chromid>::const_iterator end = index.end();
+			chr2index::const_iterator end = index.end();
 			for (map<string, chromid>::iterator it = index.begin(); it != end; ++it) {
 				cout << it->first << " -> " << it->second << endl;
 			}

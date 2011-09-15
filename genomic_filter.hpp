@@ -28,6 +28,7 @@ public:
 			("reference_format,g", po::value<string>(), "reference file format [default: reference format corresponding to input]")
 			("output,o", po::value<string>(), "output file")
 			("dice,d", po::value<float>(), "Dice coefficient threshold (only used for segmentation files) [default: 0.8]")
+			("merge,m", po::value<bool>(), "merge filtered segments with upstream/downstream segments?")
 			;
 		popts.add("input", 1).add("reference", 1).add("output", 1);
 		
@@ -51,7 +52,7 @@ public:
 		set.read(inputFileName);
 		ReferenceSetType ref;
 		ref.read(referenceFileName);
-		set.filter(ref, diceThreshold);
+		set.filter(ref, diceThreshold, merge);
 		set.write(outputFileName);
 	}
 	
@@ -137,6 +138,7 @@ private:
 	string inputFileName, referenceFileName, outputFileName;
 	data::Type inputType, referenceType;
 	float diceThreshold;
+	bool merge;
 	
 	void getOptions() {
 		
@@ -179,6 +181,12 @@ private:
 			diceThreshold = vm["dice"].as<float>();
 		} else {
 			diceThreshold = 0.8;
+		}
+		
+		if (vm.count("merge")) {
+			merge = vm["merge"].as<bool>();
+		} else {
+			merge = false;
 		}
 	}
 	

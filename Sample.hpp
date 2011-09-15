@@ -90,16 +90,22 @@ public:
 		if (k != 0) return &(items[k-1]);
 		return NULL;
 	}
-	void addToChromosome(chromid chromIndex, const T& item) {
+	T* addToChromosome(chromid chromIndex, const T& item) {
 		if (chromIndex < items.size()) {
-			items[chromIndex].push_back(item);
+			Chromosome& chrom = items[chromIndex];
+			chrom.push_back(item);
+			return &(chrom[ chrom.size() - 1 ]);
 		}
+		return NULL;
 	}
-	void addToChromosome(const std::string& chromName, const T& item) {
+	T* addToChromosome(const std::string& chromName, const T& item) {
 		chromid k = mapping::chromosome[chromName];
 		if (k != 0) {
-			items[k-1].push_back(item);
+			Chromosome& chrom = items[k-1];
+			chrom.push_back(item);
+			return &(chrom[ chrom.size() - 1 ]);
 		}
+		return NULL;
 	}
 	void resizeChromosome(chromid chromIndex, size_t n) {
 		if (chromIndex < items.size()) {
@@ -107,6 +113,7 @@ public:
 		}
 	}
 	void remove(T item) {
+		throw logic_error("Sample::remove(T) has yet been implemented.");
 		// not implemented
 		// need to find segment in data structure
 	}

@@ -43,7 +43,9 @@ private:
 	
 	void readSegment(istringstream& stream, Segment<V>& seg) {
 		stream >> seg.start >> seg.end;
-		if (!positionsOnly) {
+		if (positionsOnly) {
+			seg.count = seg.value = 0;
+		} else {
 			stream >> seg.count >> seg.value;
 		}
 	}
@@ -110,7 +112,7 @@ public:
 		return _find(*(sample->chromosome(chromIndex)), start);
 	}
 	
-	void filter(SegmentedSampleSet& ref, float diceThreshold);
+	void filter(SegmentedSampleSet& ref, float diceThreshold, bool merge);
 	
 protected:
 	bool mergeSamples;
@@ -215,7 +217,7 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 			// create segment at specified chromosome
 			Segment<V> seg;
 			readSegment(stream, seg);
-			if (mergeSamples) sampleName = "";
+			if (mergeSamples) sampleName = "ALL";
 			create(sampleName)->addToChromosome(chromName, seg);
 			//trace("%s %s %d %d %d %f\n", sampleName.c_str(), chromName.c_str(), seg.start, seg.end, seg.count, seg.value);
 		} else {
@@ -277,8 +279,9 @@ size_t SegmentedSampleSet<V>::_find(SegmentedChromosome& array, position x) {
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
+void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold, bool merge=false)
 {
+	size_t filteredCount = 0;
 	Samples oldSamples;
 	// iterate through samples
 	SamplesIterator it, end = samples.end();
@@ -323,6 +326,8 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 								// Mark segment for deletion
 								segIt->flag = true;
 								filterSegment = true;
+								trace("Filter chr%s:%d-%d in %s\n", mapping::chromosome[chri+1].c_str(), segIt->start, segIt->end, (*it)->name.c_str());
+								++filteredCount;
 								break;
 							}
 						}
@@ -337,26 +342,101 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold)
 		oldSamples.push_back(*it);
 	}
 	
-	// Create new sample set with marked segments removed
+	// Create new sample set with marked segments removed or merged
 	samples.clear();
 	byNames.clear();
 	end = oldSamples.end();
-	size_t filteredCount = 0;
 	for (it = oldSamples.begin(); it != end; ++it) {
+		// create new sample
 		SegmentedSample* sample = create((*it)->name);
+		
 		ChromosomesIterator chrIt;
 		const ChromosomesIterator chrEnd = (*it)->end();
 		size_t chri = 0;
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
 			DataIterator segIt;
 			const DataIterator segEnd = chrIt->end();
+			string chrom = mapping::chromosome[chri+1];
+			
+			Segment<V>* prevUnmarkedSegment = NULL, *nextUnmarkedSegment;
+			// prevUnmarkedSegment will point to previous unmarked segment in the samples
+			//  so that the unmarked segment is modified after being added to samples
+			// nextUnmarkedSegment will point to the next unmarked segment in the oldSamples
+			//  so that the unmarked segment is modified before being added to samples
+			
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
 				// only copy unflagged segments
 				if (!segIt->flag) {
 					Segment<V> seg(segIt->start, segIt->end, segIt->count, segIt->value);
-					sample->addToChromosome(chri, seg);
-					++filteredCount;
-				}
+					prevUnmarkedSegment = sample->addToChromosome(chri, seg);
+					//prevUnmarkedSegment = &(*segIt);
+				} else if (merge) {
+					// segment is flagged for deletion
+					// option to merge is enabled: merge segment with upstream or downstream
+					//  segment, whichever is bigger
+					
+					// find next unmarked segment
+					nextUnmarkedSegment = NULL;
+					DataIterator tmp = segIt;
+					do {
+						if (++tmp != segEnd) {
+							if (!tmp->flag) {
+								nextUnmarkedSegment = &(*tmp);
+								break;
+							}
+						} else {
+							break;
+						}
+					} while (nextUnmarkedSegment == NULL);
+					
+					if (prevUnmarkedSegment == NULL && nextUnmarkedSegment == NULL) {
+						trace("Warning: segment chr%s:%d-%d in %s cannot be merge with another segment\n",
+								chrom.c_str(), segIt->start, segIt->end, (*it)->name.c_str());
+					} else {
+						
+						// Compare upstream and downstream unmarked segments
+						// skip adding 1 to get correct size
+						position_diff prevSize, nextSize;
+						
+						if (prevUnmarkedSegment != NULL) {
+							prevSize = prevUnmarkedSegment->end - prevUnmarkedSegment->start;
+						} else {
+							prevSize = 0;
+						}
+						
+						if (nextUnmarkedSegment != NULL) {
+							nextSize = nextUnmarkedSegment->end - nextUnmarkedSegment->start;
+						} else {
+							nextSize = 0;
+						}
+						
+						if (prevSize >= nextSize) {
+							
+							trace("Merge chr%s:%d-%d to upstream chr%s:%d-%d in %s\n",
+								chrom.c_str(), segIt->start, segIt->end,
+								chrom.c_str(), prevUnmarkedSegment->start, prevUnmarkedSegment->end,
+								(*it)->name.c_str() );
+							
+							// extend upstream segment
+							prevUnmarkedSegment->end = segIt->end;
+							
+						} else {
+							// extend downstream segment
+							if (nextUnmarkedSegment->start > segIt->start) {
+								// check guards against multiple assignments in cases where a series
+								//  of segments are marked for deletion
+								
+								trace("Merge chr%s:%d-%d to downstream chr%s:%d-%d in %s\n",
+									chrom.c_str(), segIt->start, segIt->end,
+									chrom.c_str(), nextUnmarkedSegment->start, nextUnmarkedSegment->end,
+									(*it)->name.c_str() );
+								
+								nextUnmarkedSegment->start = segIt->start;
+							}
+						}
+						
+					}
+				} // if (!segIt->flag)
 			}
 			++chri;
 		}

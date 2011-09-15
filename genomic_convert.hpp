@@ -108,12 +108,20 @@ public:
 			case data::segmented: {
 			
 				SegmentedSampleSet<rvalue> set;
-				set.read(inputFileNames);
+				if (outputType != data::segmented_ref) {
+					set.read(inputFileNames);
+				}
 				
 				switch (outputType) {
 					case data::segmented:
 						set.write(outputFileName);
 						break;
+					case data::segmented_ref: {
+						ReferenceSegmentedSampleSet<rvalue> out;
+						out.read(inputFileNames);
+						out.write(outputFileName);
+						break;
+					}
 					case data::raw: {
 						RawSampleSet<rvalue> out(set);
 						out.write(outputFileName);
@@ -129,12 +137,20 @@ public:
 			case data::segmented_ascn: {
 				
 				SegmentedSampleSet<alleles_cn> set;
-				set.read(inputFileNames);
+				if (outputType != data::segmented_ref) {
+					set.read(inputFileNames);
+				}
 				
 				switch (outputType) {
 					case data::segmented_ascn:
 						set.write(outputFileName);
 						break;
+					case data::segmented_ref: {
+						ReferenceSegmentedSampleSet<alleles_cn> out;
+						out.read(inputFileNames);
+						out.write(outputFileName);
+						break;
+					}
 					case data::raw: {
 						RawSampleSet<alleles_cn> out(set);
 						out.write(outputFileName);
@@ -150,12 +166,20 @@ public:
 			case data::raw: {
 				
 				RawSampleSet<rvalue> set;
-				set.read(inputFileNames);
+				if (outputType != data::raw_ref) {
+					set.read(inputFileNames);
+				}
 				
 				switch (outputType) {
 					case data::raw:
 						set.write(outputFileName);
 						break;
+					case data::raw_ref: {
+						ReferenceRawSampleSet<rvalue> out;
+						out.read(inputFileNames);
+						out.write(outputFileName);
+						break;
+					}
 					case data::segmented: {
 						SegmentedSampleSet<rvalue> out(set);
 						out.write(outputFileName);
@@ -171,12 +195,20 @@ public:
 			case data::raw_ascn: {
 				
 				RawSampleSet<alleles_cn> set;
-				set.read(inputFileNames);
+				if (outputType != data::raw_ref) {
+					set.read(inputFileNames);
+				}
 				
 				switch (outputType) {
 					case data::raw:
 						set.write(outputFileName);
 						break;
+					case data::raw_ref: {
+						ReferenceRawSampleSet<alleles_cn> out;
+						out.read(inputFileNames);
+						out.write(outputFileName);
+						break;
+					}
 					case data::segmented: {
 						SegmentedSampleSet<alleles_cn> out(set);
 						out.write(outputFileName);
@@ -240,14 +272,22 @@ private:
 			outputFileName = vm["output"].as<string>();
 		} else {
 			outputFileName = name::filestem(inputFileNames[0]);
-			if (defaultOutputType != data::invalid) {
-				outputFileName += "." + mapping::extension[defaultOutputType];
+			if (vm.count("to")) {
+				// use specified output format extension
+				outputFileName += "." + vm["to"].as<string>();
+			} else {
+				// use default output format
+				if (defaultOutputType != data::invalid) {
+					outputFileName += "." + mapping::extension[defaultOutputType];
+				}
 			}
 		}
 		
 		if (vm.count("to")) {
 			outputType = mapping::extension[ vm["to"].as<string>() ];
 		} else {
+			// determine output type from extension
+			// outputFileName must be previously defined
 			outputType = mapping::extension[ name::fileext(outputFileName) ];
 		}
 		if (outputType == data::invalid) {
