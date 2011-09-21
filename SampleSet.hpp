@@ -36,7 +36,7 @@ public:
 		if (file.is_open()) file.close();
 	}
 	
-	void setIO(const PropertiesIO& io) {
+	void setIO(const IOProperties& io) {
 		this->io = io;
 	}
 	
@@ -77,7 +77,8 @@ public:
 	
 protected:
 	
-	PropertiesIO io;
+	IOProperties io;
+	CNACriteria cna;
 	
 	string fileName;
 	marker::Set* markers;

@@ -15,22 +15,78 @@
 
 template <typename V> class RawSampleSet;
 
+ 
+template <typename V>
+class filter_operator
+{
+public:
+	filter_operator() {}
+	bool operator()(const Segment<V>& seg) {
+		return false;
+	}
+};
+
+template <typename V>
+class spurious_segment_filter : filter_operator<V>
+{
+	position count;
+public:
+	spurious_segment_filter(position countThreshold) : count(countThreshold) {}
+	bool operator()(const Segment<V>& seg) {
+		return seg.count < count;
+	}
+};
+
+template <typename V>
+class small_segment_filter : filter_operator<V>
+{
+	position length;
+public:
+	small_segment_filter(size_t lengthThreshold) : length(lengthThreshold) {}
+	bool operator()(const Segment<V>& seg) {
+		return (seg.end - seg.start + 1) < length;
+	}
+};
+
+template <typename V, typename T=float>
+class balanced_segment_filter : filter_operator<V>
+{
+	// note: T cannot be an unsigned type; operator+ and operator- must be defined
+	// TODO: use one template type instead of two
+	T reference;
+	T deviation;
+public:
+	balanced_segment_filter(T referenceState, T stateDeviation)
+	: reference(referenceState), deviation(stateDeviation) {}
+	bool operator()(const Segment<V>& seg) {
+		return !(seg.value <= reference - deviation && seg.value >= reference + deviation);
+	}
+};
+
 template <typename V = rvalue>
 class SegmentedSampleSet : public SampleSet
 {
+	
 	friend class GenericSampleSet;
 	friend class RawSampleSet<V>;
+	
 public:
+	
 	typedef SampleSet Base;
 	typedef V Value;
-	typedef LinearChromosome< Segment<Value> > SegmentedChromosome;
-	typedef Sample<SegmentedChromosome> SegmentedSample;
+	typedef LinearChromosome< Segment<Value> > Segments;
+	typedef Sample<Segments> SegmentedSample;
 	
 	typedef vector<SegmentedSample*> Samples;
-	typedef typename Samples::iterator SamplesIterator;
-	typedef typename SegmentedSample::Chromosomes::iterator ChromosomesIterator;
-	typedef typename SegmentedChromosome::iterator DataIterator;
+	typedef typename SegmentedSample::Chromosomes Chromosomes;
+	
+// 	typedef typename Samples::iterator SamplesIterator;
+// 	typedef typename Chromosomes::iterator ChromosomesIterator;
+// 	typedef typename Segments::iterator DataIterator;
+	
+	
 private:
+	
 	Samples samples;
 	std::map<string, SegmentedSample*> byNames;
 	
@@ -50,7 +106,11 @@ private:
 		}
 	}
 	
-	size_t _find(SegmentedChromosome& array, position x);
+	void markAberrant();
+	
+	void removeFlagged(bool merged);
+	
+	size_t _find(Segments& array, position x);
 	
 public:
 	SegmentedSampleSet() {
@@ -112,9 +172,17 @@ public:
 		return _find(*(sample->chromosome(chromIndex)), start);
 	}
 	
-	void markAberrant(float refValue, float diff);
+	void set(const CNACriteria& criteria) {
+		cna = criteria;
+	}
+	
+	void reset();
+	
+	template <typename filter_operator_type>
+	void filter(filter_operator_type f, bool merge);
 	
 	void filter(SegmentedSampleSet& ref, float diceThreshold, bool merge, bool aberrantOnly);
+	
 	
 protected:
 	bool mergeSamples;
@@ -235,12 +303,12 @@ void SegmentedSampleSet<V>::_write(fstream& file)
 	
 	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "state" << endl;
 	
-	SamplesIterator it, end = samples.end();
+	typename Samples::iterator it, end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
-		ChromosomesIterator chrIt, chrEnd = (*it)->end();
+		typename Chromosomes::iterator chrIt, chrEnd = (*it)->end();
 		size_t chr = 1;
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
-			DataIterator segIt, segEnd = chrIt->end();
+			typename Segments::iterator segIt, segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
 				file << (*it)->name << delim << chr << delim << segIt->start << delim << segIt->end << delim << segIt->count << delim << segIt->value << endl;
 			}
@@ -255,9 +323,11 @@ void SegmentedSampleSet<V>::sort()
 	// Sort samples by name
 	std::sort(samples.begin(), samples.end(), &SegmentedSample::pcompare);
 	// Iterate through samples and chromosomes therefore, sort segments
-	SamplesIterator it, end = samples.end();
+	typename Samples::iterator it;
+	typename Samples::const_iterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
-		ChromosomesIterator chrIt, chrEnd = (*it)->end();
+		typename Chromosomes::iterator chrIt;
+		typename Chromosomes::iterator chrEnd = (*it)->end();
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
 			std::sort(chrIt->begin(), chrIt->end(), &Segment<Value>::compare);
 		}
@@ -265,7 +335,7 @@ void SegmentedSampleSet<V>::sort()
 }
 
 template <typename V>
-size_t SegmentedSampleSet<V>::_find(SegmentedChromosome& array, position x) {
+size_t SegmentedSampleSet<V>::_find(Segments& array, position x) {
 	// Initialize left and right beyond array bounds
 	size_t left = -1, right = array.size();
 	while (left + 1 != right) {
@@ -281,18 +351,21 @@ size_t SegmentedSampleSet<V>::_find(SegmentedChromosome& array, position x) {
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::markAberrant(float refValue, float diff) {
+void SegmentedSampleSet<V>::markAberrant() {
 	size_t count =  0;
 	// iterate through samples
-	SamplesIterator it, end = samples.end();
+	typename Samples::iterator it;
+	typename Samples::const_iterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
 		// iterate through chromosomes
-		ChromosomesIterator chrIt, chrEnd = (*it)->end();
+		typename Chromosomes::iterator chrIt;
+		typename Chromosomes::const_iterator chrEnd = (*it)->end();
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
 			// iterate through segments on a chromosome
-			DataIterator segIt, segEnd = chrIt->end();
+			typename Segments::iterator segIt;
+			typename Segments::const_iterator segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
-				if (segIt->value <= refValue - diff || segIt->value >= refValue + diff) {
+				if (segIt->value <= cna.reference - cna.deviation || segIt->value >= cna.reference + cna.deviation) {
 					segIt->aberrant = true;
 					++count;
 				} else {
@@ -305,29 +378,88 @@ void SegmentedSampleSet<V>::markAberrant(float refValue, float diff) {
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold, bool merge=false, bool aberrantOnly=false)
-{
-	size_t filteredCount = 0;
-	Samples oldSamples;
+void SegmentedSampleSet<V>::reset() {
 	// iterate through samples
-	SamplesIterator it, end = samples.end();
+	typename Samples::iterator it;
+	typename Samples::const_iterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
 		// iterate through chromosomes
-		ChromosomesIterator chrIt, chrEnd = (*it)->end();
+		typename Chromosomes::iterator chrIt;
+		typename Chromosomes::const_iterator chrEnd = (*it)->end();
+		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
+			// iterate through segments on a chromosome
+			typename Segments::iterator segIt;
+			typename Segments::const_iterator segEnd = chrIt->end();
+			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
+				segIt->flag = false;
+				segIt->aberrant = false;
+				segIt->valid = true;
+			}
+		}
+	}
+}
+
+template <typename V>
+template <typename filter_operator_type>
+void SegmentedSampleSet<V>::filter(filter_operator_type f, bool merge=false)
+{
+	size_t filteredCount = 0;
+	// iterate through samples
+	typename Samples::iterator it;
+	typename Samples::const_iterator end = samples.end();
+	for (it = samples.begin(); it != end; ++it) {
+		// iterate through chromosomes
+		typename Chromosomes::iterator chrIt;
+		typename Chromosomes::const_iterator chrEnd = (*it)->end();
 		size_t chri = 0;
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
 			// iterate through segments on a chromosome
-			DataIterator segIt, segEnd = chrIt->end();
+			typename Segments::iterator segIt;
+			typename Segments::const_iterator segEnd = chrIt->end();
+			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
+				// use filter functor to flag segment
+				segIt->flag = f(*segIt);
+				if (segIt->flag) ++filteredCount;
+			}
+		}
+	}
+	
+	removeFlagged(merge);
+	trace("Number of segments filtered: %d\n", filteredCount);
+}
+
+// assume flags of all segments are set to false
+template <typename V>
+void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold, bool merge=false, bool aberrantOnly=false)
+{
+	if (aberrantOnly) markAberrant();
+	
+	size_t filteredCount = 0;
+	// iterate through samples
+	typename Samples::iterator it;
+	typename Samples::const_iterator end = samples.end();
+	for (it = samples.begin(); it != end; ++it) {
+		// iterate through chromosomes
+		typename Chromosomes::iterator chrIt;
+		typename Chromosomes::const_iterator chrEnd = (*it)->end();
+		size_t chri = 0;
+		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
+			const char* chrom = mapping::chromosome[chri+1].c_str();
+			
+			// iterate through segments on a chromosome
+			typename Segments::iterator segIt;
+			typename Segments::const_iterator segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
 				
 				if (!aberrantOnly || segIt->aberrant) {
 					// Compare against segments in all samples in reference set
-					SamplesIterator refIt, refEnd = ref.samples.end();
+					typename Samples::iterator refIt;
+					typename Samples::const_iterator refEnd = ref.samples.end();
 					bool filterSegment = false;
 					for (refIt = ref.samples.begin(); refIt != refEnd; ++refIt) {
 						
 						// determine lower and upper bounds
-						SegmentedChromosome& refChrom = (**refIt)[chri];
+						Segments& refChrom = (**refIt)[chri];
 						position_diff lower = 2*(diceThreshold-1)/diceThreshold*segIt->end + (2-diceThreshold)/diceThreshold*(segIt->start - 1) + 1;
 						if (lower < 0) lower = 0;
 						position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*segIt->end + diceThreshold/(2-diceThreshold)*(segIt->start - 1) + 1;
@@ -351,7 +483,9 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold,
 									// Mark segment for deletion
 									segIt->flag = true;
 									filterSegment = true;
-									trace("Filter chr%s:%d-%d in %s\n", mapping::chromosome[chri+1].c_str(), segIt->start, segIt->end, (*it)->name.c_str());
+									trace("Filter chr%s:%d-%d in %s: overlap with chr%s:%d-%d in reference\n",
+										    chrom, segIt->start, segIt->end, (*it)->name.c_str(),
+												chrom, refChrom[i].start, refChrom[i].end);
 									++filteredCount;
 									break;
 								}
@@ -364,50 +498,78 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold,
 			}
 			++chri;
 		}
-		
-		// copy current samples
+	}
+	
+	removeFlagged(merge);
+	
+	trace("Number of segments filtered: %d\n", filteredCount);
+}
+
+template <typename V>
+void SegmentedSampleSet<V>::removeFlagged(bool merge)
+{
+	Samples oldSamples;
+	
+	// copy current samples (pointers)
+	typename Samples::iterator it;
+	typename Samples::const_iterator end = samples.end();
+	for (it = samples.begin(); it != end; ++it) {
 		oldSamples.push_back(*it);
 	}
 	
-	// Create new sample set with marked segments removed or merged
+	// clear vectors, but do not deallocate, since oldSamples hold pointers to same objects as samples
 	samples.clear();
 	byNames.clear();
+	
+	// Create new sample set with marked segments removed or merged
 	end = oldSamples.end();
 	for (it = oldSamples.begin(); it != end; ++it) {
 		// create new sample
 		SegmentedSample* sample = create((*it)->name);
 		
-		ChromosomesIterator chrIt;
-		const ChromosomesIterator chrEnd = (*it)->end();
+		typename Chromosomes::iterator chrIt;
+		typename Chromosomes::const_iterator chrEnd = (*it)->end();
 		size_t chri = 0;
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
-			DataIterator segIt;
-			const DataIterator segEnd = chrIt->end();
-			string chrom = mapping::chromosome[chri+1];
+			typename Segments::iterator segIt;
+			typename Segments::const_iterator segEnd = chrIt->end();
+			const char* chrom = mapping::chromosome[chri+1].c_str();
 			
 			Segment<V>* prevUnmarkedSegment = NULL, *nextUnmarkedSegment;
 			// prevUnmarkedSegment will point to previous unmarked segment in the samples
-			//  so that the unmarked segment is modified after being added to samples
+			//  so that the unmarked segment is modified after being copied to samples
 			// nextUnmarkedSegment will point to the next unmarked segment in the oldSamples
-			//  so that the unmarked segment is modified before being added to samples
+			//  so that the unmarked segment is modified before being copied to samples
 			
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
-				// only copy unflagged segments
+				
 				if (!segIt->flag) {
+					
+					// only create new copy of unflagged segments
 					Segment<V> seg(segIt->start, segIt->end, segIt->count, segIt->value);
 					prevUnmarkedSegment = sample->addToChromosome(chri, seg);
-					//prevUnmarkedSegment = &(*segIt);
-				} else if (merge) {
+					
+				} else if ( segIt->valid && merge ) {
 					// segment is flagged for deletion
 					// option to merge is enabled: merge segment with upstream or downstream
 					//  segment, whichever is bigger
 					
+					// only valid segments are candidates for merging, as guard against merging of consecutive segments,
+					//   which results in undesirable behaviour
+					// since only flagged segments are ever marked as valid
+					// copying only unflagged segments ensure that all segments are valid
+					
 					// find next unmarked segment
 					nextUnmarkedSegment = NULL;
-					DataIterator tmp = segIt;
+					typename Segments::iterator tmp = segIt;
 					do {
 						if (++tmp != segEnd) {
-							if (!tmp->flag) {
+							if (tmp->flag) {
+								// mark traversed flagged segments as invalid
+								//  s.t. they are not subsequent candidate for merging
+								tmp->valid = false;
+							} else {
+								// segment is unmarked
 								nextUnmarkedSegment = &(*tmp);
 								break;
 							}
@@ -417,50 +579,84 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold,
 					} while (nextUnmarkedSegment == NULL);
 					
 					if (prevUnmarkedSegment == NULL && nextUnmarkedSegment == NULL) {
+						
 						trace("Warning: segment chr%s:%d-%d in %s cannot be merge with another segment\n",
-								chrom.c_str(), segIt->start, segIt->end, (*it)->name.c_str());
+								chrom, segIt->start, segIt->end, (*it)->name.c_str());
+						
 					} else {
 						
-						// Compare upstream and downstream unmarked segments
-						// skip adding 1 to get correct size
-						position_diff prevSize, nextSize;
-						
-						if (prevUnmarkedSegment != NULL) {
-							prevSize = prevUnmarkedSegment->end - prevUnmarkedSegment->start;
-						} else {
-							prevSize = 0;
-						}
-						
-						if (nextUnmarkedSegment != NULL) {
-							nextSize = nextUnmarkedSegment->end - nextUnmarkedSegment->start;
-						} else {
-							nextSize = 0;
-						}
-						
-						if (prevSize >= nextSize) {
+						if ( prevUnmarkedSegment != NULL && nextUnmarkedSegment != NULL &&
+							   absdiff(prevUnmarkedSegment->value, nextUnmarkedSegment->value) <= cna.deviation ) {
+							// previous and next segments are essentially the same
 							
-							trace("Merge chr%s:%d-%d to upstream chr%s:%d-%d in %s\n",
-								chrom.c_str(), segIt->start, segIt->end,
-								chrom.c_str(), prevUnmarkedSegment->start, prevUnmarkedSegment->end,
+							trace("Merge segments from chr%s:%d-%d to chr%s:%d-%d in %s\n",
+								chrom, prevUnmarkedSegment->start, prevUnmarkedSegment->end,
+								chrom, nextUnmarkedSegment->start, nextUnmarkedSegment->end,
 								(*it)->name.c_str() );
 							
-							// extend upstream segment
-							prevUnmarkedSegment->end = segIt->end;
+							// merge next unmarked segment to previous unmarked segment
+							prevUnmarkedSegment->end = nextUnmarkedSegment->end;
+							prevUnmarkedSegment->count += nextUnmarkedSegment->count;
+							float totalCount = prevUnmarkedSegment->count + nextUnmarkedSegment->count;
+							
+							// update value with weighted average
+							if (neq(prevUnmarkedSegment->value, nextUnmarkedSegment->value)) {
+								prevUnmarkedSegment->value = 
+									prevUnmarkedSegment->value * (prevUnmarkedSegment->count/totalCount) + 
+									nextUnmarkedSegment->value * (nextUnmarkedSegment->count/totalCount);
+							}
+							
+							// mark the segment for removal, since it has been merged
+							// also mark it as invalid, s.t. it is not a subsequent candidate for merging
+							nextUnmarkedSegment->flag = true;
+							nextUnmarkedSegment->valid = false;
 							
 						} else {
-							// extend downstream segment
-							if (nextUnmarkedSegment->start > segIt->start) {
-								// check guards against multiple assignments in cases where a series
-								//  of segments are marked for deletion
+							
+							// Compare upstream and downstream unmarked segments
+							// skip adding 1 to get correct size
+							position_diff prevSize, nextSize;
+							
+							if (prevUnmarkedSegment != NULL) {
+								prevSize = prevUnmarkedSegment->end - prevUnmarkedSegment->start;
+							} else {
+								prevSize = 0;
+							}
+							
+							if (nextUnmarkedSegment != NULL) {
+								nextSize = nextUnmarkedSegment->end - nextUnmarkedSegment->start;
+							} else {
+								nextSize = 0;
+							}
+							
+							if (prevSize >= nextSize) {
 								
-								trace("Merge chr%s:%d-%d to downstream chr%s:%d-%d in %s\n",
-									chrom.c_str(), segIt->start, segIt->end,
-									chrom.c_str(), nextUnmarkedSegment->start, nextUnmarkedSegment->end,
+								trace("Merge chr%s:%d-%d to upstream chr%s:%d-%d in %s\n",
+									chrom, segIt->start, segIt->end,
+									chrom, prevUnmarkedSegment->start, prevUnmarkedSegment->end,
 									(*it)->name.c_str() );
 								
-								nextUnmarkedSegment->start = segIt->start;
+								// extend upstream segment
+								prevUnmarkedSegment->end = segIt->end;
+								// do not increase segment count, because that'd be lying
+								
+							} else {
+								if (nextUnmarkedSegment->start > segIt->start) {
+									// check guards against multiple assignments in cases where a series
+									//  of segments are marked for deletion
+									
+									trace("Merge chr%s:%d-%d to downstream chr%s:%d-%d in %s\n",
+										chrom, segIt->start, segIt->end,
+										chrom, nextUnmarkedSegment->start, nextUnmarkedSegment->end,
+										(*it)->name.c_str() );
+									
+									// extend downstream segment
+									nextUnmarkedSegment->start = segIt->start;
+									// do not increase segment count, because that'd be lying
+								}
 							}
-						}
+							
+						}  // if (prevUnmarkedSegment != NULL & nextUnmarkedSegment != NULL)
 						
 					}
 				} // if (!segIt->flag)
@@ -472,9 +668,7 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold,
 	}
 	oldSamples.clear();
 	
-	trace("Number of segments filtered: %d\n", filteredCount);
 }
-
 
 /* Template Specialization */
 

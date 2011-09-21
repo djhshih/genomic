@@ -53,10 +53,14 @@ public:
 	void filter(segmented<true>) {
 		SampleSetType set;
 		set.read(inputFileName);
+		
 		ReferenceSetType ref;
 		ref.read(referenceFileName);
-		if (aberrant) set.markAberrant(refState, stateDiff);
+		
+		set.set(CNACriteria(refState, stateDiff));
+		
 		set.filter(ref, diceThreshold, merge, aberrant);
+		
 		set.write(outputFileName);
 	}
 	

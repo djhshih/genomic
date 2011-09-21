@@ -8,5 +8,6 @@
 #include "genomic_common.hpp"
 #include "genomic_convert.hpp"
 #include "genomic_filter.hpp"
+#include "genomic_clean.hpp"
 
 #endif

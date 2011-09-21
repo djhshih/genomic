@@ -21,12 +21,12 @@ void SegmentedSampleSet<SPECIALIZATION_TYPE>::_write(fstream& file)
 	
 	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "stateA" << delim << "stateB" << endl;
 	
-	SamplesIterator it, end = samples.end();
+	typename Samples::iterator it, end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
-		ChromosomesIterator chrIt, chrEnd = (*it)->end();
+		typename Chromosomes::iterator chrIt, chrEnd = (*it)->end();
 		size_t chr = 1;
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
-			DataIterator segIt, segEnd = chrIt->end();
+			typename Segments::iterator segIt, segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
 				file << (*it)->name << delim << chr << delim << segIt->start << delim << segIt->end << delim << segIt->count << delim << segIt->value.a << delim << segIt->value.b << endl;
 			}

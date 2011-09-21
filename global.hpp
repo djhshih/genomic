@@ -27,17 +27,22 @@ using namespace std;
 #define ENABLE_IF_ARITHMETIC typename boost::enable_if<boost::is_arithmetic<T>, T>
 
 template <typename T>
+inline ENABLE_IF_ARITHMETIC::type absdiff(T a, T b) {
+	return (a > b) ? a - b : b - a;
+}
+
+template <typename T>
 inline bool eq(T a, T b, ENABLE_IF_ARITHMETIC::type epsilon=std::numeric_limits<T>::epsilon()) {
 	// essentially equal
 	//return abs(a - b) <= ( (abs(a) > abs(b) ? abs(b) : abs(a)) * epsilon );
-	return std::abs(a - b) <= epsilon;
+	return absdiff(a, b) <= epsilon;
 }
 
 template <typename T>
 inline bool neq(T a, T b, ENABLE_IF_ARITHMETIC::type epsilon=std::numeric_limits<T>::epsilon()) {
 	// essentially equal
 	//return abs(a - b) > ( (abs(a) > abs(b) ? abs(b) : abs(a)) * epsilon );
-	return std::abs(a - b) > epsilon;
+	return absdiff(a, b) > epsilon;
 }
 
 

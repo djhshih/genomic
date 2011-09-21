@@ -96,7 +96,7 @@ namespace marker
 			set[chromIndex].push_back(marker);
 		}
 		
-		void setIO(const PropertiesIO& io) {
+		void setIO(const IOProperties& io) {
 			this->io = io;
 		}
 		
@@ -130,7 +130,7 @@ namespace marker
 		size_t unsortedChromIndex;
 		size_t refCount;
 		
-		PropertiesIO io;
+		IOProperties io;
 		
 		// construct hash containing all marker names found in markerNames
 		void hashMarkers(const std::vector<std::string>& markerNames, uset& hash);

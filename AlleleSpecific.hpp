@@ -8,6 +8,7 @@
 #include <boost/type_traits/is_base_of.hpp>
 
 #include "typedefs.h"
+#include "global.hpp"
 
 
 #define ENABLE_IF_ALLELE_SPECIFIC typename boost::enable_if<boost::is_base_and_derived<allele_specific_base, allele_specific_type>, allele_specific_type>
@@ -19,12 +20,24 @@ struct allele_specific : allele_specific_base
 {
 	a_type a;
 	b_type b;
+	
+	allele_specific() {}
+	allele_specific(a_type A, b_type B) : a(A), b(B) {}
 };
 
-// sum of the absolute differences in each element
 template <typename allele_specific_type> inline
-allele_specific_type operator-(const allele_specific_type& x, const ENABLE_IF_ALLELE_SPECIFIC::type& y) {
-	return std::abs(x.a - y.a) + std::abs(x.b - y.b);
+ENABLE_IF_ALLELE_SPECIFIC::type operator+(const allele_specific_type& x, const allele_specific_type& y) {
+	return allele_specific_type(x.a + y.a, x.b + y.b);
+}
+
+template <typename allele_specific_type> inline
+ENABLE_IF_ALLELE_SPECIFIC::type absdiff(const allele_specific_type& x, const allele_specific_type& y) {
+	return allele_specific_type( absdiff(x.a, y.a), absdiff(x.b, y.b) );
+}
+
+template <typename allele_specific_type> inline
+ENABLE_IF_ALLELE_SPECIFIC::type operator*(const allele_specific_type& x, float z) {
+	return allele_specific_type(x.a * z, x.b * z);
 }
 
 template <typename allele_specific_type> inline

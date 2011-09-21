@@ -25,6 +25,7 @@ int main(int argc, char **argv)
 	
 		commands["convert"] = new Convert();
 		commands["filter"] = new Filter();
+		commands["clean"] = new Clean();
 		
 		// Use the first argument (excluding name of program itself)
 		//   to determine the command
