@@ -460,34 +460,38 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold,
 						
 						// determine lower and upper bounds
 						Segments& refChrom = (**refIt)[chri];
-						position_diff lower = 2*(diceThreshold-1)/diceThreshold*segIt->end + (2-diceThreshold)/diceThreshold*(segIt->start - 1) + 1;
-						if (lower < 0) lower = 0;
-						position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*segIt->end + diceThreshold/(2-diceThreshold)*(segIt->start - 1) + 1;
-						//cout << segIt->start << " " << segIt->end << " " << lower << " " << upper << endl;
-						
-						// find marker indices corresponding to lower and upper bounds
-						size_t lowerIndex = ref.find(*refIt, chri, lower);
-						size_t upperIndex = ref.find(*refIt, chri, upper) + 1;
-						if (upperIndex >= refChrom.size()) upperIndex = refChrom.size()-1;
-						
-						//size_t lowerIndex = 0, upperIndex = refChrom.size()-1;
-						//cout << "Index: " << lowerIndex << ", " << upperIndex << endl;
-						for (size_t i = lowerIndex; i <= upperIndex; ++i) {
-							// calculate Dice coefficient
-							position_diff intersection = min(refChrom[i].end, segIt->end) - max(refChrom[i].start, segIt->start) + 1;
-							//cout << segIt->start << " " << refChrom->at(i).start << " " << intersection << endl;
-							if (intersection > 0) {
-								float dice = 2 * float(intersection) / (refChrom[i].length() + segIt->length());
-								if (dice > diceThreshold) {
-									//cout << "Filter: " << segIt->start << " " << refChrom->at(i).start << " " << dice << endl;
-									// Mark segment for deletion
-									segIt->flag = true;
-									filterSegment = true;
-									trace("Filter chr%s:%d-%d in %s: overlap with chr%s:%d-%d in reference\n",
-										    chrom, segIt->start, segIt->end, (*it)->name.c_str(),
-												chrom, refChrom[i].start, refChrom[i].end);
-									++filteredCount;
-									break;
+						if (refChrom.size() > 0) {
+							// chromosome may be empty
+							
+							position_diff lower = 2*(diceThreshold-1)/diceThreshold*segIt->end + (2-diceThreshold)/diceThreshold*(segIt->start - 1) + 1;
+							if (lower < 0) lower = 0;
+							position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*segIt->end + diceThreshold/(2-diceThreshold)*(segIt->start - 1) + 1;
+							//cout << segIt->start << " " << segIt->end << " " << lower << " " << upper << endl;
+							
+							// find marker indices corresponding to lower and upper bounds
+							size_t lowerIndex = ref.find(*refIt, chri, lower);
+							size_t upperIndex = ref.find(*refIt, chri, upper) + 1;
+							if (upperIndex >= refChrom.size()) upperIndex = refChrom.size()-1;
+							
+							//size_t lowerIndex = 0, upperIndex = refChrom.size()-1;
+							//cout << "Index: " << lowerIndex << ", " << upperIndex << endl;
+							for (size_t i = lowerIndex; i <= upperIndex; ++i) {
+								// calculate Dice coefficient
+								position_diff intersection = min(refChrom[i].end, segIt->end) - max(refChrom[i].start, segIt->start) + 1;
+								//cout << segIt->start << " " << refChrom->at(i).start << " " << intersection << endl;
+								if (intersection > 0) {
+									float dice = 2 * float(intersection) / (refChrom[i].length() + segIt->length());
+									if (dice > diceThreshold) {
+										//cout << "Filter: " << segIt->start << " " << refChrom->at(i).start << " " << dice << endl;
+										// Mark segment for deletion
+										segIt->flag = true;
+										filterSegment = true;
+										trace("Filter chr%s:%d-%d in %s: overlap with chr%s:%d-%d in reference\n",
+													chrom, segIt->start, segIt->end, (*it)->name.c_str(),
+													chrom, refChrom[i].start, refChrom[i].end);
+										++filteredCount;
+										break;
+									}
 								}
 							}
 						}
