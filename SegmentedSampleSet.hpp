@@ -181,7 +181,7 @@ public:
 	template <typename filter_operator_type>
 	void filter(filter_operator_type f, bool merge);
 	
-	void filter(SegmentedSampleSet& ref, float diceThreshold, bool merge, bool aberrantOnly);
+	void filter(SegmentedSampleSet& ref, float diceThreshold, bool merge, bool aberrantOnly, bool optimize);
 	
 	
 protected:
@@ -334,6 +334,7 @@ void SegmentedSampleSet<V>::sort()
 	}
 }
 
+// find segments that start at specified position
 template <typename V>
 size_t SegmentedSampleSet<V>::_find(Segments& array, position x) {
 	// Initialize left and right beyond array bounds
@@ -430,7 +431,7 @@ void SegmentedSampleSet<V>::filter(filter_operator_type f, bool merge=false)
 
 // assume flags of all segments are set to false
 template <typename V>
-void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold, bool merge=false, bool aberrantOnly=false)
+void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold, bool merge=false, bool aberrantOnly=false, bool optimize=true)
 {
 	if (aberrantOnly) markAberrant();
 	
@@ -463,15 +464,22 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold,
 						if (refChrom.size() > 0) {
 							// chromosome may be empty
 							
-							position_diff lower = 2*(diceThreshold-1)/diceThreshold*segIt->end + (2-diceThreshold)/diceThreshold*(segIt->start - 1) + 1;
-							if (lower < 0) lower = 0;
-							position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*segIt->end + diceThreshold/(2-diceThreshold)*(segIt->start - 1) + 1;
-							//cout << segIt->start << " " << segIt->end << " " << lower << " " << upper << endl;
+							size_t lowerIndex, upperIndex;
 							
-							// find marker indices corresponding to lower and upper bounds
-							size_t lowerIndex = ref.find(*refIt, chri, lower);
-							size_t upperIndex = ref.find(*refIt, chri, upper) + 1;
-							if (upperIndex >= refChrom.size()) upperIndex = refChrom.size()-1;
+							if (optimize) {
+								position_diff lower = 2*(diceThreshold-1)/diceThreshold*segIt->end + (2-diceThreshold)/diceThreshold*(segIt->start - 1) + 1;
+								if (lower < 0) lower = 0;
+								position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*segIt->end + diceThreshold/(2-diceThreshold)*(segIt->start - 1) + 1;
+								//cout << segIt->start << " " << segIt->end << " " << lower << " " << upper << endl;
+								
+								// find marker indices corresponding to lower and upper bounds
+								lowerIndex = ref.find(*refIt, chri, lower);
+								upperIndex = ref.find(*refIt, chri, upper) + 1;
+								if (upperIndex >= refChrom.size()) upperIndex = refChrom.size()-1;
+							} else {
+								lowerIndex = 0;
+								upperIndex = refChrom.size()-1;
+							}
 							
 							//size_t lowerIndex = 0, upperIndex = refChrom.size()-1;
 							//cout << "Index: " << lowerIndex << ", " << upperIndex << endl;
@@ -486,8 +494,9 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold,
 										// Mark segment for deletion
 										segIt->flag = true;
 										filterSegment = true;
-										trace("Filter chr%s:%d-%d in %s: overlap with chr%s:%d-%d in reference\n",
+										trace("Filter chr%s:%d-%d in %s: %.2f overlap with chr%s:%d-%d in reference\n",
 													chrom, segIt->start, segIt->end, (*it)->name.c_str(),
+													dice,
 													chrom, refChrom[i].start, refChrom[i].end);
 										++filteredCount;
 										break;

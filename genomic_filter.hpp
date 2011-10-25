@@ -32,6 +32,7 @@ public:
 			("aberrant,a", po::value<bool>(), "filter only aberrant segments?")
 			("state_diff", po::value<rvalue>(), "threshold for difference from reference state")
 			("ref_state", po::value<rvalue>(), "reference state")
+			("optimize,O", po::value<bool>(), "optimize algorithm speed, assuming contiguity of reference segments")
 			;
 		popts.add("input", 1).add("reference", 1).add("output", 1);
 		
@@ -59,7 +60,7 @@ public:
 		
 		set.set(CNACriteria(refState, stateDiff));
 		
-		set.filter(ref, diceThreshold, merge, aberrant);
+		set.filter(ref, diceThreshold, merge, aberrant, optimize);
 		
 		set.write(outputFileName);
 	}
@@ -148,6 +149,7 @@ private:
 	float diceThreshold;
 	bool merge, aberrant;
 	float stateDiff, refState;
+	bool optimize;
 	
 	void getOptions() {
 		
@@ -217,6 +219,12 @@ private:
 			refState = vm["ref_state"].as<float>();
 		} else {
 			refState = 0;
+		}
+		
+		if (vm.count("optimize")) {
+			optimize = vm["optimize"].as<bool>();
+		} else {
+			optimize = true;
 		}
 	}
 	
