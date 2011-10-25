@@ -21,9 +21,7 @@ class filter_operator
 {
 public:
 	filter_operator() {}
-	bool operator()(const Segment<V>& seg) {
-		return false;
-	}
+	virtual bool operator()(const Segment<V>& seg) = 0;
 };
 
 template <typename V>
