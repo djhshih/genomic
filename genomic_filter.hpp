@@ -59,8 +59,16 @@ public:
 		ref.read(referenceFileName);
 		
 		set.set(CNACriteria(refState, stateDiff));
-		
 		set.filter(ref, diceThreshold, merge, aberrant, optimize);
+		
+		/*
+		typename SampleSetType::filter_operators filters;
+		reference_segment_filter<typename SampleSetType::Value> refFilter(ref, diceThreshold, aberrant, optimize);
+		balanced_segment_filter<typename SampleSetType::Value> balancedFilter(refState, stateDiff);
+		filters.push_back(&refFilter);
+		filters.push_back(&balancedFilter);
+		set.filter(filters.begin(), filters.end(), merge);
+		*/
 		
 		set.write(outputFileName);
 	}
@@ -212,7 +220,7 @@ private:
 		if (vm.count("state_diff")) {
 			stateDiff = vm["state_diff"].as<float>();
 		} else {
-			stateDiff = 0.2;
+			stateDiff = 0.1;
 		}
 		
 		if (vm.count("ref_state")) {

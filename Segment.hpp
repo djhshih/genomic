@@ -7,6 +7,8 @@ template <typename V>
 class Segment
 {
 public:
+	// chromosome number (1-index)
+	chromid chromosome;
 	position start;
 	position end;
 	position count;
@@ -21,8 +23,13 @@ public:
 	
 	Segment() : flag(false), aberrant(false), valid(true) {}
 	
-	Segment(position startPos, position endPos, unsigned long numElements, V segValue)
+	Segment(chromid chromosomeNumber)
 	: flag(false), aberrant(false), valid(true),
+	chromosome(chromosomeNumber) {}
+	
+	Segment(chromid chromosomeNumber, position startPos, position endPos, unsigned long numElements, V segValue)
+	: flag(false), aberrant(false), valid(true),
+	  chromosome(chromosomeNumber),
 	  start(startPos), end(endPos), count(numElements), value(segValue) {}
 	  
 	static bool compare(const Segment& a, const Segment& b) {

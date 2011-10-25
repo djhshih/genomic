@@ -21,33 +21,34 @@ class filter_operator
 {
 public:
 	filter_operator() {}
-	virtual bool operator()(const Segment<V>& seg) = 0;
+	virtual bool operator()(Segment<V>& seg) = 0;
 };
 
 template <typename V>
-class spurious_segment_filter : filter_operator<V>
+class spurious_segment_filter : public filter_operator<V>
 {
 	position count;
 public:
 	spurious_segment_filter(position countThreshold) : count(countThreshold) {}
-	bool operator()(const Segment<V>& seg) {
+	bool operator()(Segment<V>& seg) {
 		return seg.count < count;
 	}
 };
 
 template <typename V>
-class small_segment_filter : filter_operator<V>
+class small_segment_filter : public filter_operator<V>
 {
 	position length;
 public:
 	small_segment_filter(size_t lengthThreshold) : length(lengthThreshold) {}
-	bool operator()(const Segment<V>& seg) {
+	bool operator()(Segment<V>& seg) {
 		return (seg.end - seg.start + 1) < length;
 	}
 };
 
+// filter out balanced segments
 template <typename V, typename T=float>
-class balanced_segment_filter : filter_operator<V>
+class balanced_segment_filter : public filter_operator<V>
 {
 	// note: T cannot be an unsigned type; operator+ and operator- must be defined
 	// TODO: use one template type instead of two
@@ -56,9 +57,93 @@ class balanced_segment_filter : filter_operator<V>
 public:
 	balanced_segment_filter(T referenceState, T stateDeviation)
 	: reference(referenceState), deviation(stateDeviation) {}
-	bool operator()(const Segment<V>& seg) {
-		return !(seg.value <= reference - deviation && seg.value >= reference + deviation);
+	bool operator()(Segment<V>& seg) {
+		return (seg.value <= reference - deviation || seg.value >= reference + deviation);
 	}
+};
+
+// filter out segments in reference set
+template <typename V>
+class reference_segment_filter : public filter_operator<V>
+{
+	typedef SegmentedSampleSet<V> ReferenceSet;
+	const ReferenceSet& ref;
+	float diceThreshold;
+	//bool aberrantOnly, optimize;
+	bool optimize;
+public:
+
+	//reference_segment_filter(const ReferenceSet& reference, float overlapDiceThreshold)
+	//: aberrantOnly(false), optimize(true), ref(reference), diceThreshold(overlapDiceThreshold)
+	//{}
+	
+	//reference_segment_filter(const ReferenceSet& reference, float _diceThreshold, bool _aberrantOnly, bool _optimize)
+	//: aberrantOnly(_aberrantOnly), optimize(_optimize), ref(reference), diceThreshold(_diceThreshold)
+	reference_segment_filter(const ReferenceSet& reference, float _diceThreshold, bool _optimize)
+	: optimize(_optimize), ref(reference), diceThreshold(_diceThreshold)
+	{}
+	
+	bool operator()(Segment<V>& seg) {
+		
+		bool filterSegment = false;
+		
+		//if (!aberrantOnly || seg.aberrant) {
+			chromid chri = seg.chromosome - 1;
+			const char* chrom = mapping::chromosome[chri+1].c_str();
+			
+			// Compare against segments in all samples in reference set
+			typename ReferenceSet::Samples::const_iterator refIt, refEnd = ref.end();
+			//typename ReferenceSet::Samples::const_iterator refEnd = ref.end();
+			for (refIt = ref.begin(); refIt != refEnd; ++refIt) {
+				
+				// determine lower and upper bounds
+				typename ReferenceSet::Segments& refChrom = (**refIt)[chri];
+				if (refChrom.size() > 0) {
+					// chromosome may be empty
+					
+					size_t lowerIndex, upperIndex;
+					
+					if (optimize) {
+						// optimize algorithm by restricting Dice coefficient calculation to lower and upper bound region,
+						//   based on defiend threshold
+						position_diff lower = 2*(diceThreshold-1)/diceThreshold*seg.end + (2-diceThreshold)/diceThreshold*(seg.start - 1) + 1;
+						if (lower < 0) lower = 0;
+						position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*seg.end + diceThreshold/(2-diceThreshold)*(seg.start - 1) + 1;
+						
+						// find marker indices corresponding to lower and upper bounds
+						lowerIndex = ref.find(*refIt, chri, lower);
+						upperIndex = ref.find(*refIt, chri, upper) + 1;
+						if (upperIndex >= refChrom.size()) upperIndex = refChrom.size()-1;
+					} else {
+						lowerIndex = 0;
+						upperIndex = refChrom.size()-1;
+					}
+					
+					for (size_t i = lowerIndex; i <= upperIndex; ++i) {
+						// calculate Dice coefficient
+						position_diff intersection = min(refChrom[i].end, seg.end) - max(refChrom[i].start, seg.start) + 1;
+						if (intersection > 0) {
+							float dice = 2 * float(intersection) / (refChrom[i].length() + seg.length());
+							if (dice > diceThreshold) {
+								// Mark segment for deletion
+								seg.flag = true;
+								filterSegment = true;
+								trace("Filter chr%s:%d-%d: %.2f overlap with chr%s:%d-%d in reference\n",
+											chrom, seg.start, seg.end,
+											dice,
+											chrom, refChrom[i].start, refChrom[i].end);
+								break;
+							}
+						}
+					}
+				}
+				if (filterSegment) break;
+			} // for (refIt = ref.samples.begin(); refIt != refEnd; ++refIt)
+		//}  // if (!aberrantOnly || segIt->aberrant) {
+		
+		return filterSegment;
+	}
+	
 };
 
 template <typename V = rvalue>
@@ -77,6 +162,8 @@ public:
 	
 	typedef vector<SegmentedSample*> Samples;
 	typedef typename SegmentedSample::Chromosomes Chromosomes;
+	
+	typedef vector< filter_operator<V>* > filter_operators;
 	
 // 	typedef typename Samples::iterator SamplesIterator;
 // 	typedef typename Chromosomes::iterator ChromosomesIterator;
@@ -104,11 +191,11 @@ private:
 		}
 	}
 	
-	void markAberrant();
+	//void markAberrant();
 	
 	void removeFlagged(bool merged);
 	
-	size_t _find(Segments& array, position x);
+	size_t _find(Segments& array, position x) const;
 	
 public:
 	SegmentedSampleSet() {
@@ -163,10 +250,10 @@ public:
 		return samples.size();
 	}
 	
-	size_t find(const string& sampleName, size_t chromIndex, position start) {
+	size_t find(const string& sampleName, size_t chromIndex, position start) const {
 		return _find(*(byNames[sampleName]->chromosome(chromIndex)), start);
 	}
-	size_t find(SegmentedSample* sample, size_t chromIndex, position start) {
+	size_t find(SegmentedSample* sample, size_t chromIndex, position start) const {
 		return _find(*(sample->chromosome(chromIndex)), start);
 	}
 	
@@ -174,10 +261,29 @@ public:
 		cna = criteria;
 	}
 	
+	typename Samples::iterator begin() {
+		return samples.begin();
+	}
+	
+	
+	typename Samples::const_iterator begin() const {
+		return samples.begin();
+	}
+	
+	typename Samples::iterator end() {
+		return samples.end();
+	}
+	
+	typename Samples::const_iterator end() const {
+		return samples.end();
+	}
+	
 	void reset();
 	
 	template <typename filter_operator_type>
 	void filter(filter_operator_type f, bool merge);
+	
+	void filter(typename filter_operators::const_iterator begin, typename filter_operators::const_iterator end, bool merge);
 	
 	void filter(SegmentedSampleSet& ref, float diceThreshold, bool merge, bool aberrantOnly, bool optimize);
 	
@@ -232,6 +338,7 @@ SegmentedSampleSet<V>::SegmentedSampleSet(const RawSampleSet<V>& raw)
 					if (!eq(*markerIt, prevValue)) {
 						// segment ended: store segment from $startMarkerIndex to $markerIndex-1
 						Segment<Value> seg(
+							chr+1,
 							raw.markers->at(chr)[startMarkerIndex]->pos,
 							raw.markers->at(chr)[markerIndex-1]->pos,
 							(markerIndex-1) - startMarkerIndex + 1,
@@ -249,6 +356,7 @@ SegmentedSampleSet<V>::SegmentedSampleSet(const RawSampleSet<V>& raw)
 				// handling is same whether last segment is the last marker alone or
 				// 	laste segment ends on the last marker
 				Segment<Value> seg(
+					chr+1,
 					raw.markers->at(chr)[startMarkerIndex]->pos,
 					raw.markers->at(chr)[markerIndex-1]->pos,
 					(markerIndex-1) - startMarkerIndex + 1,
@@ -272,7 +380,6 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 	
 	size_t lineCount = 0;
 	string line, sampleName, chromName;
-	Segment<Value>* seg;
 	while (true) {
 		getline(file, line);
 		
@@ -281,12 +388,13 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 			istringstream stream(line);
 			stream >> sampleName >> chromName;
 			// ignore unknown chromosome: continue to next line
-			if (mapping::chromosome[chromName] == 0) continue;
+			chromid chrom = mapping::chromosome[chromName];
+			if (chrom == 0) continue;
 			// create segment at specified chromosome
-			Segment<V> seg;
+			Segment<V> seg(chrom);
 			readSegment(stream, seg);
 			if (mergeSamples) sampleName = "ALL";
-			create(sampleName)->addToChromosome(chromName, seg);
+			create(sampleName)->addToChromosome(chrom-1, seg);
 			//trace("%s %s %d %d %d %f\n", sampleName.c_str(), chromName.c_str(), seg.start, seg.end, seg.count, seg.value);
 		} else {
 			// discard line
@@ -304,13 +412,11 @@ void SegmentedSampleSet<V>::_write(fstream& file)
 	typename Samples::iterator it, end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
 		typename Chromosomes::iterator chrIt, chrEnd = (*it)->end();
-		size_t chr = 1;
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
 			typename Segments::iterator segIt, segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
-				file << (*it)->name << delim << chr << delim << segIt->start << delim << segIt->end << delim << segIt->count << delim << segIt->value << endl;
+				file << (*it)->name << delim << segIt->chromosome << delim << segIt->start << delim << segIt->end << delim << segIt->count << delim << segIt->value << endl;
 			}
-			++chr;
 		}
 	}
 }
@@ -334,7 +440,7 @@ void SegmentedSampleSet<V>::sort()
 
 // find segments that start at specified position
 template <typename V>
-size_t SegmentedSampleSet<V>::_find(Segments& array, position x) {
+size_t SegmentedSampleSet<V>::_find(Segments& array, position x) const {
 	// Initialize left and right beyond array bounds
 	size_t left = -1, right = array.size();
 	while (left + 1 != right) {
@@ -349,6 +455,7 @@ size_t SegmentedSampleSet<V>::_find(Segments& array, position x) {
 	return ( (left == -1) ? 0 : left );
 }
 
+/*
 template <typename V>
 void SegmentedSampleSet<V>::markAberrant() {
 	size_t count =  0;
@@ -375,6 +482,7 @@ void SegmentedSampleSet<V>::markAberrant() {
 	}
 	trace("Number of segments marked aberrant: %d\n", count);
 }
+*/
 
 template <typename V>
 void SegmentedSampleSet<V>::reset() {
@@ -407,10 +515,10 @@ void SegmentedSampleSet<V>::filter(filter_operator_type f, bool merge=false)
 	typename Samples::iterator it;
 	typename Samples::const_iterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
+		trace("%s\n", (*it)->name.c_str());
 		// iterate through chromosomes
 		typename Chromosomes::iterator chrIt;
 		typename Chromosomes::const_iterator chrEnd = (*it)->end();
-		size_t chri = 0;
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
 			// iterate through segments on a chromosome
 			typename Segments::iterator segIt;
@@ -427,93 +535,62 @@ void SegmentedSampleSet<V>::filter(filter_operator_type f, bool merge=false)
 	trace("Number of segments filtered: %d\n", filteredCount);
 }
 
-// assume flags of all segments are set to false
 template <typename V>
-void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold, bool merge=false, bool aberrantOnly=false, bool optimize=true)
+void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator filterBegin, typename filter_operators::const_iterator filterEnd, bool merge=false)
 {
-	if (aberrantOnly) markAberrant();
-	
 	size_t filteredCount = 0;
 	// iterate through samples
 	typename Samples::iterator it;
 	typename Samples::const_iterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
+		trace("%s\n", (*it)->name.c_str());
 		// iterate through chromosomes
 		typename Chromosomes::iterator chrIt;
 		typename Chromosomes::const_iterator chrEnd = (*it)->end();
-		size_t chri = 0;
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
-			const char* chrom = mapping::chromosome[chri+1].c_str();
-			
 			// iterate through segments on a chromosome
 			typename Segments::iterator segIt;
 			typename Segments::const_iterator segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
-				
-				if (!aberrantOnly || segIt->aberrant) {
-					// Compare against segments in all samples in reference set
-					typename Samples::iterator refIt;
-					typename Samples::const_iterator refEnd = ref.samples.end();
-					bool filterSegment = false;
-					for (refIt = ref.samples.begin(); refIt != refEnd; ++refIt) {
-						
-						// determine lower and upper bounds
-						Segments& refChrom = (**refIt)[chri];
-						if (refChrom.size() > 0) {
-							// chromosome may be empty
-							
-							size_t lowerIndex, upperIndex;
-							
-							if (optimize) {
-								position_diff lower = 2*(diceThreshold-1)/diceThreshold*segIt->end + (2-diceThreshold)/diceThreshold*(segIt->start - 1) + 1;
-								if (lower < 0) lower = 0;
-								position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*segIt->end + diceThreshold/(2-diceThreshold)*(segIt->start - 1) + 1;
-								//cout << segIt->start << " " << segIt->end << " " << lower << " " << upper << endl;
-								
-								// find marker indices corresponding to lower and upper bounds
-								lowerIndex = ref.find(*refIt, chri, lower);
-								upperIndex = ref.find(*refIt, chri, upper) + 1;
-								if (upperIndex >= refChrom.size()) upperIndex = refChrom.size()-1;
-							} else {
-								lowerIndex = 0;
-								upperIndex = refChrom.size()-1;
-							}
-							
-							//size_t lowerIndex = 0, upperIndex = refChrom.size()-1;
-							//cout << "Index: " << lowerIndex << ", " << upperIndex << endl;
-							for (size_t i = lowerIndex; i <= upperIndex; ++i) {
-								// calculate Dice coefficient
-								position_diff intersection = min(refChrom[i].end, segIt->end) - max(refChrom[i].start, segIt->start) + 1;
-								//cout << segIt->start << " " << refChrom->at(i).start << " " << intersection << endl;
-								if (intersection > 0) {
-									float dice = 2 * float(intersection) / (refChrom[i].length() + segIt->length());
-									if (dice > diceThreshold) {
-										//cout << "Filter: " << segIt->start << " " << refChrom->at(i).start << " " << dice << endl;
-										// Mark segment for deletion
-										segIt->flag = true;
-										filterSegment = true;
-										trace("Filter chr%s:%d-%d in %s: %.2f overlap with chr%s:%d-%d in reference\n",
-													chrom, segIt->start, segIt->end, (*it)->name.c_str(),
-													dice,
-													chrom, refChrom[i].start, refChrom[i].end);
-										++filteredCount;
-										break;
-									}
-								}
-							}
-						}
-						if (filterSegment) break;
+				// use filter functor to flag segment
+				bool flag = true;
+				for (typename filter_operators::const_iterator filterIt = filterBegin; filterIt != filterEnd; ++filterIt) {
+					// apply filter
+					if ( !(**filterIt)(*segIt) ) {
+						flag = false;
+						break;
 					}
-				}  // if (aberrantOnly && segIt->aberrant)
-				
+				}
+				segIt->flag = flag;
+				if (segIt->flag) ++filteredCount;
 			}
-			++chri;
 		}
 	}
 	
 	removeFlagged(merge);
-	
 	trace("Number of segments filtered: %d\n", filteredCount);
+}
+
+template <typename V>
+void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold, bool merge=false, bool aberrantOnly=false, bool optimize=true)
+{
+	//if (aberrantOnly) markAberrant();
+	filter_operators filters;
+	
+	if (aberrantOnly) {
+		balanced_segment_filter<V> balancedFilter(cna.reference, cna.deviation);
+		filters.push_back(&balancedFilter);
+	}
+	
+	//reference_segment_filter<V> refFilter(ref, diceThreshold, aberrantOnly, optimize);
+	reference_segment_filter<V> refFilter(ref, diceThreshold, optimize);
+	filters.push_back(&refFilter);
+	
+	
+	filter(filters.begin(), filters.end(), merge);
+	
+	//reference_segment_filter<V> f(ref, diceThreshold, aberrantOnly, optimize);
+	//filter(f, merge);
 }
 
 template <typename V>
@@ -557,7 +634,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 				if (!segIt->flag) {
 					
 					// only create new copy of unflagged segments
-					Segment<V> seg(segIt->start, segIt->end, segIt->count, segIt->value);
+					Segment<V> seg(chri+1, segIt->start, segIt->end, segIt->count, segIt->value);
 					prevUnmarkedSegment = sample->addToChromosome(chri, seg);
 					
 				} else if ( segIt->valid && merge ) {
