@@ -27,7 +27,8 @@ public:
 			("format,f", po::value<string>(), "input file format [default: determined from file extension]")
 			("reference_format,g", po::value<string>(), "reference file format [default: reference format corresponding to input]")
 			("output,o", po::value<string>(), "output file")
-			("dice,d", po::value<float>(), "Dice coefficient threshold (only used for segmentation files) [default: 0.8]")
+			("threshold,t", po::value<float>(), "overlap threshold (only used for segmentation files) [default: 0.5]")
+			("score,s", po::value<string>(), "overlap score method, only used for segmentation files) [options: dice (default), query, reference]")
 			("merge,m", po::value<bool>(), "merge filtered segments with upstream/downstream segments?")
 			("aberrant,a", po::value<bool>(), "filter only aberrant segments?")
 			("state_diff", po::value<rvalue>(), "threshold for difference from reference state")
@@ -59,16 +60,25 @@ public:
 		ref.read(referenceFileName);
 		
 		set.set(CNACriteria(refState, stateDiff));
-		set.filter(ref, diceThreshold, merge, aberrant, optimize);
 		
-		/*
-		typename SampleSetType::filter_operators filters;
-		reference_segment_filter<typename SampleSetType::Value> refFilter(ref, diceThreshold, aberrant, optimize);
-		balanced_segment_filter<typename SampleSetType::Value> balancedFilter(refState, stateDiff);
-		filters.push_back(&refFilter);
-		filters.push_back(&balancedFilter);
-		set.filter(filters.begin(), filters.end(), merge);
-		*/
+		if (score == "dice") {
+			dice_overlapper checker(threshold);
+			set.filter<dice_overlapper>(ref, checker, merge, aberrant, optimize);
+		} else if (score == "region") {
+			query_overlapper checker(threshold);
+			set.filter<query_overlapper>(ref, checker, merge, aberrant, optimize);
+		} else if (score == "reference") {
+			reference_overlapper checker(threshold);
+			set.filter<reference_overlapper>(ref, checker, merge, aberrant, optimize);
+		} else if (score == "min") {
+			min_overlapper checker(threshold);
+			set.filter<min_overlapper>(ref, checker, merge, aberrant, optimize);
+		} else if (score == "max") {
+			max_overlapper checker(threshold);
+			set.filter<max_overlapper>(ref, checker, merge, aberrant, optimize);
+		} else {
+			throw runtime_error("Invalid overlap score method specified.");
+		}
 		
 		set.write(outputFileName);
 	}
@@ -154,10 +164,11 @@ private:
 	
 	string inputFileName, referenceFileName, outputFileName;
 	data::Type inputType, referenceType;
-	float diceThreshold;
+	float threshold;
 	bool merge, aberrant;
 	float stateDiff, refState;
 	bool optimize;
+	string score;
 	
 	void getOptions() {
 		
@@ -196,10 +207,16 @@ private:
 			outputFileName = name::filestem(inputFileName) + ".filtered." + name::fileext(inputFileName);
 		}
 		
-		if (vm.count("dice")) {
-			diceThreshold = vm["dice"].as<float>();
+		if (vm.count("threshold")) {
+			threshold = vm["threshold"].as<float>();
 		} else {
-			diceThreshold = 0.5;
+			threshold = 0.5;
+		}
+		
+		if (vm.count("score")) {
+			score = vm["score"].as<string>();
+		} else {
+			score = "dice";
 		}
 		
 		if (vm.count("merge")) {

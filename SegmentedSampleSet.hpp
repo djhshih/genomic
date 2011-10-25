@@ -13,15 +13,17 @@
 #include "AlleleSpecific.hpp"
 #include "SampleSet.hpp"
 
-template <typename V> class RawSampleSet;
+#define ENABLE_IF_OVERLAPPER typename boost::enable_if<boost::is_base_and_derived<overlapper_base, overlapper_type>, overlapper_type>
 
+
+template <typename V> class RawSampleSet;
  
 template <typename V>
 class filter_operator
 {
 public:
 	filter_operator() {}
-	virtual bool operator()(Segment<V>& seg) = 0;
+	virtual bool operator()(Segment<V>& seg) const = 0;
 };
 
 template <typename V>
@@ -30,7 +32,7 @@ class spurious_segment_filter : public filter_operator<V>
 	position count;
 public:
 	spurious_segment_filter(position countThreshold) : count(countThreshold) {}
-	bool operator()(Segment<V>& seg) {
+	bool operator()(Segment<V>& seg) const {
 		return seg.count < count;
 	}
 };
@@ -41,7 +43,7 @@ class small_segment_filter : public filter_operator<V>
 	position length;
 public:
 	small_segment_filter(size_t lengthThreshold) : length(lengthThreshold) {}
-	bool operator()(Segment<V>& seg) {
+	bool operator()(Segment<V>& seg) const {
 		return (seg.end - seg.start + 1) < length;
 	}
 };
@@ -57,20 +59,101 @@ class balanced_segment_filter : public filter_operator<V>
 public:
 	balanced_segment_filter(T referenceState, T stateDeviation)
 	: reference(referenceState), deviation(stateDeviation) {}
-	bool operator()(Segment<V>& seg) {
+	bool operator()(Segment<V>& seg) const {
 		return (seg.value <= reference - deviation || seg.value >= reference + deviation);
 	}
 };
 
+class overlapper_base
+{
+protected:
+	float threshold;
+public:
+	overlapper_base(float _threshold) : threshold(_threshold) {}
+	virtual bool bounds(position start, position end, position_diff& lower, position_diff& upper) const {
+		return false;
+	}
+	virtual bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const = 0;
+};
+
+class reference_overlapper : public overlapper_base
+{
+public:
+	reference_overlapper(float threshold) : overlapper_base(threshold) {}
+	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
+		score = float(intersection) / (reference_length);
+		return (score > threshold);
+	}
+};
+
+class query_overlapper : public overlapper_base
+{
+public:
+	query_overlapper(float threshold) : overlapper_base(threshold) {}
+	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
+		score = float(intersection) / (query_length);
+		return (score > threshold);
+	}
+};
+
+class union_overlapper : public overlapper_base
+{
+public:
+	union_overlapper(float threshold) : overlapper_base(threshold) {}
+	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
+		score = float(intersection) / (query_length + reference_length - intersection);
+		return (score > threshold);
+	}
+};
+
+class min_overlapper : public overlapper_base
+{
+public:
+	min_overlapper(float threshold) : overlapper_base(threshold) {}
+	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
+		score = float(intersection) / max(query_length, reference_length);
+		return (score > threshold);
+	}
+};
+
+class max_overlapper : public overlapper_base
+{
+public:
+	max_overlapper(float threshold) : overlapper_base(threshold) {}
+	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
+		score = float(intersection) / min(query_length, reference_length);
+		return (score > threshold);
+	}
+};
+
+class dice_overlapper : public overlapper_base
+{
+public:
+	dice_overlapper(float threshold) : overlapper_base(threshold) {}
+	bool bounds(position start, position end, position_diff& lower, position_diff& upper) const {
+		lower = 2*(threshold-1)/threshold*end + (2-threshold)/threshold*(start - 1) + 1;
+		if (lower < 0) lower = 0;
+		upper = 2*(1-threshold)/(2-threshold)*end + threshold/(2-threshold)*(start - 1) + 1;
+		return true;
+	}
+	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
+		score = 2 * float(intersection) / (query_length + reference_length);
+		return (score > threshold);
+	}
+};
+
 // filter out segments in reference set
-template <typename V>
+template <typename V, typename overlapper_type>
 class reference_segment_filter : public filter_operator<V>
 {
 	typedef SegmentedSampleSet<V> ReferenceSet;
+	
 	const ReferenceSet& ref;
-	float diceThreshold;
+	overlapper_type overlap_checker;
+	//float diceThreshold;
 	//bool aberrantOnly, optimize;
 	bool optimize;
+	
 public:
 
 	//reference_segment_filter(const ReferenceSet& reference, float overlapDiceThreshold)
@@ -79,11 +162,11 @@ public:
 	
 	//reference_segment_filter(const ReferenceSet& reference, float _diceThreshold, bool _aberrantOnly, bool _optimize)
 	//: aberrantOnly(_aberrantOnly), optimize(_optimize), ref(reference), diceThreshold(_diceThreshold)
-	reference_segment_filter(const ReferenceSet& reference, float _diceThreshold, bool _optimize)
-	: optimize(_optimize), ref(reference), diceThreshold(_diceThreshold)
+	reference_segment_filter(const ReferenceSet& reference, const overlapper_type& _overlap_checker, bool _optimize)
+	: optimize(_optimize), ref(reference), overlap_checker(_overlap_checker)
 	{}
 	
-	bool operator()(Segment<V>& seg) {
+	bool operator()(Segment<V>& seg) const {
 		
 		bool filterSegment = false;
 		
@@ -102,18 +185,20 @@ public:
 					// chromosome may be empty
 					
 					size_t lowerIndex, upperIndex;
+					position_diff lower, upper;
 					
-					if (optimize) {
+					if (optimize && overlap_checker.bounds(seg.start, seg.end, lower, upper)) {
 						// optimize algorithm by restricting Dice coefficient calculation to lower and upper bound region,
 						//   based on defiend threshold
-						position_diff lower = 2*(diceThreshold-1)/diceThreshold*seg.end + (2-diceThreshold)/diceThreshold*(seg.start - 1) + 1;
-						if (lower < 0) lower = 0;
-						position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*seg.end + diceThreshold/(2-diceThreshold)*(seg.start - 1) + 1;
+						//position_diff lower = 2*(diceThreshold-1)/diceThreshold*seg.end + (2-diceThreshold)/diceThreshold*(seg.start - 1) + 1;
+						//if (lower < 0) lower = 0;
+						//position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*seg.end + diceThreshold/(2-diceThreshold)*(seg.start - 1) + 1;
 						
 						// find marker indices corresponding to lower and upper bounds
 						lowerIndex = ref.find(*refIt, chri, lower);
 						upperIndex = ref.find(*refIt, chri, upper) + 1;
 						if (upperIndex >= refChrom.size()) upperIndex = refChrom.size()-1;
+						
 					} else {
 						lowerIndex = 0;
 						upperIndex = refChrom.size()-1;
@@ -123,14 +208,15 @@ public:
 						// calculate Dice coefficient
 						position_diff intersection = min(refChrom[i].end, seg.end) - max(refChrom[i].start, seg.start) + 1;
 						if (intersection > 0) {
-							float dice = 2 * float(intersection) / (refChrom[i].length() + seg.length());
-							if (dice > diceThreshold) {
+							//float dice = 2 * float(intersection) / (refChrom[i].length() + seg.length());
+							//if (dice > diceThreshold) {
+							float score;
+							if ( overlap_checker.overlap(intersection, seg.length(), refChrom[i].length(), score) ) {
 								// Mark segment for deletion
-								seg.flag = true;
-								filterSegment = true;
+								seg.flag = filterSegment = true;
 								trace("Filter chr%s:%d-%d: %.2f overlap with chr%s:%d-%d in reference\n",
 											chrom, seg.start, seg.end,
-											dice,
+											score,
 											chrom, refChrom[i].start, refChrom[i].end);
 								break;
 							}
@@ -281,11 +367,17 @@ public:
 	void reset();
 	
 	template <typename filter_operator_type>
-	void filter(filter_operator_type f, bool merge);
+	void filter(const filter_operator_type& f, bool merge);
 	
 	void filter(typename filter_operators::const_iterator begin, typename filter_operators::const_iterator end, bool merge);
 	
-	void filter(SegmentedSampleSet& ref, float diceThreshold, bool merge, bool aberrantOnly, bool optimize);
+	template <typename overlapper_type>
+	void filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool merge, bool aberrantOnly, bool optimize);
+	
+	void filter(SegmentedSampleSet& ref, float diceThreshold, bool merge=false, bool aberrantOnly=false, bool optimize=true) {
+		dice_overlapper checker(diceThreshold);
+		filter<dice_overlapper>(ref, checker, merge, aberrantOnly, optimize);
+	}
 	
 	
 protected:
@@ -508,7 +600,7 @@ void SegmentedSampleSet<V>::reset() {
 
 template <typename V>
 template <typename filter_operator_type>
-void SegmentedSampleSet<V>::filter(filter_operator_type f, bool merge=false)
+void SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool merge=false)
 {
 	size_t filteredCount = 0;
 	// iterate through samples
@@ -572,9 +664,9 @@ void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator fil
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold, bool merge=false, bool aberrantOnly=false, bool optimize=true)
+template <typename overlapper_type>
+void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool merge=false, bool aberrantOnly=false, bool optimize=true)
 {
-	//if (aberrantOnly) markAberrant();
 	filter_operators filters;
 	
 	if (aberrantOnly) {
@@ -582,15 +674,10 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, float diceThreshold,
 		filters.push_back(&balancedFilter);
 	}
 	
-	//reference_segment_filter<V> refFilter(ref, diceThreshold, aberrantOnly, optimize);
-	reference_segment_filter<V> refFilter(ref, diceThreshold, optimize);
+	reference_segment_filter<V, overlapper_type> refFilter(ref, overlap_checker, optimize);
 	filters.push_back(&refFilter);
 	
-	
 	filter(filters.begin(), filters.end(), merge);
-	
-	//reference_segment_filter<V> f(ref, diceThreshold, aberrantOnly, optimize);
-	//filter(f, merge);
 }
 
 template <typename V>
