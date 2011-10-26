@@ -28,7 +28,8 @@ public:
 			("reference_format,g", po::value<string>(), "reference file format [default: reference format corresponding to input]")
 			("output,o", po::value<string>(), "output file")
 			("threshold,t", po::value<float>(), "overlap threshold (only used for segmentation files) [default: 0.5]")
-			("score,s", po::value<string>(), "overlap score method, only used for segmentation files) [options: dice (default), query, reference]")
+			("score,s", po::value<string>(), "overlap score method, only used for segmentation files) [options: dice (default), query, reference, min, max]")
+			("inverse,v", po::value<bool>(), "select instead of filter overlapping segments")
 			("merge,m", po::value<bool>(), "merge filtered segments with upstream/downstream segments?")
 			("aberrant,a", po::value<bool>(), "filter only aberrant segments?")
 			("state_diff", po::value<rvalue>(), "threshold for difference from reference state")
@@ -63,19 +64,19 @@ public:
 		
 		if (score == "dice") {
 			dice_overlapper checker(threshold);
-			set.filter<dice_overlapper>(ref, checker, merge, aberrant, optimize);
-		} else if (score == "region") {
+			set.filter<dice_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
+		} else if (score == "query") {
 			query_overlapper checker(threshold);
-			set.filter<query_overlapper>(ref, checker, merge, aberrant, optimize);
+			set.filter<query_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
 		} else if (score == "reference") {
 			reference_overlapper checker(threshold);
-			set.filter<reference_overlapper>(ref, checker, merge, aberrant, optimize);
+			set.filter<reference_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
 		} else if (score == "min") {
 			min_overlapper checker(threshold);
-			set.filter<min_overlapper>(ref, checker, merge, aberrant, optimize);
+			set.filter<min_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
 		} else if (score == "max") {
 			max_overlapper checker(threshold);
-			set.filter<max_overlapper>(ref, checker, merge, aberrant, optimize);
+			set.filter<max_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
 		} else {
 			throw runtime_error("Invalid overlap score method specified.");
 		}
@@ -168,6 +169,7 @@ private:
 	bool merge, aberrant;
 	float stateDiff, refState;
 	bool optimize;
+	bool inverse;
 	string score;
 	
 	void getOptions() {
@@ -250,6 +252,12 @@ private:
 			optimize = vm["optimize"].as<bool>();
 		} else {
 			optimize = true;
+		}
+		
+		if (vm.count("inverse")) {
+			inverse = vm["inverse"].as<bool>();
+		} else {
+			inverse = false;
 		}
 	}
 	

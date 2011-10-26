@@ -217,16 +217,23 @@ BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Filter)
 	
 	FilesDiff diff;
 	
-	SegmentedSampleSet<rvalue> set1, set2;
-	set1.read("segfilt1a.in");
-	set2.read("segfilt1b.in");
+	SegmentedSampleSet<rvalue> set1a, set1b, set2a;
+	set1a.read("segfilt1a.in");
+	set2a.read("segfilt1a.in");
+	set1b.read("segfilt1b.in");
 	
 	string out_seg = "segfilt1.out", ans_seg = "segfilt1.ans";
+	string out2_seg = "segfilt2.out", ans2_seg = "segfilt2.ans";
 	
-	set1.filter(set2, 0.8);
-	set1.write(out_seg);
+	set1a.filter(set1b, 0.8);
+	set1a.write(out_seg);
+	
+	// invert filter
+	set2a.filter(set1b, 0.8, true);
+	set2a.write(out2_seg);
 	
 	BOOST_CHECK_EQUAL(diff.different(out_seg, ans_seg), 0);
+	BOOST_CHECK_EQUAL(diff.different(out2_seg, ans2_seg), 0);
 }
 
 BOOST_AUTO_TEST_CASE(RawSampleSet_Filter)

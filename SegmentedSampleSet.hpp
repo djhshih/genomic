@@ -82,7 +82,7 @@ public:
 	reference_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
 		score = float(intersection) / (reference_length);
-		return (score > threshold);
+		return (score >= threshold);
 	}
 };
 
@@ -92,7 +92,7 @@ public:
 	query_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
 		score = float(intersection) / (query_length);
-		return (score > threshold);
+		return (score >= threshold);
 	}
 };
 
@@ -102,7 +102,7 @@ public:
 	union_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
 		score = float(intersection) / (query_length + reference_length - intersection);
-		return (score > threshold);
+		return (score >= threshold);
 	}
 };
 
@@ -112,7 +112,7 @@ public:
 	min_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
 		score = float(intersection) / max(query_length, reference_length);
-		return (score > threshold);
+		return (score >= threshold);
 	}
 };
 
@@ -122,7 +122,7 @@ public:
 	max_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
 		score = float(intersection) / min(query_length, reference_length);
-		return (score > threshold);
+		return (score >= threshold);
 	}
 };
 
@@ -138,7 +138,7 @@ public:
 	}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
 		score = 2 * float(intersection) / (query_length + reference_length);
-		return (score > threshold);
+		return (score >= threshold);
 	}
 };
 
@@ -367,16 +367,16 @@ public:
 	void reset();
 	
 	template <typename filter_operator_type>
-	void filter(const filter_operator_type& f, bool merge);
+	void filter(const filter_operator_type& f, bool inverse, bool merge);
 	
-	void filter(typename filter_operators::const_iterator begin, typename filter_operators::const_iterator end, bool merge);
+	void filter(typename filter_operators::const_iterator begin, typename filter_operators::const_iterator end, bool inverse, bool merge);
 	
 	template <typename overlapper_type>
-	void filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool merge, bool aberrantOnly, bool optimize);
+	void filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool inverse, bool merge, bool aberrantOnly, bool optimize);
 	
-	void filter(SegmentedSampleSet& ref, float diceThreshold, bool merge=false, bool aberrantOnly=false, bool optimize=true) {
+	void filter(SegmentedSampleSet& ref, float diceThreshold, bool inverse=false, bool merge=false, bool aberrantOnly=false, bool optimize=true) {
 		dice_overlapper checker(diceThreshold);
-		filter<dice_overlapper>(ref, checker, merge, aberrantOnly, optimize);
+		filter<dice_overlapper>(ref, checker, inverse, merge, aberrantOnly, optimize);
 	}
 	
 	
@@ -600,7 +600,7 @@ void SegmentedSampleSet<V>::reset() {
 
 template <typename V>
 template <typename filter_operator_type>
-void SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool merge=false)
+void SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool inverse=false, bool merge=false)
 {
 	size_t filteredCount = 0;
 	// iterate through samples
@@ -617,7 +617,8 @@ void SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool merge=fal
 			typename Segments::const_iterator segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
 				// use filter functor to flag segment
-				segIt->flag = f(*segIt);
+				// use XOR to flip boolean if inverse == true
+				segIt->flag = f(*segIt) ^ inverse;
 				if (segIt->flag) ++filteredCount;
 			}
 		}
@@ -628,8 +629,7 @@ void SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool merge=fal
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator filterBegin, typename filter_operators::const_iterator filterEnd, bool merge=false)
-{
+void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator filterBegin, typename filter_operators::const_iterator filterEnd, bool inverse=false, bool merge=false) {
 	size_t filteredCount = 0;
 	// iterate through samples
 	typename Samples::iterator it;
@@ -653,7 +653,8 @@ void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator fil
 						break;
 					}
 				}
-				segIt->flag = flag;
+				// use XOR to flip boolean if inverse == true
+				segIt->flag = flag ^ inverse;
 				if (segIt->flag) ++filteredCount;
 			}
 		}
@@ -665,7 +666,7 @@ void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator fil
 
 template <typename V>
 template <typename overlapper_type>
-void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool merge=false, bool aberrantOnly=false, bool optimize=true)
+void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool inverse=false, bool merge=false, bool aberrantOnly=false, bool optimize=true)
 {
 	filter_operators filters;
 	
@@ -677,7 +678,7 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, const ENABLE_IF_OVER
 	reference_segment_filter<V, overlapper_type> refFilter(ref, overlap_checker, optimize);
 	filters.push_back(&refFilter);
 	
-	filter(filters.begin(), filters.end(), merge);
+	filter(filters.begin(), filters.end(), inverse, merge);
 }
 
 template <typename V>
