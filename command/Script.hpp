@@ -7,11 +7,7 @@
 #include <string>
 using namespace std;
 
-extern "C" {
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
-}
+#include <lua.hpp>
 
 // Scripting engine
 
@@ -31,7 +27,7 @@ public:
 	
 	void init() {
 		// create state
-		L = lua_open();
+		L = luaL_newstate();
 		if (L == NULL) {
 			throw std::runtime_error("Failed to initialize Lua interpreter.");
 		}
