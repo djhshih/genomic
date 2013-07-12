@@ -70,21 +70,25 @@ namespace mapping
 		index2chr chr;
 	public:
 		ChromosomesMap() {
+			
 			// Map numeric values of chromosomes and alternatives prefixed with chr
 			char s[6];
 			for (chromid i = 1; i <= nChromosomes; ++i) {
 				sprintf(s, "%d", i); index[s] = i;
 				index[s] = i;
 			}
-			index["X"] = 23;
-			index["Y"] = 24;
-			//index["MT"] = 25;
 			
 			// Generate reverse mapping (while the mapping is still one-to-one)
 			chr2index::const_iterator it, end = index.end();
 			for (it = index.begin(); it != end; ++it) {
 				chr.insert( make_pair(it->second, it->first) );
 			}
+			
+			// Map special cases
+			index["X"] = 23;
+			index["Y"] = 24;
+			chr[23] = "X";
+			chr[24] = "Y";
 			
 			// Map alternative names for chromosomes prefixed with chr
 			for (chromid i = 1; i <= nChromosomes; ++i) {
@@ -93,7 +97,6 @@ namespace mapping
 			}
 			index["chrX"] = 23;
 			index["chrY"] = 24;
-			//index["chrMT"] = 25;
 		}	
 		
 		chromid operator[] (const string& chr) {
