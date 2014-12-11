@@ -6,7 +6,7 @@ from genompy.cn import *
 
 def main():
 
-	pr = argparse.ArgumentParser(description='Create copy number data matrix from GISTIC all lesions file.')
+	pr = argparse.ArgumentParser(description='Create gene copy number data matrix from GISTIC all lesions file.')
 
 	pr.add_argument('input', help='input GISTIC all lesions file')
 	pr.add_argument('output', help='output CN file')

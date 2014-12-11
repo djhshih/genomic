@@ -263,7 +263,8 @@ class CytobandRegion(Region):
 		start = cytobandTable.cytobands[idx[0]].start
 		end = cytobandTable.cytobands[idx[-1]].end
 
-		super().__init__(chromosome = chromosome, start = start, end = end)
+		#super().__init__(chromosome = chromosome, start = start, end = end)
+		Region.__init__(self, chromosome = chromosome, start = start, end = end)
 
 
 class GeneRegion(Region):
@@ -271,7 +272,8 @@ class GeneRegion(Region):
 	def __init__(self, name, geneDatabase):
 		# initialize all fields required by base class
 		# some of these will be overwritten below
-		super().__init__()
+		#super().__init__()
+		Region.__init__(self)
 
 		self.name = name
 		self.geneDb = geneDatabase
@@ -349,7 +351,8 @@ class GeneRegion(Region):
 class GenomicRegion(Region):
 
 	def __init__(self, coord=None, geneDatabase=None, region=None):
-		super().__init__(coord, region=region)
+		#super().__init__(coord, region=region)
+		Region.__init__(self, coord, region=region)
 		self.geneDb = geneDatabase
 
 	@property
@@ -360,7 +363,8 @@ class GenomicRegion(Region):
 class AberrantRegion(GenomicRegion):
 
 	def __init__(self, coord=None, geneDatabase=None, state=None, samples=None, region=None, score=0):
-		super().__init__(coord, geneDatabase, region)
+		#super().__init__(coord, geneDatabase, region)
+		GenomicRegion.__init__(self, coord, geneDatabase, region)
 		if samples:
 			self.samples = samples
 		else:
@@ -388,7 +392,8 @@ class AberrantRegion(GenomicRegion):
 		else:
 			state = '0'
 
-		return '{}|{}'.format(super().__str__(), state)
+		#return '{}|{}'.format(super().__str__(), state)
+		return '{}|{}'.format(Region.__str__(self), state)
 	
 	def delimited(self, delimiter='\t'):
 		z = (str(x) for x in (self.chromosome, self.start, self.end, self.count, self.state))

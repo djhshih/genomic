@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
+##!/usr/bin/env python3
 
 import os, argparse
 
@@ -85,6 +86,7 @@ pr.add_argument('sample', help='name of sample')
 pr.add_argument('coord', help='coordinates to plot')
 pr.add_argument('coord2', help='zoomed coordinates to plot')
 pr.add_argument('--seg', help='copy-number segmentation file')
+pr.add_argument('--in_scale', help='original copy number scale', default='linear')
 pr.add_argument('--scale', help='copy number scale', default='log')
 pr.add_argument('--cytoband', help='UCSC cytoBand flat file', default='cytoBand.txt')
 pr.add_argument('--geneDb', help='gene datatbase', default='refGene.db')
@@ -101,6 +103,7 @@ pr.add_argument('--downsample', help='downsampling windows', type=int, nargs=2, 
 argv = pr.parse_args()
 
 scale = argv.scale
+in_scale = argv.in_scale
 sample_name = argv.sample
 
 sampleSet = None
@@ -158,7 +161,7 @@ idx = (chromosomes == region.chromosome.encode()) & (positions >= region.start) 
 x, y = positions[idx], profile[idx]
 
 if scale == 'log':
-	y = np.log2(y/2)
+	if in_scale != 'log': y = np.log2(y/2)
 	yref = 0
 else:
 	yref = 2
