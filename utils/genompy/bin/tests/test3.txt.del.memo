@@ -1,0 +1,2 @@
+index	chromosome	region_start	region_end	peak_start	peak_end	enlarged_peak_start	enlarged_peak_end	n_genes_in_region	genes_in_region	n_genes_in_peak	genes_in_peak	n_genes_on_chip	genes_on_chip	top 3
+1	4	139945562	140777496	140193779	140225496	140186054	140407892	7	C4orf49,CCRN4L,ELF2,NAA15,NDUFC1,RAB33B,SETD7	3	C4orf49,CCRN4L,ELF2

@@ -1,0 +1,2 @@
+index	chromosome	region_start	region_end	peak_start	peak_end	enlarged_peak_start	enlarged_peak_end	n_genes_in_region	genes_in_region	n_genes_in_peak	genes_in_peak	n_genes_on_chip	genes_on_chip	top 3
+1	1	202018583	203206539	202780884	202785464	202017953	202796430	16	ETNK2,GOLT1A,KISS1,LINC00303,LOC127841,LRRN2,MDM4,NFASC,PIK3C2B,PLEKHA6,PPP1R15B,REN,SNRPE,SOX13,ZBED6,ZC3H11A	14	ETNK2,GOLT1A,KISS1,LINC00303,LOC127841,MDM4,PIK3C2B,PLEKHA6,PPP1R15B,REN,SNRPE,SOX13,ZBED6,ZC3H11A
