@@ -20,7 +20,7 @@ configure_file(
 )
 
 # include custom modules
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/Modules")
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules" ${CMAKE_MODULE_PATH})
 
 
 
@@ -38,4 +38,4 @@ install(TARGETS genomic RUNTIME DESTINATION bin)
 add_subdirectory(tests)
 add_subdirectory(examples)
 add_subdirectory(graphic)
-add_subdirectory(command)
+#add_subdirectory(command)

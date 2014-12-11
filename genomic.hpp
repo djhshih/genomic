@@ -9,5 +9,6 @@
 #include "genomic_convert.hpp"
 #include "genomic_filter.hpp"
 #include "genomic_clean.hpp"
+#include "genomic_sort.hpp"
 
 #endif

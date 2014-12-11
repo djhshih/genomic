@@ -26,6 +26,7 @@ int main(int argc, char **argv)
 		commands["convert"] = new Convert();
 		commands["filter"] = new Filter();
 		commands["clean"] = new Clean();
+		commands["sort"] = new Sort();
 		
 		// Use the first argument (excluding name of program itself)
 		//   to determine the command
@@ -74,7 +75,7 @@ int main(int argc, char **argv)
 			CommandMap::iterator it;
 			CommandMap::const_iterator end = commands.end();
 			for (it = commands.begin(); it != end; ++it) {
-				cout << "  " << it->first << '\t'
+				cout << "  " << it->first << "  \t"
 					<< *(it->second) << endl;
 			}
 			cout << endl;

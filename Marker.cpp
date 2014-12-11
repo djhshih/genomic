@@ -2,36 +2,41 @@
 
 namespace marker {
 
-	void Set::read(const string& fileName, const string& platform, bool doSort) {
+	void Set::read(const string& fileName, const string& platform, bool doSort, bool named) {
 		ifstream file(fileName.c_str(), ios::in);
 		if (!file.is_open()) throw runtime_error("Failed to open input file");
-		read(file, platform, doSort);
+		read(file, platform, doSort, named);
 		file.close();
 	}
 	
-	void Set::read(ifstream& file, const string& platform, bool doSort) {
+	void Set::read(ifstream& file, const string& platform, bool doSort, bool named) {
 		clear();
 		// assume M x 3 data matrix with M makers
 		// columns: marker, chromosome, position
 		
 		if (!doSort) {
+			// add extra chromosome for unsorted markers
 			unsortedChromIndex = set.size();
 			set.resize(set.size()+1);
 		}
+		
+		namedMarkers = named;
 		
 		const char delim = io.delim;
 		size_t lineCount = 0;
 		string line;
 		position pos;
-		string markerName, chromName, s;
+		string markerName = "", chromName, s;
 		while (true) {
+			// discard the header line
 			getline(file, line);
 			
 			if (file.eof()) break;
 			if (++lineCount > io.nSkippedLines && lineCount != io.headerLine) {
 					istringstream stream(line);
-					//stream >> markerName >> chromName >> pos;
-					getline(stream, markerName, delim);
+					if (named) {
+						getline(stream, markerName, delim);
+					}
 					getline(stream, chromName, delim);
 					getline(stream, s, delim);
 					pos = atol(s.c_str());
@@ -55,6 +60,38 @@ namespace marker {
 		}
 		
 		if (doSort) sort();
+	}
+	
+	void Set::write(const string& fileName) {
+		ofstream file(fileName.c_str(), ios::out);
+		if (!file.is_open()) throw runtime_error("Failed to open output file");
+		write(file);
+		file.close();
+	}
+	
+	void Set::write(ofstream& file) {
+		if (set.empty()) return;
+		
+		const char delim = io.delim;
+		
+		// print header line
+		if (namedMarkers) {
+			file << "marker" << delim;
+		}
+		file << "chromosome" << delim << "position" << endl;
+		
+		// iterate through each chromosome in the vector of vector $set
+		for (size_t i = 0; i < set.size(); ++i) {
+			const ChromosomeMarkers& markers = set[i];
+			ChromosomeMarkers::const_iterator it, end = markers.end();
+			for (it = markers.begin(); it != end; ++it) {
+				const Marker* marker = (*it);
+				if (namedMarkers) {
+					file << marker->name << delim;
+				}
+				file << mapping::chromosome[marker->chromosome] << delim << marker->pos << endl;
+			}
+		}
 	}
 	
 	void Set::sort() {

@@ -51,10 +51,11 @@ namespace marker
 		typedef vector<ChromosomeMarkers> GenomeMarkers;
 		
 		string platform;
+		bool namedMarkers;
 		
 		Set(const string& markerSetPlatform)
 		: refCount(1), set(nChromosomes), unsortedChromIndex(0),
-			platform(markerSetPlatform) {
+			platform(markerSetPlatform), namedMarkers(true) {
 		}
 		
 		~Set() {
@@ -100,8 +101,11 @@ namespace marker
 			this->io = io;
 		}
 		
-		void read(const string& fileName, const string& platform, bool doSort=true);
-		void read(ifstream& file, const string& platform, bool doSort=true);
+		void read(const string& fileName, const string& platform, bool doSort=true, bool named=false);
+		void read(ifstream& file, const string& platform, bool doSort=true, bool named=false);
+		
+		void write(const string& fileName);
+		void write(ofstream& file);
 		
 		void distribute();
 		
