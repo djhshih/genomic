@@ -372,7 +372,7 @@ public:
 	void filter(typename filter_operators::const_iterator begin, typename filter_operators::const_iterator end, bool inverse=false, bool merge=false);
 	
 	template <typename overlapper_type>
-	void filter(SegmentedSampleSet& ref, const typename ENABLE_IF_OVERLAPPER::type& overlap_checker, bool inverse=false, bool merge=false, bool aberrantOnly=false, bool optimize=true);
+	void filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool inverse=false, bool merge=false, bool aberrantOnly=false, bool optimize=true);
 	
 	void filter(SegmentedSampleSet& ref, float diceThreshold, bool inverse=false, bool merge=false, bool aberrantOnly=false, bool optimize=true) {
 		dice_overlapper checker(diceThreshold);
