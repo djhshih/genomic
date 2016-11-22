@@ -367,12 +367,12 @@ public:
 	void reset();
 	
 	template <typename filter_operator_type>
-	void filter(const filter_operator_type& f, bool inverse, bool merge);
+	void filter(const filter_operator_type& f, bool inverse=false, bool merge=false);
 	
-	void filter(typename filter_operators::const_iterator begin, typename filter_operators::const_iterator end, bool inverse, bool merge);
+	void filter(typename filter_operators::const_iterator begin, typename filter_operators::const_iterator end, bool inverse=false, bool merge=false);
 	
 	template <typename overlapper_type>
-	void filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool inverse, bool merge, bool aberrantOnly, bool optimize);
+	void filter(SegmentedSampleSet& ref, const typename ENABLE_IF_OVERLAPPER::type& overlap_checker, bool inverse=false, bool merge=false, bool aberrantOnly=false, bool optimize=true);
 	
 	void filter(SegmentedSampleSet& ref, float diceThreshold, bool inverse=false, bool merge=false, bool aberrantOnly=false, bool optimize=true) {
 		dice_overlapper checker(diceThreshold);
@@ -600,7 +600,7 @@ void SegmentedSampleSet<V>::reset() {
 
 template <typename V>
 template <typename filter_operator_type>
-void SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool inverse=false, bool merge=false)
+void SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool inverse, bool merge)
 {
 	size_t filteredCount = 0;
 	// iterate through samples
@@ -629,7 +629,7 @@ void SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool inverse=f
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator filterBegin, typename filter_operators::const_iterator filterEnd, bool inverse=false, bool merge=false) {
+void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator filterBegin, typename filter_operators::const_iterator filterEnd, bool inverse, bool merge) {
 	size_t filteredCount = 0;
 	// iterate through samples
 	typename Samples::iterator it;
@@ -666,7 +666,7 @@ void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator fil
 
 template <typename V>
 template <typename overlapper_type>
-void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool inverse=false, bool merge=false, bool aberrantOnly=false, bool optimize=true)
+void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool inverse, bool merge, bool aberrantOnly, bool optimize)
 {
 	filter_operators filters;
 	

@@ -10,6 +10,7 @@ Work in progress.
 * OpenGL
 * SDL
 * freetype
+* ftgl
 * lua (>= 5.1)
 
 ### Build ###
