@@ -189,7 +189,7 @@ public:
 					
 					if (optimize && overlap_checker.bounds(seg.start, seg.end, lower, upper)) {
 						// optimize algorithm by restricting Dice coefficient calculation to lower and upper bound region,
-						//   based on defiend threshold
+						//   based on defined threshold
 						//position_diff lower = 2*(diceThreshold-1)/diceThreshold*seg.end + (2-diceThreshold)/diceThreshold*(seg.start - 1) + 1;
 						//if (lower < 0) lower = 0;
 						//position_diff upper = 2*(1-diceThreshold)/(2-diceThreshold)*seg.end + diceThreshold/(2-diceThreshold)*(seg.start - 1) + 1;
@@ -207,6 +207,7 @@ public:
 					for (size_t i = lowerIndex; i <= upperIndex; ++i) {
 						// calculate Dice coefficient
 						position_diff intersection = min(refChrom[i].end, seg.end) - max(refChrom[i].start, seg.start) + 1;
+
 						if (intersection > 0) {
 							//float dice = 2 * float(intersection) / (refChrom[i].length() + seg.length());
 							//if (dice > diceThreshold) {
@@ -645,6 +646,8 @@ void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator fil
 			typename Segments::const_iterator segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
 				// use filter functor to flag segment
+				// combine filters by AND operator: all filters must be true
+				// for the filter flag to remain true
 				bool flag = true;
 				for (typename filter_operators::const_iterator filterIt = filterBegin; filterIt != filterEnd; ++filterIt) {
 					// apply filter
@@ -679,6 +682,26 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, const ENABLE_IF_OVER
 	filters.push_back(&refFilter);
 	
 	filter(filters.begin(), filters.end(), inverse, merge);
+}
+
+template <typename V>
+void mergeSegments(Segment<V>* seg1, Segment<V>* seg2) {
+	// merge next unmarked segment to previous unmarked segment
+	seg1->end = seg2->end;
+	seg1->count += seg2->count;
+	
+	// update value with weighted average
+	if (neq(seg1->value, seg2->value)) {
+		float totalCount = seg1->count + seg2->count;
+		seg1->value = 
+			seg1->value * (seg1->count/totalCount) + 
+			seg2->value * (seg2->count/totalCount);
+	}
+	
+	// mark the segment for removal, since it has been merged
+	// also mark it as invalid, s.t. it is not a subsequent candidate for merging
+	seg2->flag = true;
+	seg2->valid = false;
 }
 
 template <typename V>
@@ -724,6 +747,28 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 					// only create new copy of unflagged segments
 					Segment<V> seg(chri+1, segIt->start, segIt->end, segIt->count, segIt->value);
 					prevUnmarkedSegment = sample->addToChromosome(chri, seg);
+
+					// mark the segment for removal, since it has been merged
+					// also mark it as invalid, s.t. it is not a subsequent candidate for merging
+					// assess whether to merge current segment with the segment
+					// that follows immediately, if it is not flagged
+					if (segIt + 1 != segEnd) {
+						// current segment is not the last segment: next segment is valid
+						nextUnmarkedSegment = &(*(segIt + 1));
+						if (!nextUnmarkedSegment->flag && nextUnmarkedSegment->valid && merge) {
+							// check if values are essentially the same for the two segments
+							if ( prevUnmarkedSegment != NULL && nextUnmarkedSegment != NULL &&
+									 absdiff(prevUnmarkedSegment->value, nextUnmarkedSegment->value) <= cna.deviation ) {
+
+								trace("Merge segments from chr%s:%d-%d to chr%s:%d-%d in %s\n",
+									chrom, prevUnmarkedSegment->start, prevUnmarkedSegment->end,
+									chrom, nextUnmarkedSegment->start, nextUnmarkedSegment->end,
+									(*it)->name.c_str() );
+
+								mergeSegments(prevUnmarkedSegment, nextUnmarkedSegment);
+							}
+						}
+					}
 					
 				} else if ( segIt->valid && merge ) {
 					// segment is flagged for deletion
@@ -732,6 +777,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 					
 					// only valid segments are candidates for merging, as guard against merging of consecutive segments,
 					//   which results in undesirable behaviour
+
 					// since only flagged segments are ever marked as valid
 					// copying only unflagged segments ensure that all segments are valid
 					
@@ -769,26 +815,15 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 								chrom, prevUnmarkedSegment->start, prevUnmarkedSegment->end,
 								chrom, nextUnmarkedSegment->start, nextUnmarkedSegment->end,
 								(*it)->name.c_str() );
-							
-							// merge next unmarked segment to previous unmarked segment
-							prevUnmarkedSegment->end = nextUnmarkedSegment->end;
-							prevUnmarkedSegment->count += nextUnmarkedSegment->count;
-							float totalCount = prevUnmarkedSegment->count + nextUnmarkedSegment->count;
-							
-							// update value with weighted average
-							if (neq(prevUnmarkedSegment->value, nextUnmarkedSegment->value)) {
-								prevUnmarkedSegment->value = 
-									prevUnmarkedSegment->value * (prevUnmarkedSegment->count/totalCount) + 
-									nextUnmarkedSegment->value * (nextUnmarkedSegment->count/totalCount);
-							}
-							
-							// mark the segment for removal, since it has been merged
-							// also mark it as invalid, s.t. it is not a subsequent candidate for merging
-							nextUnmarkedSegment->flag = true;
-							nextUnmarkedSegment->valid = false;
+
+							mergeSegments(prevUnmarkedSegment, nextUnmarkedSegment);
 							
 						} else {
-							
+
+							// upstream and downstream segments cannot be merged
+							// determine whether to merge current flagged segment to
+							// upstream or downstream based on size
+
 							// Compare upstream and downstream unmarked segments
 							// skip adding 1 to get correct size
 							position_diff prevSize, nextSize;
