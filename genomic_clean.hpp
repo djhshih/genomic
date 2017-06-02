@@ -23,8 +23,9 @@ public:
 		opts.add_options()
 			("help", "print help message")
 			("input,i", po::value<string>(), "sample set file")
-			("format,f", po::value<string>(), "input file format [default: determined from file extension]")
 			("output,o", po::value<string>(), "output file")
+			("format,f", po::value<string>(), "input file format [default: determined from file extension]")
+			("inverse,v", po::value<bool>(), "select instead of filter overlapping segments")
 			("merge,m", po::value<bool>(), "merge filtered segments with upstream/downstream segments?")
 			("count", po::value<position>(), "threshold for number of markers in segment")
 			("length", po::value<position>(), "threshold for segment length")
@@ -32,7 +33,7 @@ public:
 			("state_diff", po::value<rvalue>(), "threshold for difference from reference state")
 			("ref_state", po::value<rvalue>(), "reference state")
 			;
-		popts.add("input", 1).add("reference", 1).add("output", 1);
+		popts.add("input", 1).add("output", 1);
 		
 	}
 	
@@ -50,9 +51,9 @@ public:
 		
 		set.set(CNACriteria(refState, stateDiff));
 		
-		if (count > 0) set.filter(spurious_segment_filter<typename SampleSetType::Value>(count), merge);
-		if (length > 0) set.filter(small_segment_filter<typename SampleSetType::Value>(length), merge);
-		if (balanced) set.filter(balanced_segment_filter<typename SampleSetType::Value>(refState, stateDiff), false);
+		if (count > 0) set.filter(spurious_segment_filter<typename SampleSetType::Value>(count), inverse, merge);
+		if (length > 0) set.filter(small_segment_filter<typename SampleSetType::Value>(length), inverse, merge);
+		if (balanced) set.filter(balanced_segment_filter<typename SampleSetType::Value>(refState, stateDiff), inverse, false);
 		
 		set.write(outputFileName);
 	}
@@ -60,7 +61,7 @@ public:
 	void run() {
 		
 		if (vm.count("help")) {
-			cout << "usage:  " << progname << " clean [options] <sample set file> <reference set file> <output file>" << endl;
+			cout << "usage:  " << progname << " clean [options] <sample set file> <output file>" << endl;
 			cout << opts << endl;
 			return;
 		}
@@ -98,7 +99,7 @@ private:
 	string inputFileName, outputFileName;
 	data::Type inputType;
 	float diceThreshold;
-	bool merge, balanced;
+	bool inverse, merge, balanced;
 	position count, length;
 	float stateDiff, refState;
 	
@@ -123,6 +124,12 @@ private:
 			outputFileName = vm["output"].as<string>();
 		} else {
 			outputFileName = name::filestem(inputFileName) + ".filtered." + name::fileext(inputFileName);
+		}
+
+		if (vm.count("inverse")) {
+			inverse = vm["inverse"].as<bool>();
+		} else {
+			inverse = false;
 		}
 		
 		if (vm.count("merge")) {
