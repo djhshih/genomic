@@ -64,19 +64,19 @@ public:
 		
 		if (score == "dice") {
 			dice_overlapper checker(threshold);
-			set.filter<dice_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
+			set.template filter<dice_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
 		} else if (score == "query") {
 			query_overlapper checker(threshold);
-			set.filter<query_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
+			set.template filter<query_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
 		} else if (score == "reference") {
 			reference_overlapper checker(threshold);
-			set.filter<reference_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
+			set.template filter<reference_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
 		} else if (score == "min") {
 			min_overlapper checker(threshold);
-			set.filter<min_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
+			set.template filter<min_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
 		} else if (score == "max") {
 			max_overlapper checker(threshold);
-			set.filter<max_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
+			set.template filter<max_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
 		} else {
 			throw runtime_error("Invalid overlap score method specified.");
 		}
