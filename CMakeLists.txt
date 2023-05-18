@@ -36,6 +36,6 @@ target_link_libraries(genomic boost_program_options)
 install(TARGETS genomic RUNTIME DESTINATION bin)
 
 add_subdirectory(tests)
-add_subdirectory(examples)
-add_subdirectory(graphic)
+#add_subdirectory(examples)
+#add_subdirectory(graphic)
 #add_subdirectory(command)
