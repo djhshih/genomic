@@ -39,6 +39,7 @@ public:
 	GenericSampleSet& operator= (GenericSampleSet other) {
 		// pass other by value to automatically create temporary copy
 		std::swap(rep, other.rep);
+		return *this;
 	}
 	
 	~GenericSampleSet() {
