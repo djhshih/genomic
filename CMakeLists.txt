@@ -26,11 +26,12 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules" ${CMAKE_MODULE_PATH}
 
 find_package(Boost REQUIRED)
 
-include_directories(${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/lib ${BOOST_INCLUDES})
+include_directories(${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src ${BOOST_INCLUDES})
 
 set(genomic_LIB_SRCS
-	lib/genomic_common.cpp
+	src/genomic_common.cpp
 	lib/global.cpp
+	lib/Sample.cpp
 	lib/SampleSet.cpp
 	lib/GenericSampleSet.cpp
 	lib/Marker.cpp
