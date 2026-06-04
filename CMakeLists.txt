@@ -26,12 +26,20 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules" ${CMAKE_MODULE_PATH}
 
 find_package(Boost REQUIRED)
 
-include_directories(${PROJECT_BINARY_DIR} ${BOOST_INCLUDES})
+include_directories(${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/lib ${BOOST_INCLUDES})
 
-set(genomic_SRCS genomic.cpp genomic_common.cpp global.cpp SampleSet.cpp GenericSampleSet.cpp Marker.cpp)
+set(genomic_LIB_SRCS
+	lib/genomic_common.cpp
+	lib/global.cpp
+	lib/SampleSet.cpp
+	lib/GenericSampleSet.cpp
+	lib/Marker.cpp
+)
 
-add_executable(genomic ${genomic_SRCS})
-target_link_libraries(genomic boost_program_options)
+add_library(genomic_lib ${genomic_LIB_SRCS})
+
+add_executable(genomic src/genomic.cpp)
+target_link_libraries(genomic genomic_lib boost_program_options)
 
 install(TARGETS genomic RUNTIME DESTINATION bin)
 
