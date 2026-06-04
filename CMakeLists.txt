@@ -24,7 +24,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules" ${CMAKE_MODULE_PATH}
 
 
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED CONFIG)
 
 include_directories(${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src ${BOOST_INCLUDES})
 
