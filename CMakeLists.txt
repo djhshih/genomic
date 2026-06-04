@@ -1,5 +1,5 @@
+cmake_minimum_required(VERSION 3.5)
 project(genomic)
-cmake_minimum_required(VERSION 2.8)
 enable_testing()
 
 # configure project properties
@@ -37,5 +37,3 @@ install(TARGETS genomic RUNTIME DESTINATION bin)
 
 add_subdirectory(tests)
 #add_subdirectory(examples)
-#add_subdirectory(graphic)
-#add_subdirectory(command)
