@@ -40,67 +40,22 @@ public:
 		
 		
 		switch (inputType) {
-			
-			case data::picnic: {
-				
-				const data::Type defaultOutType = data::segmented_ascn;
-		
-				const string& markersFileName = inputFileNames[0];
-				const string& samplesFileName = inputFileNames[1];
-				
-				cout << "Input files: " << inputFileNames << endl;
-
-				ifstream samplesFile(samplesFileName.c_str());
-				if (!samplesFile.is_open()) {
-					throw runtime_error("Failed to open samples file.");
-				}
-				
-				vector<string> fileNames;
-				while (!samplesFile.eof()) {
-					string sample;
-					samplesFile >> sample;
-					if (sample != "") {
-						fileNames.push_back(name::filepath(samplesFileName) + sample);
-						cout << sample << endl;
-					}
-				}
-					
-				PicnicSampleSet pset;
-				pset.read(fileNames, markersFileName, true);
-				
-				switch (outputType) {
-					case data::segmented:
-					case data::segmented_ascn: {
-						SegmentedSampleSet<PicnicSampleSet::Value> sset(pset);
-						sset.write(outputFileName);
-						break;
-					}
-					case data::raw:
-					case data::raw_ascn: {
-						pset.write(outputFileName);
-						break;
-					}
-					default:
-						throw invalid_conversion("Unsupported output type.");
-				}
-				
-				break;
-			}
-			
 			case data::dchip: {
-				
 				throw logic_error("Conversion not implemented");
 				break;
 			}
 			
 			case data::penncnv: {
-				
 				throw logic_error("Conversion not implemented");
 				break;
 			}
 				
 			case data::cnag: {
-					
+				throw logic_error("Conversion not implemented");
+				break;
+			}
+			
+			case data::picnic: {
 				throw logic_error("Conversion not implemented");
 				break;
 			}
@@ -265,6 +220,8 @@ private:
 				break;
 			case data::segmented_ascn:
 				defaultOutputType = data::raw_ascn;
+				break;
+			default:
 				break;
 		}
 		

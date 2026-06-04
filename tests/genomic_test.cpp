@@ -140,31 +140,6 @@ BOOST_FIXTURE_TEST_CASE(InputOutput, IOFixture)
 	test();
 }
 
-BOOST_AUTO_TEST_CASE(InputOutput_Picnic)
-{
-	BOOST_TEST_MESSAGE("Input output - Picnic");
-	
-	FilesDiff diff;
-	
-	vector<string> fileNames(2);
-	fileNames[0] = "picnic1a.in";
-	fileNames[1] = "picnic1b.in";
-	string markersFileName = "picnic.snp6.in";
-	string out = "picnic1.out";
-	string ans = "picnic1.ans";
-	string out_seg = "picnic1.seg";
-	string ans_seg = "picnic1.seg.ans";
-	
-	PicnicSampleSet pset;
-	pset.read(fileNames, markersFileName);
-	pset.write(out);
-	BOOST_CHECK_EQUAL(diff.different(out, ans), 0);
-	
-	SegmentedSampleSet<PicnicSampleSet::Value> sset(pset);
-	sset.write(out_seg);
-	BOOST_CHECK_EQUAL(diff.different(out_seg, ans_seg), 0);
-}
-
 BOOST_AUTO_TEST_CASE(RawSampleSet_CopyConstructor)
 {
 	BOOST_TEST_MESSAGE("RawSampleSet copy constructor");

@@ -8,6 +8,5 @@
 #include "ReferenceSegmentedSampleSet.hpp"
 #include "SplitRawSampleSet.hpp"
 #include "GenericSampleSet.hpp"
-#include "PicnicSampleSet.hpp"
 
 #endif
