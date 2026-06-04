@@ -224,25 +224,9 @@ CLI main
         -> global typedefs + mappings + properties
 ```
 
-## Graphics subsystem
-
-### 12. Optional/secondary graphics code
-There is a separate graphics-oriented subsystem under:
-- **`graphic/`**
-- **`command/`**
-
-Key files include:
-- `graphic/Window.hpp/cpp`
-- `graphic/Graph.hpp/cpp`
-- `command/graphic.cpp`
-- `command/graphic_lua.cpp`
-- `command/Script*.hpp/cpp`
-
-This subsystem uses SDL, OpenGL, FTGL, and scripting experiments to render genomic graphs interactively. It is currently not part of the main build in the top-level `CMakeLists.txt` (`add_subdirectory(graphic)` and `add_subdirectory(command)` are commented out), so architecturally it is best understood as an experimental or auxiliary module rather than part of the core CLI pipeline.
-
 ## Build and test structure
 
-### 13. Build
+### 12. Build
 - **`CMakeLists.txt`** builds the main executable from a small set of translation units:
   - `genomic.cpp`
   - `genomic_common.cpp`
@@ -252,7 +236,7 @@ This subsystem uses SDL, OpenGL, FTGL, and scripting experiments to render genom
   - `Marker.cpp`
 - Much of the functional code is header-only through templates.
 
-### 14. Tests
+### 13. Tests
 - **`tests/genomic_test.cpp`**
   - Exercises I/O, conversions, copy behavior, filtering, and mapping utilities.
   - Confirms the architecture’s main contract: datasets can be read, transformed, and written reproducibly.
