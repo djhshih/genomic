@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 4.0)
 project(genomic)
 enable_testing()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -41,6 +41,7 @@ set(genomic_LIB_SRCS
 
 add_library(genomic_lib ${genomic_LIB_SRCS})
 target_include_directories(genomic_lib PUBLIC ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src)
+set_target_properties(genomic_lib PROPERTIES OUTPUT_NAME "genomic")
 
 if(GENOMIC_ENABLE_WARNINGS)
 	target_compile_options(genomic_lib PRIVATE
@@ -59,6 +60,7 @@ if(GENOMIC_ENABLE_WARNINGS)
 endif()
 
 install(TARGETS genomic RUNTIME DESTINATION bin)
+
 
 add_subdirectory(tests)
 #add_subdirectory(examples)
