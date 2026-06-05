@@ -1,5 +1,5 @@
-#ifndef genomic_fiilter_h
-#define genomic_fiilter_h
+#ifndef genomic_convert_h
+#define genomic_convert_h
 
 #include <stdexcept>
 

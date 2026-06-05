@@ -24,7 +24,7 @@ public:
 };
 
 template <typename T>
-class LinearChromosome : Chromosome<T>
+class LinearChromosome : public Chromosome<T>
 {
 public:
 	typedef T DataType;
@@ -49,8 +49,7 @@ public:
 		items.swap(chr.items);
 		return *this;
 	}
-	~LinearChromosome() {
-	}
+	~LinearChromosome() {}
 	T& at(size_t i) {
 		return items[i];
 	}
@@ -79,7 +78,7 @@ public:
 		items.pop_back();
 	}
 	void clear() {
-		// deallocate memory if T is a pointe type
+		// deallocate memory if T is a pointer type
 		free( typename boost::is_pointer<T>::type() );
 		items.clear();
 	}
@@ -89,7 +88,7 @@ public:
 	
 private:
 	
-	void duplicate(const typename boost::true_type& t) {
+	void duplicate(const typename boost::true_type&) {
 		for (chromid i = 0; i < items.size(); ++i) {
 			items[i] = new typename boost::remove_pointer<T>::type(*(items[i]));
 		}

@@ -190,7 +190,9 @@ namespace marker
 		}
 		
 		void ref(Set* set) {
-			if (set != NULL) ref(set->platform);
+			if (set != NULL) {
+				ref(set->platform);
+			}
 		}
 		
 		void ref(const std::string& markerSetPlatform) {
@@ -201,7 +203,9 @@ namespace marker
 		}
 		
 		void unref(Set* set) {
-			if (set != NULL) unref(set->platform);
+			if (set != NULL) {
+				unref(set->platform);
+			}
 		}
 		
 		void unref(const std::string& markerSetPlatform) {

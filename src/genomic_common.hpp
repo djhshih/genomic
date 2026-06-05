@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 
@@ -26,7 +27,7 @@ extern std::string progname;
 class Command {
 public:
 	Command() {}
-	Command(const std::string& desc) : description(desc) {}
+	explicit Command(const std::string& desc) : description(desc) {}
 	virtual ~Command() {}
 	
 	Command& parse(int argc, char *argv[]) {
