@@ -9,7 +9,7 @@ namespace marker {
 		file.close();
 	}
 	
-	void Set::read(std::ifstream& file, const std::string& platform, bool doSort, bool named) {
+	void Set::read(std::ifstream& file, const std::string&, bool doSort, bool named) {
 		clear();
 		// assume M x 3 data matrix with M makers
 		// columns: marker, chromosome, position

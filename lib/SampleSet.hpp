@@ -28,7 +28,7 @@ public:
 	SampleSet(marker::Set* markerSet) : markers(markerSet) {}
 	
 	SampleSet(const SampleSet& other)
-	: io(other.io), markers(other.markers), fileName(other.fileName) {
+	: io(other.io), fileName(other.fileName), markers(other.markers) {
 		marker::manager.ref(markers);
 	}
 	

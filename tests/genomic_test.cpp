@@ -54,7 +54,6 @@ struct IOFixture
 		
 		string line, s;
 		istringstream stream;
-		int count = 0;
 		while (true) {
 			getline(configf, line);
 			if (configf.eof()) break;
@@ -112,7 +111,7 @@ struct IOFixture
 		}
 	}
 	
-	IOFixture() : chrComment('#'), chrClass('@'), diff(1) {	
+	IOFixture() : diff(1), chrComment('#'), chrClass('@') {	
 		
 		sets.resize(tests.configFilenames.size());
 		filenames.resize(tests.configFilenames.size());

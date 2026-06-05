@@ -1,5 +1,5 @@
 #ifndef genomic_GenericSampleSet_h
-#define genomic_GenericSampleSet
+#define genomic_GenericSampleSet_h
 
 #include <algorithm>
 #include <stdexcept>
@@ -34,7 +34,7 @@ public:
 	GenericSampleSet() : rep(NULL) {}
 	
 	GenericSampleSet(const GenericSampleSet& other)
-	: rep(other.clone()) {}
+	: Base(other), rep(other.clone()) {}
 	
 	GenericSampleSet& operator= (GenericSampleSet other) {
 		// pass other by value to automatically create temporary copy

@@ -47,6 +47,7 @@ public:
 	}
 	LinearChromosome<T>& swap(LinearChromosome<T>& chr) {
 		items.swap(chr.items);
+		return *this;
 	}
 	~LinearChromosome() {
 	}
@@ -56,7 +57,7 @@ public:
 	T& operator[](size_t i) {
 		return items[i];
 	}
-	const size_t size() const {
+	size_t size() const {
 		return items.size();
 	}
 	iterator begin() {
@@ -93,7 +94,7 @@ private:
 			items[i] = new typename boost::remove_pointer<T>::type(*(items[i]));
 		}
 	}
-	void duplicate(const typename boost::false_type& t) {}
+	void duplicate(const typename boost::false_type&) {}
 	
 	void free(const typename boost::true_type&) {
 		for (chromid i = 0; i < items.size(); ++i) {

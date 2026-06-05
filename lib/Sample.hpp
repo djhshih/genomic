@@ -46,7 +46,7 @@ public:
 	void clear() {
 		items.clear();
 	}
-	const size_t size() const {
+	size_t size() const {
 		return items.size();
 	}
 	Chromosome& at(chromid chromIndex) {

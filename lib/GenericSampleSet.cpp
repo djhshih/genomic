@@ -18,6 +18,7 @@ void GenericSampleSet::_read(std::fstream& file)
 			break;
 		case data::segmented_ascn:
 			rep = new SegmentedSampleSet<alleles_cn>(markers);
+			break;
 		default:
 			throw invalid_conversion("Cannot determine file type from file name extension.");
 	}

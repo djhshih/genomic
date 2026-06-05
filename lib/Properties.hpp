@@ -13,8 +13,8 @@ struct IOProperties
 	             size_t _nSkippedLines=0,
 	             bool _mergeSamples=false)
 	: delim(_delim),
-	  headerLine(_headerLine),
 	  nSkippedLines(_nSkippedLines),
+	  headerLine(_headerLine),
 	  mergeSamples(_mergeSamples)
 	{}
 	

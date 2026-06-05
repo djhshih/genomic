@@ -70,7 +70,7 @@ protected:
 	float threshold;
 public:
 	overlapper_base(float _threshold) : threshold(_threshold) {}
-	virtual bool bounds(position start, position end, position_diff& lower, position_diff& upper) const {
+	virtual bool bounds(position, position, position_diff&, position_diff&) const {
 		return false;
 	}
 	virtual bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const = 0;
@@ -80,7 +80,7 @@ class reference_overlapper : public overlapper_base
 {
 public:
 	reference_overlapper(float threshold) : overlapper_base(threshold) {}
-	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
+	bool overlap(position_diff intersection, position, position reference_length, float& score) const {
 		score = float(intersection) / (reference_length);
 		return (score >= threshold);
 	}
@@ -90,7 +90,7 @@ class query_overlapper : public overlapper_base
 {
 public:
 	query_overlapper(float threshold) : overlapper_base(threshold) {}
-	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
+	bool overlap(position_diff intersection, position query_length, position, float& score) const {
 		score = float(intersection) / (query_length);
 		return (score >= threshold);
 	}
@@ -163,7 +163,7 @@ public:
 	//reference_segment_filter(const ReferenceSet& reference, float _diceThreshold, bool _aberrantOnly, bool _optimize)
 	//: aberrantOnly(_aberrantOnly), optimize(_optimize), ref(reference), diceThreshold(_diceThreshold)
 	reference_segment_filter(const ReferenceSet& reference, const overlapper_type& _overlap_checker, bool _optimize)
-	: optimize(_optimize), ref(reference), overlap_checker(_overlap_checker)
+	: ref(reference), overlap_checker(_overlap_checker), optimize(_optimize)
 	{}
 	
 	bool operator()(Segment<V>& seg) const {
@@ -535,17 +535,30 @@ void SegmentedSampleSet<V>::sort()
 template <typename V>
 size_t SegmentedSampleSet<V>::_find(Segments& array, position x) const {
 	// Initialize left and right beyond array bounds
-	size_t left = -1, right = array.size();
-	while (left + 1 != right) {
+	if (array.size() == 0) {
+		return 0;
+	}
+	size_t left = 0;
+	size_t right = array.size();
+	bool inLeft = false;
+	while (left + 1 < right) {
 		// Check middle of remaining subarray
-		size_t i = (left + right) / 2;
-		if (x < array[i].start) right = i;      // in the left half
-		if (x == array[i].start) return i;      // found
-		if (x > array[i].start) left = i;       // in the left half
+		const size_t i = left + (right - left) / 2;
+		if (x < array[i].start) {
+			right = i;
+		} else if (x == array[i].start) {
+			return i;
+		} else {
+			left = i;
+			inLeft = true;
+		}
+	}
+	if (array[left].start <= x) {
+		return left;
 	}
 	// x is not found in the array
 	// return index of the value that is greatest value lower than the query
-	return ( (left == -1) ? 0 : left );
+	return inLeft ? left : 0;
 }
 
 /*

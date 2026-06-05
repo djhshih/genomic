@@ -24,13 +24,13 @@ public:
 	Segment() : flag(false), aberrant(false), valid(true) {}
 	
 	Segment(chromid chromosomeNumber)
-	: flag(false), aberrant(false), valid(true),
-	chromosome(chromosomeNumber) {}
+	: chromosome(chromosomeNumber),
+	  flag(false), aberrant(false), valid(true) {}
 	
 	Segment(chromid chromosomeNumber, position startPos, position endPos, unsigned long numElements, V segValue)
-	: flag(false), aberrant(false), valid(true),
-	  chromosome(chromosomeNumber),
-	  start(startPos), end(endPos), count(numElements), value(segValue) {}
+	: chromosome(chromosomeNumber),
+	  start(startPos), end(endPos), count(numElements), value(segValue),
+	  flag(false), aberrant(false), valid(true) {}
 	  
 	static bool compare(const Segment& a, const Segment& b) {
 		return a.start < b.start; 

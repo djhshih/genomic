@@ -210,7 +210,6 @@ RawSampleSet<V>::RawSampleSet(const SegmentedSampleSet<V>& set)
 template <typename V>
 void RawSampleSet<V>::_read(std::fstream& file)
 {
-	const char delim = Base::io.delim;
 	const size_t nSkippedLines = Base::io.nSkippedLines, headerLine = Base::io.headerLine;
 	marker::Set* markers = Base::markers;
 	

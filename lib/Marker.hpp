@@ -31,7 +31,7 @@ namespace marker
 		Marker() : flag(false) {}
 		
 		Marker(std::string markerName, chromid markerChromosome, position markerPosition)
-		: flag(false), name(markerName), chromosome(markerChromosome), pos(markerPosition) {}
+		: name(markerName), chromosome(markerChromosome), pos(markerPosition), flag(false) {}
 		
 		static bool compare(const Marker& a, const Marker& b) {
 			return a.pos < b.pos;
@@ -54,8 +54,8 @@ namespace marker
 		bool namedMarkers;
 		
 		Set(const std::string& markerSetPlatform)
-		: refCount(1), set(nChromosomes), unsortedChromIndex(0),
-			platform(markerSetPlatform), namedMarkers(true) {
+		: platform(markerSetPlatform), namedMarkers(true),
+		  set(nChromosomes), unsortedChromIndex(0), refCount(1) {
 		}
 		
 		~Set() {
@@ -83,7 +83,7 @@ namespace marker
 				throw std::logic_error("Unsorted chromosome has yet been initialized.");
 			}
 		}
-		const size_t size() const {
+		size_t size() const {
 			return set.size();
 		}
 		GenomeMarkers::const_iterator begin() {
