@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <map>
+#include <functional>
 #include <stdexcept>
 using namespace std;
 
@@ -12,9 +13,13 @@ namespace po = boost::program_options;
 
 int main(int argc, char **argv)
 {
-	typedef map<string, Command*> CommandMap;
+	typedef map<string, reference_wrapper<Command> > CommandMap;
 	
 	Command* command = NULL;
+	Convert convert;
+	Filter filter;
+	Clean clean;
+	Sort sort;
 	CommandMap commands;
 	
 	bool printUsage = false;
@@ -23,10 +28,10 @@ int main(int argc, char **argv)
 	
 	try {
 	
-		commands["convert"] = new Convert();
-		commands["filter"] = new Filter();
-		commands["clean"] = new Clean();
-		commands["sort"] = new Sort();
+		commands.emplace("convert", ref(convert));
+		commands.emplace("filter", ref(filter));
+		commands.emplace("clean", ref(clean));
+		commands.emplace("sort", ref(sort));
 		
 		// Use the first argument (excluding name of program itself)
 		//   to determine the command
@@ -41,13 +46,9 @@ int main(int argc, char **argv)
 				printVersion = true;
 			} else {
 			
-				CommandMap::iterator it;
-				CommandMap::const_iterator end = commands.end();
-				for (it = commands.begin(); it != end; ++it) {
-					if (s == it->first) {
-						command = it->second;
-						break;
-					}
+				CommandMap::const_iterator it = commands.find(s);
+				if (it != commands.end()) {
+					command = &(it->second.get());
 				}
 				
 				if (!command) {
@@ -72,11 +73,11 @@ int main(int argc, char **argv)
 			
 			cout << "commands:" << endl;
 			
-			CommandMap::iterator it;
+			CommandMap::const_iterator it;
 			CommandMap::const_iterator end = commands.end();
 			for (it = commands.begin(); it != end; ++it) {
 				cout << "  " << it->first << "  \t"
-					<< *(it->second) << endl;
+					<< it->second.get() << endl;
 			}
 			cout << endl;
 			
@@ -95,12 +96,5 @@ int main(int argc, char **argv)
 		ret = 1;
 	}
 	
-	// clear command objects
-	CommandMap::iterator cmdIt;
-	CommandMap::const_iterator cmdEnd = commands.end();
-	for (cmdIt = commands.begin(); cmdIt != cmdEnd; ++cmdIt) {
-		delete cmdIt->second;
-	}
-
 	return ret;
 }
