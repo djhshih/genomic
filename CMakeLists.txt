@@ -31,6 +31,9 @@ find_package(Boost REQUIRED CONFIG)
 
 set(genomic_LIB_SRCS
 	src/genomic_common.cpp
+	src/genomic_clean.cpp
+	src/genomic_convert.cpp
+	src/genomic_filter.cpp
 	lib/global.cpp
 	lib/logging.cpp
 	lib/Sample.cpp

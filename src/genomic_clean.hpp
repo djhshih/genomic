@@ -16,26 +16,7 @@ class Clean : public Command {
 	
 public:
 	
-	Clean() 
-	: Command("clean file based on filtering criteria") {
-		
-		// Delcare options
-		opts.add_options()
-			("help", "print help message")
-			("input,i", po::value<std::string>(), "sample set file")
-			("output,o", po::value<std::string>(), "output file")
-			("format,f", po::value<std::string>(), "input file format [default: determined from file extension]")
-			("inverse,v", po::value<bool>(), "select instead of filter overlapping segments")
-			("merge,m", po::value<bool>(), "merge filtered segments with upstream/downstream segments?")
-			("count", po::value<position>(), "threshold for number of markers in segment")
-			("length", po::value<position>(), "threshold for segment length")
-			("balanced", po::value<bool>(), "remove balanced segments?")
-			("state_diff", po::value<rvalue>(), "threshold for difference from reference state")
-			("ref_state", po::value<rvalue>(), "reference state")
-			;
-		popts.add("input", 1).add("output", 1);
-		
-	}
+	Clean();
 	
 	template <bool> struct segmented {};
 	
@@ -58,42 +39,7 @@ public:
 		set.write(outputFileName);
 	}
 	
-	void run() {
-		
-		if (vm.count("help")) {
-			std::cout << "usage:  " << progname << " clean [options] <sample set file> <output file>" << std::endl;
-			std::cout << opts << std::endl;
-			return;
-		}
-		
-		getOptions();
-		
-		switch (inputType) {
-			
-			case data::segmented:
-				
-				clean< SegmentedSampleSet<rvalue> >(segmented<true>());
-				break;
-				
-			case data::segmented_ascn:
-				
-				clean< SegmentedSampleSet<alleles_cn> >(segmented<true>());
-				break;
-				
-			case data::raw:
-				
-				clean< RawSampleSet<rvalue> >(segmented<false>());
-				break;
-				
-			case data::raw_ascn:
-				
-				clean< RawSampleSet<alleles_cn> >(segmented<false>());
-				break;
-			default:
-				throw std::logic_error("Unsupported input type in clean.");
-		}
-		
-	}
+	void run();
 	
 private:
 	
@@ -104,74 +50,7 @@ private:
 	position count, length;
 	float stateDiff, refState;
 	
-	void getOptions() {
-		
-		if (vm.count("input")) {
-			inputFileName = vm["input"].as<std::string>();
-		} else {
-			throw std::invalid_argument("Input file not specified for clean command.");
-		}
-		
-		if (vm.count("format")) {
-			inputType = mapping::extension[ vm["format"].as<std::string>() ];
-		} else {
-			inputType = mapping::extension[ name::fileext(inputFileName) ];
-		}
-		if (inputType == data::invalid) {
-			throw std::invalid_argument("Invalid input format type for input file '" + inputFileName + "'.");
-		}
-		
-		if (vm.count("output")) {
-			outputFileName = vm["output"].as<std::string>();
-		} else {
-			outputFileName = name::filestem(inputFileName) + ".filtered." + name::fileext(inputFileName);
-		}
-
-		if (vm.count("inverse")) {
-			inverse = vm["inverse"].as<bool>();
-		} else {
-			inverse = false;
-		}
-		
-		if (vm.count("merge")) {
-			merge = vm["merge"].as<bool>();
-		} else {
-			merge = false;
-		}
-		
-		if (vm.count("count")) {
-			count = vm["count"].as<position>();
-		} else {
-			count = 0;
-		}
-		
-		if (vm.count("length")) {
-			length = vm["length"].as<position>();
-		} else {
-			length = 0;
-		}
-		
-		//TODO automatically determine stateDiff and refState
-		// current settings are suitable for LRR data
-		
-		if (vm.count("balanced")) {
-			balanced = vm["balanced"].as<bool>();
-		} else {
-			balanced = false;
-		}
-		
-		if (vm.count("state_diff")) {
-			stateDiff = vm["state_diff"].as<float>();
-		} else {
-			stateDiff = 0.2;
-		}
-		
-		if (vm.count("ref_state")) {
-			refState = vm["ref_state"].as<float>();
-		} else {
-			refState = 0;
-		}
-	}
+	void getOptions();
 	
 };
 
