@@ -1,11 +1,11 @@
 #include "GenericSampleSet.hpp"
 
-void GenericSampleSet::_read(fstream& file)
+void GenericSampleSet::_read(std::fstream& file)
 {
-	const string& fileName = Base::fileName;
+	const std::string& fileName = Base::fileName;
 	marker::Set* markers = Base::markers;
 	
-	string ext = name::fileext(fileName);
+	std::string ext = name::fileext(fileName);
 	switch (mapping::extension[ext]) {
 		case data::raw:
 			rep = new RawSampleSet<cnvalue>(markers);
@@ -24,11 +24,11 @@ void GenericSampleSet::_read(fstream& file)
 	rep->_read(file);
 }
 
-void GenericSampleSet::_write(fstream& file)
+void GenericSampleSet::_write(std::fstream& file)
 {
-	const string& fileName = Base::fileName;
+	const std::string& fileName = Base::fileName;
 	
-	string ext = name::fileext(fileName);
+	std::string ext = name::fileext(fileName);
 	
 	// cast $rep to appropriate type
 	// runtime checking is skipped (i.e. use static_cast instead of dynamic_cast)
@@ -43,7 +43,7 @@ void GenericSampleSet::_write(fstream& file)
 				switch (rep->type()) {
 					case data::segmented:
 						tmp = new RawSampleSet<cnvalue>(*static_cast<SegmentedSampleSet<cnvalue>*>(rep));
-						swap(rep, tmp);
+						std::swap(rep, tmp);
 						delete tmp;
 						break;
 					default:
@@ -54,7 +54,7 @@ void GenericSampleSet::_write(fstream& file)
 				switch (rep->type()) {
 					case data::segmented_ascn:
 						tmp = new RawSampleSet<alleles_cn>(*static_cast<SegmentedSampleSet<alleles_cn>*>(rep));
-						swap(rep, tmp);
+						std::swap(rep, tmp);
 						delete tmp;
 						break;
 					default:
@@ -65,7 +65,7 @@ void GenericSampleSet::_write(fstream& file)
 				switch (rep->type()) {
 					case data::raw:
 						tmp = new SegmentedSampleSet<cnvalue>(*static_cast<RawSampleSet<cnvalue>*>(rep));
-						swap(rep, tmp);
+						std::swap(rep, tmp);
 						delete tmp;
 						break;
 					default:
@@ -76,7 +76,7 @@ void GenericSampleSet::_write(fstream& file)
 				switch (rep->type()) {
 					case data::raw_ascn:
 						tmp = new SegmentedSampleSet<alleles_cn>(*static_cast<RawSampleSet<alleles_cn>*>(rep));
-						swap(rep, tmp);
+						std::swap(rep, tmp);
 						delete tmp;
 						break;
 					default:

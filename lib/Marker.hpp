@@ -23,14 +23,14 @@ namespace marker
 	class Marker
 	{
 	public:
-		string name;
+		std::string name;
 		chromid chromosome;
 		position pos;
 		bool flag;
 		
 		Marker() : flag(false) {}
 		
-		Marker(string markerName, chromid markerChromosome, position markerPosition)
+		Marker(std::string markerName, chromid markerChromosome, position markerPosition)
 		: flag(false), name(markerName), chromosome(markerChromosome), pos(markerPosition) {}
 		
 		static bool compare(const Marker& a, const Marker& b) {
@@ -47,13 +47,13 @@ namespace marker
 		friend class Manager;
 		typedef boost::unordered_set<std::string> uset;
 	public:
-		typedef vector<Marker*> ChromosomeMarkers;
-		typedef vector<ChromosomeMarkers> GenomeMarkers;
+		typedef std::vector<Marker*> ChromosomeMarkers;
+		typedef std::vector<ChromosomeMarkers> GenomeMarkers;
 		
-		string platform;
+		std::string platform;
 		bool namedMarkers;
 		
-		Set(const string& markerSetPlatform)
+		Set(const std::string& markerSetPlatform)
 		: refCount(1), set(nChromosomes), unsortedChromIndex(0),
 			platform(markerSetPlatform), namedMarkers(true) {
 		}
@@ -80,7 +80,7 @@ namespace marker
 			if (unsortedChromIndex > 0) {
 				return set[unsortedChromIndex];
 			} else {
-				throw logic_error("Unsorted chromosome has yet been initialized.");
+				throw std::logic_error("Unsorted chromosome has yet been initialized.");
 			}
 		}
 		const size_t size() const {
@@ -101,11 +101,11 @@ namespace marker
 			this->io = io;
 		}
 		
-		void read(const string& fileName, const string& platform, bool doSort=true, bool named=false);
-		void read(ifstream& file, const string& platform, bool doSort=true, bool named=false);
+		void read(const std::string& fileName, const std::string& platform, bool doSort=true, bool named=false);
+		void read(std::ifstream& file, const std::string& platform, bool doSort=true, bool named=false);
 		
-		void write(const string& fileName);
-		void write(ofstream& file);
+		void write(const std::string& fileName);
+		void write(std::ofstream& file);
 		
 		void distribute();
 		
@@ -165,8 +165,8 @@ namespace marker
 	class Manager
 	{
 	private:
-		typedef map<string, Set*>::iterator iterator;
-		map<string, Set*> sets;
+		typedef std::map<std::string, Set*>::iterator iterator;
+		std::map<std::string, Set*> sets;
 		static const char alphanum[];
 		static const unsigned nalphanum;
 	public:
@@ -179,11 +179,11 @@ namespace marker
 			}
 		}
 		
-		void newSetName(string& markerSetPlatform);
+		void newSetName(std::string& markerSetPlatform);
 		
-		Set* create(const string& markerSetPlatform);
+		Set* create(const std::string& markerSetPlatform);
 		
-		Set* operator[](const string& markerSetPlatform) {
+		Set* operator[](const std::string& markerSetPlatform) {
 			Set* set = sets[markerSetPlatform];
 			set->ref();
 			return set;
@@ -193,7 +193,7 @@ namespace marker
 			if (set != NULL) ref(set->platform);
 		}
 		
-		void ref(const string& markerSetPlatform) {
+		void ref(const std::string& markerSetPlatform) {
 			iterator it = sets.find(markerSetPlatform);
 			if (it != sets.end()) {
 				it->second->ref();
@@ -204,7 +204,7 @@ namespace marker
 			if (set != NULL) unref(set->platform);
 		}
 		
-		void unref(const string& markerSetPlatform) {
+		void unref(const std::string& markerSetPlatform) {
 			iterator it = sets.find(markerSetPlatform);
 			if (it != sets.end() && it->second->unref()) {
 				delete (it->second);

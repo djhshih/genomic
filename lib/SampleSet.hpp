@@ -40,32 +40,32 @@ public:
 		this->io = io;
 	}
 	
-	void read(const vector<string>& fileNames, bool isSorted=false) {
+	void read(const std::vector<std::string>& fileNames, bool isSorted=false) {
 		read(fileNames, "", isSorted);
 	}
 	
-	void read(const vector<string>& fileNames, const string& markersFileName, bool isSorted=false) {
-		string platform;
+	void read(const std::vector<std::string>& fileNames, const std::string& markersFileName, bool isSorted=false) {
+		std::string platform;
 		marker::manager.newSetName(platform);
 		read(fileNames, markersFileName, platform, isSorted);
 	}
 	
-	void read(const vector<string>& fileNames, const string& markersFileName, const string& platform, bool isSorted);
+	void read(const std::vector<std::string>& fileNames, const std::string& markersFileName, const std::string& platform, bool isSorted);
 	
-	void read(const string& fileName, bool append=false) {
-		string platform;
+	void read(const std::string& fileName, bool append=false) {
+		std::string platform;
 		marker::manager.newSetName(platform);
 		read(fileName, platform, append);
 	}
 	
 	// N.B. If platform name is specified explicitly by user, the marker file should be already sorted!
-	void read(const string& fileName, const string& platform, bool append=false);
+	void read(const std::string& fileName, const std::string& platform, bool append=false);
 	
-	void read(fstream& file, const string& platform, const string& fileName, bool append=false);
+	void read(std::fstream& file, const std::string& platform, const std::string& fileName, bool append=false);
 	
-	void write(const string& fileName);
+	void write(const std::string& fileName);
 	
-	void write(fstream& file, const string& fileName) {
+	void write(std::fstream& file, const std::string& fileName) {
 		this->fileName = fileName;
 		_write(file);
 	}
@@ -80,15 +80,15 @@ protected:
 	IOProperties io;
 	CNACriteria cna;
 	
-	string fileName;
+	std::string fileName;
 	marker::Set* markers;
 	
 private:
 	
-	fstream file;
+	std::fstream file;
 	//  file IO is the responsibiliity of the base class
-	virtual void _read(fstream& file) = 0;
-	virtual void _write(fstream& file) = 0;
+	virtual void _read(std::fstream& file) = 0;
+	virtual void _write(std::fstream& file) = 0;
 	virtual SampleSet* clone() const = 0;
 	
 };

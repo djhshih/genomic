@@ -59,13 +59,13 @@ public:
 		if (chromIndex < items.size()) {
 			return items[chromIndex];
 		} else {
-			throw logic_error("Chromosome index is out of bound.");
+			throw std::logic_error("Chromosome index is out of bound.");
 		}
 	}
 	Chromosome& operator[](const std::string& chromName) {
 		chromid k = mapping::chromosome[chromName];
 		if (k != 0) return items[k-1];
-		throw logic_error("Chromosome name is not found.");
+		throw std::logic_error("Chromosome name is not found.");
 	}
 	typename Chromosomes::iterator begin() {
 		return items.begin();
@@ -113,7 +113,7 @@ public:
 		}
 	}
 	void remove(T item) {
-		throw logic_error("Sample::remove(T) has yet been implemented.");
+		throw std::logic_error("Sample::remove(T) has yet been implemented.");
 		// not implemented
 		// need to find segment in data structure
 	}

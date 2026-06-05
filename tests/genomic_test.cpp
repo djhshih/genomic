@@ -64,8 +64,7 @@ struct IOFixture
 			stream.clear();  // clear error flag
 			stream.str(line);  // setup stream
 		
-			while (!stream.eof()) {
-				stream >> s;
+			while (stream >> s) {
 				if (s[0] == chrClass) {
 					// item specifies which class to use
 					// remove the first character
@@ -237,6 +236,16 @@ BOOST_AUTO_TEST_CASE(RawSampleSet_Filter)
 		BOOST_CHECK_EQUAL(diff.different(out, ans), 0);
 		
 	}
+}
+
+BOOST_AUTO_TEST_CASE(RawSampleSet_InvalidInputPath)
+{
+	BOOST_CHECK_THROW(RawSampleSet<rvalue>().read("does-not-exist.cn"), runtime_error);
+}
+
+BOOST_AUTO_TEST_CASE(GenericSampleSet_InvalidInputPath)
+{
+	BOOST_CHECK_THROW(GenericSampleSet().read("does-not-exist.cn"), runtime_error);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

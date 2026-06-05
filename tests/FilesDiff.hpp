@@ -5,31 +5,29 @@
 #include <string>
 #include <stdexcept>
 
-using namespace std;
-
 class FilesDiff
 {
 private:
-	fstream file1, file2;
-	size_t nSkippedLines;
+	std::fstream file1, file2;
+	std::size_t nSkippedLines;
 	
 public:
 	FilesDiff() : nSkippedLines(0) {}
-	FilesDiff(size_t skip) : nSkippedLines(skip) {}
+	FilesDiff(std::size_t skip) : nSkippedLines(skip) {}
 	~FilesDiff() {
 		if (file1.is_open()) file2.close();
 		if (file1.is_open()) file2.close();
 	}
-	int different(const string&fileName1, const string& fileName2) {
-		file1.open(fileName1.c_str(), ios::in);
-		file2.open(fileName2.c_str(), ios::in);
+	int different(const std::string&fileName1, const std::string& fileName2) {
+		file1.open(fileName1.c_str(), std::ios::in);
+		file2.open(fileName2.c_str(), std::ios::in);
 		if (!file1.is_open() || !file2.is_open()) {
-			throw runtime_error("Faile to open files for comparison");
+			throw std::runtime_error("Failed to open files for comparison: '" + fileName1 + "' and '" + fileName2 + "'.");
 		}
 		
-		string s1, s2;
+		std::string s1, s2;
 		int diff = 0;
-		size_t lineCount = 0;
+		std::size_t lineCount = 0;
 		while(true) {
 			getline(file1, s1);
 			getline(file2, s2);

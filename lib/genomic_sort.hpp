@@ -22,8 +22,8 @@ public:
 		// Delcare options
 		opts.add_options()
 			("help", "print help message")
-			("input,i", po::value<string>(), "markers file")
-			("output,o", po::value<string>(), "output sorted file")
+			("input,i", po::value<std::string>(), "markers file")
+			("output,o", po::value<std::string>(), "output sorted file")
 			("named,m", po::value<bool>(), "whether marker names are present")
 			;
 		popts.add("input", 1).add("output", 1);
@@ -33,14 +33,14 @@ public:
 	void run() {
 		
 		if (vm.count("help")) {
-			cout << "usage:  " << progname << " sort [options] <markers file> <output file>" << endl;
-			cout << opts << endl;
+			std::cout << "usage:  " << progname << " sort [options] <markers file> <output file>" << std::endl;
+			std::cout << opts << std::endl;
 			return;
 		}
 		
 		getOptions();
 		
-		string platform = "";
+		std::string platform = "";
 		
 		marker::Set set(platform);
 		
@@ -55,18 +55,18 @@ public:
 	
 private:
 	
-	string inputFileName, outputFileName;
+	std::string inputFileName, outputFileName;
 	bool named;
 	
 	void getOptions() {
 		
 		if (vm.count("input")) {
-			inputFileName = vm["input"].as<string>();
+			inputFileName = vm["input"].as<std::string>();
 		} else {
-			throw invalid_argument("Input file not specified.");
+			throw std::invalid_argument("Input file not specified.");
 		}
 		if (vm.count("output")) {
-			outputFileName = vm["output"].as<string>();
+			outputFileName = vm["output"].as<std::string>();
 		} else {
 			outputFileName = name::filestem(inputFileName) + ".sorted." + name::fileext(inputFileName);
 		}

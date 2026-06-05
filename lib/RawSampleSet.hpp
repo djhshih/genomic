@@ -36,7 +36,7 @@ public:
 	typedef V Value;
 	typedef LinearChromosome<Value> RawChromosome;
 	typedef Sample<RawChromosome> RawSample;
-	typedef vector<RawSample*> Samples;
+	typedef std::vector<RawSample*> Samples;
 	typedef typename Samples::iterator SamplesIterator;
 	typedef typename RawSample::Chromosomes::iterator ChromosomesIterator;
 	typedef typename RawChromosome::iterator DataIterator;
@@ -45,20 +45,20 @@ protected:
 	Samples samples;
 
 private:
-	std::map<string, RawSample*> byNames;
+	std::map<std::string, RawSample*> byNames;
 	
 	RawSampleSet* clone() const {
 		return new RawSampleSet(*this);
 	}
 	
-	void _read(fstream& file);
-	void _write(fstream& file);
+	void _read(std::fstream& file);
+	void _write(std::fstream& file);
 
-	void readSampleNames(istringstream& stream);
-	void readSampleValues(istringstream& stream, size_t sampleStart, const string& chromName);
+	void readSampleNames(std::istringstream& stream);
+	void readSampleValues(std::istringstream& stream, size_t sampleStart, const std::string& chromName);
 
-	void writeSampleNames(fstream& file, const char delim);
-	void writeSampleValues(fstream& file, size_t chr, size_t markerIndex, const char delim);
+	void writeSampleNames(std::fstream& file, const char delim);
+	void writeSampleValues(std::fstream& file, size_t chr, size_t markerIndex, const char delim);
 	
 public:
 	RawSampleSet() {}
@@ -93,7 +93,7 @@ public:
 		marker::manager.unref(markers);
 	}
 	
-	RawSample* create(const string& sampleName) {
+	RawSample* create(const std::string& sampleName) {
 		RawSample* sam = byNames[sampleName];
 		if (sam == NULL) {
 			// sample does not exist: create it
@@ -103,7 +103,7 @@ public:
 			byNames[sampleName] = sam;
 		} else {
 			// sample already exists: not supported
-			throw runtime_error("Duplicate sample names are not permitted in RawSampleSet.");
+			throw std::runtime_error("Duplicate sample names are not permitted in RawSampleSet.");
 		}
 		return sam;
 	}
@@ -116,14 +116,14 @@ public:
 	
 	void filter(const RawSampleSet& ref) {
 		if (ref.markers == NULL) {
-			throw invalid_argument("Markers in reference set are missing.");
+			throw std::invalid_argument("Markers in reference set are missing.");
 		}
 		filter(*ref.markers);
 	}
 	
 	void filter(const marker::Set& refMarkers) {
 		if (markers == NULL) {
-			throw invalid_argument("Markers in sample set are missing.");
+			throw std::invalid_argument("Markers in sample set are missing.");
 		}
 		
 		// flag markers for removal
@@ -152,7 +152,7 @@ public:
 			
 			// copy data from unflagged markers
 			const size_t chromEnd = markers->size();
-			vector<size_t> validMarkersCounts(chromEnd);
+			std::vector<size_t> validMarkersCounts(chromEnd);
 			for (size_t chromIndex = 0; chromIndex < chromEnd; ++chromIndex) {
 				const size_t numMarkers = (*markers)[chromIndex].size();
 				validMarkersCounts[chromIndex] = 0;
@@ -201,14 +201,14 @@ RawSampleSet<V>::RawSampleSet(const SegmentedSampleSet<V>& set)
 	//TODO
 	
 	if (set.markers == NULL) {
-		throw runtime_error("Marker information is required for converting from SegmentedSampleSet to RawSampleSet.");
+		throw std::runtime_error("Marker information is required for converting from SegmentedSampleSet to RawSampleSet.");
 	}
 	
-	throw runtime_error("RawSampleSet(SegmentedSampleSet<V>&) has not been implemented.");
+	throw std::runtime_error("RawSampleSet(SegmentedSampleSet<V>&) has not been implemented.");
 }
 
 template <typename V>
-void RawSampleSet<V>::_read(fstream& file)
+void RawSampleSet<V>::_read(std::fstream& file)
 {
 	const char delim = Base::io.delim;
 	const size_t nSkippedLines = Base::io.nSkippedLines, headerLine = Base::io.headerLine;
@@ -221,20 +221,20 @@ void RawSampleSet<V>::_read(fstream& file)
 	
 	size_t lineCount = 0;
 	size_t sampleStart = samples.size()-1; 
-	string line, markerName, chromName, discard;
+	std::string line, markerName, chromName, discard;
 	while (true) {
 		getline(file, line);
 		
 		if (file.eof()) break;
 		if (++lineCount > nSkippedLines) {
 			if (lineCount == headerLine) {
-				istringstream stream(line);
+				std::istringstream stream(line);
 				// discard the marker information columns (3)
 				stream >> discard >> discard >> discard;
 				
 				readSampleNames(stream);
 			} else {
-				istringstream stream(line);
+				std::istringstream stream(line);
 				position pos;
 				stream >> markerName >> chromName >> pos;
 				
@@ -256,28 +256,26 @@ void RawSampleSet<V>::_read(fstream& file)
 }
 
 template <typename V> inline
-void RawSampleSet<V>::readSampleNames(istringstream& stream) {
-	while (!stream.eof()) {
-		string sampleName;
-		stream >> sampleName;
-		// create sample with $sampleName	
+void RawSampleSet<V>::readSampleNames(std::istringstream& stream) {
+	std::string sampleName;
+	while (stream >> sampleName) {
+		// create sample with $sampleName
 		create(sampleName);
 	}
 }
 
 template <typename V> inline
-void RawSampleSet<V>::readSampleValues(istringstream& stream, size_t sampleStart, const string& chromName) {
+void RawSampleSet<V>::readSampleValues(std::istringstream& stream, size_t sampleStart, const std::string& chromName) {
 	size_t i = sampleStart;
 	Value value;
-	while (!stream.eof()) {
-		stream >> value;
+	while (stream >> value) {
 		// create point at specified chromosome
 		samples[++i]->addToChromosome(chromName, value);
 	}
 }
 
 template <typename V>
-void RawSampleSet<V>::_write(fstream& file)
+void RawSampleSet<V>::_write(std::fstream& file)
 {
 	const char delim = Base::io.delim;
 	marker::Set* markers = Base::markers;
@@ -299,25 +297,25 @@ void RawSampleSet<V>::_write(fstream& file)
 }
 
 template <typename V> inline
-void RawSampleSet<V>::writeSampleNames(fstream& file, const char delim) {
+void RawSampleSet<V>::writeSampleNames(std::fstream& file, const char delim) {
 	// print sample names
 	SamplesIterator it;
 	const SamplesIterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
 		file << delim << (**it).name;
 	}
-	file << endl;
+	file << std::endl;
 }
 
 template <typename V> inline
-void RawSampleSet<V>::writeSampleValues(fstream& file, size_t chr, size_t markerIndex, const char delim) {
+void RawSampleSet<V>::writeSampleValues(std::fstream& file, size_t chr, size_t markerIndex, const char delim) {
 	// iterate through samples to print values, selected the specified chromosome and marker
 	SamplesIterator it;
 	const SamplesIterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
 		file << delim << (**it)[chr][markerIndex];
 	}
-	file << endl;
+	file << std::endl;
 }
 
 template <typename V>
@@ -327,8 +325,8 @@ void RawSampleSet<V>::sort()
 	
 	// Construct order vector for obtaining a sorted index of markers
 	marker::Set::ChromosomeMarkers chromosomeMarkers;
-	vector<RawChromosome> samplesChromosomeCopy;
-	vector< pair<position, size_t> > order;
+	std::vector<RawChromosome> samplesChromosomeCopy;
+	std::vector< std::pair<position, size_t> > order;
 	
 	for (size_t chri = 0; chri < markers->size(); ++chri) {	
 		
@@ -352,7 +350,7 @@ void RawSampleSet<V>::sort()
 		// create order vector
 		order.reserve(numMarkers);
 		for (size_t j = 0; j < numMarkers; ++j) {
-			order.push_back( make_pair(currentMarkers[j]->pos, j) );
+			order.push_back(std::make_pair(currentMarkers[j]->pos, j));
 		}
 		
 		// Sort on the order vector instead of the original vector<Markers*>,

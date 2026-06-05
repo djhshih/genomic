@@ -2,14 +2,14 @@
 
 namespace marker {
 
-	void Set::read(const string& fileName, const string& platform, bool doSort, bool named) {
-		ifstream file(fileName.c_str(), ios::in);
-		if (!file.is_open()) throw runtime_error("Failed to open input file");
+	void Set::read(const std::string& fileName, const std::string& platform, bool doSort, bool named) {
+		std::ifstream file(fileName.c_str(), std::ios::in);
+		if (!file.is_open()) throw std::runtime_error("Failed to open marker input file '" + fileName + "'.");
 		read(file, platform, doSort, named);
 		file.close();
 	}
 	
-	void Set::read(ifstream& file, const string& platform, bool doSort, bool named) {
+	void Set::read(std::ifstream& file, const std::string& platform, bool doSort, bool named) {
 		clear();
 		// assume M x 3 data matrix with M makers
 		// columns: marker, chromosome, position
@@ -24,16 +24,12 @@ namespace marker {
 		
 		const char delim = io.delim;
 		size_t lineCount = 0;
-		string line;
+		std::string line;
 		position pos;
-		string markerName = "", chromName, s;
-		while (true) {
-			// discard the header line
-			getline(file, line);
-			
-			if (file.eof()) break;
+		std::string markerName = "", chromName, s;
+		while (std::getline(file, line)) {
 			if (++lineCount > io.nSkippedLines && lineCount != io.headerLine) {
-					istringstream stream(line);
+					std::istringstream stream(line);
 					if (named) {
 						getline(stream, markerName, delim);
 					}
@@ -62,14 +58,14 @@ namespace marker {
 		if (doSort) sort();
 	}
 	
-	void Set::write(const string& fileName) {
-		ofstream file(fileName.c_str(), ios::out);
-		if (!file.is_open()) throw runtime_error("Failed to open output file");
+	void Set::write(const std::string& fileName) {
+		std::ofstream file(fileName.c_str(), std::ios::out);
+		if (!file.is_open()) throw std::runtime_error("Failed to open marker output file '" + fileName + "'.");
 		write(file);
 		file.close();
 	}
 	
-	void Set::write(ofstream& file) {
+	void Set::write(std::ofstream& file) {
 		if (set.empty()) return;
 		
 		const char delim = io.delim;
@@ -78,7 +74,7 @@ namespace marker {
 		if (namedMarkers) {
 			file << "marker" << delim;
 		}
-		file << "chromosome" << delim << "position" << endl;
+		file << "chromosome" << delim << "position" << std::endl;
 		
 		// iterate through each chromosome in the vector of vector $set
 		for (size_t i = 0; i < set.size(); ++i) {
@@ -89,7 +85,7 @@ namespace marker {
 				if (namedMarkers) {
 					file << marker->name << delim;
 				}
-				file << mapping::chromosome[marker->chromosome] << delim << marker->pos << endl;
+				file << mapping::chromosome[marker->chromosome] << delim << marker->pos << std::endl;
 			}
 		}
 	}
@@ -196,7 +192,7 @@ namespace marker {
 			}
 		}
 		
-		trace("Number of markers filtered: %d\n", filteredCount);
+		log_trace(__FILE__, __LINE__, __func__, "Number of markers filtered: %d", filteredCount);
 	}
 	
 	void Set::clear() {
@@ -221,7 +217,7 @@ namespace marker {
 	// length of alphanum, subtracted by 1 (to account for null character)
 	const unsigned Manager::nalphanum = 62;
 	
-	void Manager::newSetName(string& markerSetPlatform) {
+	void Manager::newSetName(std::string& markerSetPlatform) {
 		const unsigned n = 7;
 		char randstr[n];
 		do {
@@ -230,9 +226,9 @@ namespace marker {
 		} while (sets.find(markerSetPlatform) != sets.end());
 	}
 
-	Set* Manager::create(const string& markerSetPlatform) {
+	Set* Manager::create(const std::string& markerSetPlatform) {
 		if (markerSetPlatform.empty()) {
-			throw runtime_error("Market set platform name cannot be empty");
+			throw std::runtime_error("Market set platform name cannot be empty");
 		}
 		Set* set;
 		iterator it = sets.find(markerSetPlatform);

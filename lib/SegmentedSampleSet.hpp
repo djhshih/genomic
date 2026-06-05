@@ -111,7 +111,7 @@ class min_overlapper : public overlapper_base
 public:
 	min_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
-		score = float(intersection) / max(query_length, reference_length);
+		score = float(intersection) / std::max(query_length, reference_length);
 		return (score >= threshold);
 	}
 };
@@ -121,7 +121,7 @@ class max_overlapper : public overlapper_base
 public:
 	max_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
-		score = float(intersection) / min(query_length, reference_length);
+		score = float(intersection) / std::min(query_length, reference_length);
 		return (score >= threshold);
 	}
 };
@@ -206,7 +206,7 @@ public:
 					
 					for (size_t i = lowerIndex; i <= upperIndex; ++i) {
 						// calculate Dice coefficient
-						position_diff intersection = min(refChrom[i].end, seg.end) - max(refChrom[i].start, seg.start) + 1;
+						position_diff intersection = std::min(refChrom[i].end, seg.end) - std::max(refChrom[i].start, seg.start) + 1;
 
 						if (intersection > 0) {
 							//float dice = 2 * float(intersection) / (refChrom[i].length() + seg.length());
@@ -215,7 +215,7 @@ public:
 							if ( overlap_checker.overlap(intersection, seg.length(), refChrom[i].length(), score) ) {
 								// Mark segment for deletion
 								seg.flag = filterSegment = true;
-								trace("Filter chr%s:%d-%d: %.2f overlap with chr%s:%d-%d in reference\n",
+								log_trace(__FILE__, __LINE__, __func__, "Filter chr%s:%d-%d: %.2f overlap with chr%s:%d-%d in reference",
 											chrom, seg.start, seg.end,
 											score,
 											chrom, refChrom[i].start, refChrom[i].end);
@@ -247,10 +247,10 @@ public:
 	typedef LinearChromosome< Segment<Value> > Segments;
 	typedef Sample<Segments> SegmentedSample;
 	
-	typedef vector<SegmentedSample*> Samples;
+	typedef std::vector<SegmentedSample*> Samples;
 	typedef typename SegmentedSample::Chromosomes Chromosomes;
 	
-	typedef vector< filter_operator<V>* > filter_operators;
+	typedef std::vector< filter_operator<V>* > filter_operators;
 	
 // 	typedef typename Samples::iterator SamplesIterator;
 // 	typedef typename Chromosomes::iterator ChromosomesIterator;
@@ -260,16 +260,16 @@ public:
 private:
 	
 	Samples samples;
-	std::map<string, SegmentedSample*> byNames;
+	std::map<std::string, SegmentedSample*> byNames;
 	
 	SegmentedSampleSet* clone() const {
 		return new SegmentedSampleSet(*this);
 	}
 	
-	void _read(fstream& file);
-	void _write(fstream& file);
+	void _read(std::fstream& file);
+	void _write(std::fstream& file);
 	
-	void readSegment(istringstream& stream, Segment<V>& seg) {
+	void readSegment(std::istringstream& stream, Segment<V>& seg) {
 		stream >> seg.start >> seg.end;
 		if (positionsOnly) {
 			seg.count = seg.value = 0;
@@ -320,7 +320,7 @@ public:
 		samples.clear();
 		byNames.clear();
 	}
-	SegmentedSample* create(const string& sampleName) {
+	SegmentedSample* create(const std::string& sampleName) {
 		SegmentedSample* sam = byNames[sampleName];
 		if (sam == NULL) {
 			// sample does not exist: create it
@@ -337,7 +337,7 @@ public:
 		return samples.size();
 	}
 	
-	size_t find(const string& sampleName, size_t chromIndex, position start) const {
+	size_t find(const std::string& sampleName, size_t chromIndex, position start) const {
 		return _find(*(byNames[sampleName]->chromosome(chromIndex)), start);
 	}
 	size_t find(SegmentedSample* sample, size_t chromIndex, position start) const {
@@ -463,7 +463,7 @@ SegmentedSampleSet<V>::SegmentedSampleSet(const RawSampleSet<V>& raw)
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::_read(fstream& file)
+void SegmentedSampleSet<V>::_read(std::fstream& file)
 {
 	//const char delim = Base::delim;
 	//const size_t nSkippedLines = Base::nSkippedLines, headerLine = Base::headerLine;
@@ -472,13 +472,13 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 	// columns: sample, chr, start, end, markers, value
 	
 	size_t lineCount = 0;
-	string line, sampleName, chromName;
+	std::string line, sampleName, chromName;
 	while (true) {
 		getline(file, line);
 		
 		if (file.eof()) break;
 		if (++lineCount > io.nSkippedLines && lineCount != io.headerLine) {
-			istringstream stream(line);
+			std::istringstream stream(line);
 			stream >> sampleName >> chromName;
 			// ignore unknown chromosome: continue to next line
 			chromid chrom = mapping::chromosome[chromName];
@@ -496,11 +496,11 @@ void SegmentedSampleSet<V>::_read(fstream& file)
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::_write(fstream& file)
+void SegmentedSampleSet<V>::_write(std::fstream& file)
 {
 	const char delim = Base::io.delim;
 	
-	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "state" << endl;
+	file << "sample" << delim << "chromosome" << delim << "start" << delim << "end" << delim << "count" << delim << "state" << std::endl;
 	
 	typename Samples::iterator it, end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
@@ -508,7 +508,7 @@ void SegmentedSampleSet<V>::_write(fstream& file)
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
 			typename Segments::iterator segIt, segEnd = chrIt->end();
 			for (segIt = chrIt->begin(); segIt != segEnd; ++segIt) {
-				file << (*it)->name << delim << segIt->chromosome << delim << segIt->start << delim << segIt->end << delim << segIt->count << delim << segIt->value << endl;
+				file << (*it)->name << delim << segIt->chromosome << delim << segIt->start << delim << segIt->end << delim << segIt->count << delim << segIt->value << std::endl;
 			}
 		}
 	}
@@ -573,7 +573,7 @@ void SegmentedSampleSet<V>::markAberrant() {
 			}
 		}
 	}
-	trace("Number of segments marked aberrant: %d\n", count);
+	log_trace(__FILE__, __LINE__, __func__, "Number of segments marked aberrant: %d", count);
 }
 */
 
@@ -608,7 +608,7 @@ void SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool inverse, 
 	typename Samples::iterator it;
 	typename Samples::const_iterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
-		trace("%s\n", (*it)->name.c_str());
+		log_trace(__FILE__, __LINE__, __func__, "%s", (*it)->name.c_str());
 		// iterate through chromosomes
 		typename Chromosomes::iterator chrIt;
 		typename Chromosomes::const_iterator chrEnd = (*it)->end();
@@ -626,7 +626,7 @@ void SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool inverse, 
 	}
 	
 	removeFlagged(merge);
-	trace("Number of segments filtered: %d\n", filteredCount);
+	log_trace(__FILE__, __LINE__, __func__, "Number of segments filtered: %d", filteredCount);
 }
 
 template <typename V>
@@ -636,7 +636,7 @@ void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator fil
 	typename Samples::iterator it;
 	typename Samples::const_iterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
-		trace("%s\n", (*it)->name.c_str());
+		log_trace(__FILE__, __LINE__, __func__, "%s", (*it)->name.c_str());
 		// iterate through chromosomes
 		typename Chromosomes::iterator chrIt;
 		typename Chromosomes::const_iterator chrEnd = (*it)->end();
@@ -664,7 +664,7 @@ void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator fil
 	}
 	
 	removeFlagged(merge);
-	trace("Number of segments filtered: %d\n", filteredCount);
+	log_trace(__FILE__, __LINE__, __func__, "Number of segments filtered: %d", filteredCount);
 }
 
 template <typename V>
@@ -760,7 +760,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 							if ( prevUnmarkedSegment != NULL && nextUnmarkedSegment != NULL &&
 									 absdiff(prevUnmarkedSegment->value, nextUnmarkedSegment->value) <= cna.deviation ) {
 
-								trace("Merge segments from chr%s:%d-%d to chr%s:%d-%d in %s\n",
+								log_trace(__FILE__, __LINE__, __func__, "Merge segments from chr%s:%d-%d to chr%s:%d-%d in %s",
 									chrom, prevUnmarkedSegment->start, prevUnmarkedSegment->end,
 									chrom, nextUnmarkedSegment->start, nextUnmarkedSegment->end,
 									(*it)->name.c_str() );
@@ -802,7 +802,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 					
 					if (prevUnmarkedSegment == NULL && nextUnmarkedSegment == NULL) {
 						
-						trace("Warning: segment chr%s:%d-%d in %s cannot be merge with another segment\n",
+						log_trace(__FILE__, __LINE__, __func__, "Warning: segment chr%s:%d-%d in %s cannot be merge with another segment",
 								chrom, segIt->start, segIt->end, (*it)->name.c_str());
 						
 					} else {
@@ -811,7 +811,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 							   absdiff(prevUnmarkedSegment->value, nextUnmarkedSegment->value) <= cna.deviation ) {
 							// previous and next segments are essentially the same
 							
-							trace("Merge segments from chr%s:%d-%d to chr%s:%d-%d in %s\n",
+							log_trace(__FILE__, __LINE__, __func__, "Merge segments from chr%s:%d-%d to chr%s:%d-%d in %s",
 								chrom, prevUnmarkedSegment->start, prevUnmarkedSegment->end,
 								chrom, nextUnmarkedSegment->start, nextUnmarkedSegment->end,
 								(*it)->name.c_str() );
@@ -842,7 +842,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 							
 							if (prevSize >= nextSize) {
 								
-								trace("Merge chr%s:%d-%d to upstream chr%s:%d-%d in %s\n",
+								log_trace(__FILE__, __LINE__, __func__, "Merge chr%s:%d-%d to upstream chr%s:%d-%d in %s",
 									chrom, segIt->start, segIt->end,
 									chrom, prevUnmarkedSegment->start, prevUnmarkedSegment->end,
 									(*it)->name.c_str() );
@@ -856,7 +856,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 									// check guards against multiple assignments in cases where a series
 									//  of segments are marked for deletion
 									
-									trace("Merge chr%s:%d-%d to downstream chr%s:%d-%d in %s\n",
+									log_trace(__FILE__, __LINE__, __func__, "Merge chr%s:%d-%d to downstream chr%s:%d-%d in %s",
 										chrom, segIt->start, segIt->end,
 										chrom, nextUnmarkedSegment->start, nextUnmarkedSegment->end,
 										(*it)->name.c_str() );

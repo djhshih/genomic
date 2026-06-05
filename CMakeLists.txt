@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 project(genomic)
 enable_testing()
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+option(GENOMIC_ENABLE_WARNINGS "Enable extra compiler warnings" ON)
 
 # configure project properties
 
@@ -26,11 +29,10 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules" ${CMAKE_MODULE_PATH}
 
 find_package(Boost REQUIRED CONFIG)
 
-include_directories(${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src ${BOOST_INCLUDES})
-
 set(genomic_LIB_SRCS
 	src/genomic_common.cpp
 	lib/global.cpp
+	lib/logging.cpp
 	lib/Sample.cpp
 	lib/SampleSet.cpp
 	lib/GenericSampleSet.cpp
@@ -38,9 +40,23 @@ set(genomic_LIB_SRCS
 )
 
 add_library(genomic_lib ${genomic_LIB_SRCS})
+target_include_directories(genomic_lib PUBLIC ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src)
+
+if(GENOMIC_ENABLE_WARNINGS)
+	target_compile_options(genomic_lib PRIVATE
+		$<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+	)
+endif()
 
 add_executable(genomic src/genomic.cpp)
+target_include_directories(genomic PRIVATE ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(genomic genomic_lib boost_program_options)
+
+if(GENOMIC_ENABLE_WARNINGS)
+	target_compile_options(genomic PRIVATE
+		$<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+	)
+endif()
 
 install(TARGETS genomic RUNTIME DESTINATION bin)
 

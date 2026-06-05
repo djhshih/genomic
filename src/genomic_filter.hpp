@@ -22,13 +22,13 @@ public:
 		// Delcare options
 		opts.add_options()
 			("help", "print help message")
-			("input,i", po::value<string>(), "sample set file")
-			("reference,r", po::value<string>(), "reference set file (same format as sample set)")
-			("format,f", po::value<string>(), "input file format [default: determined from file extension]")
-			("reference_format,g", po::value<string>(), "reference file format [default: reference format corresponding to input]")
-			("output,o", po::value<string>(), "output file")
+			("input,i", po::value<std::string>(), "sample set file")
+			("reference,r", po::value<std::string>(), "reference set file (same format as sample set)")
+			("format,f", po::value<std::string>(), "input file format [default: determined from file extension]")
+			("reference_format,g", po::value<std::string>(), "reference file format [default: reference format corresponding to input]")
+			("output,o", po::value<std::string>(), "output file")
 			("threshold,t", po::value<float>(), "overlap threshold (only used for segmentation files) [default: 0.5]")
-			("score,s", po::value<string>(), "overlap score method, only used for segmentation files) [options: dice (default), query, reference, min, max]")
+			("score,s", po::value<std::string>(), "overlap score method, only used for segmentation files) [options: dice (default), query, reference, min, max]")
 			("inverse,v", po::value<bool>(), "select instead of filter overlapping segments")
 			("merge,m", po::value<bool>(), "merge filtered segments with upstream/downstream segments?")
 			("aberrant,a", po::value<bool>(), "filter only aberrant segments?")
@@ -78,7 +78,7 @@ public:
 			max_overlapper checker(threshold);
 			set.template filter<max_overlapper>(ref, checker, inverse, merge, aberrant, optimize);
 		} else {
-			throw runtime_error("Invalid overlap score method specified.");
+			throw std::runtime_error("Invalid overlap score method specified.");
 		}
 		
 		set.write(outputFileName);
@@ -87,8 +87,8 @@ public:
 	void run() {
 		
 		if (vm.count("help")) {
-			cout << "usage:  " << progname << " filter [options] <sample set file> <reference set file> <output file>" << endl;
-			cout << opts << endl;
+			std::cout << "usage:  " << progname << " filter [options] <sample set file> <reference set file> <output file>" << std::endl;
+			std::cout << opts << std::endl;
 			return;
 		}
 		
@@ -106,7 +106,7 @@ public:
 						filter< SegmentedSampleSet<rvalue>, SegmentedSampleSet<rvalue> >(segmented<true>());
 						break;
 					default:
-						throw invalid_argument("Unsupported reference file format.");
+						throw std::invalid_argument("Unsupported reference file format.");
 				}
 				
 				break;
@@ -121,7 +121,7 @@ public:
 						filter< SegmentedSampleSet<alleles_cn>, SegmentedSampleSet<alleles_cn> >(segmented<true>());
 						break;
 					default:
-						throw invalid_argument("Unsupported reference file format.");
+						throw std::invalid_argument("Unsupported reference file format.");
 				}
 				
 				break;
@@ -136,7 +136,7 @@ public:
 						filter< RawSampleSet<rvalue>, RawSampleSet<rvalue> >(segmented<false>());
 						break;
 					default:
-						throw invalid_argument("Unsupported reference file format.");
+						throw std::invalid_argument("Unsupported reference file format.");
 				}
 				
 				break;
@@ -151,11 +151,12 @@ public:
 						filter< RawSampleSet<alleles_cn>, RawSampleSet<alleles_cn> >(segmented<false>());
 						break;
 					default:
-						throw invalid_argument("Unsupported reference file format.");
+						throw std::invalid_argument("Unsupported reference file format.");
 				}
 				
 				break;
-				
+			default:
+				throw std::logic_error("Unsupported input type in filter.");
 		}
 		
 		
@@ -163,35 +164,35 @@ public:
 	
 private:
 	
-	string inputFileName, referenceFileName, outputFileName;
+	std::string inputFileName, referenceFileName, outputFileName;
 	data::Type inputType, referenceType;
 	float threshold;
 	bool merge, aberrant;
 	float stateDiff, refState;
 	bool optimize;
 	bool inverse;
-	string score;
+	std::string score;
 	
 	void getOptions() {
 		
 		if (vm.count("input") && vm.count("reference")) {
-			inputFileName = vm["input"].as<string>();
-			referenceFileName = vm["reference"].as<string>();
+			inputFileName = vm["input"].as<std::string>();
+			referenceFileName = vm["reference"].as<std::string>();
 		} else {
-			throw invalid_argument("Both input and reference files must be specified.");
+			throw std::invalid_argument("Both input and reference files must be specified.");
 		}
 		
 		if (vm.count("format")) {
-			inputType = mapping::extension[ vm["format"].as<string>() ];
+			inputType = mapping::extension[ vm["format"].as<std::string>() ];
 		} else {
 			inputType = mapping::extension[ name::fileext(inputFileName) ];
 		}
 		if (inputType == data::invalid) {
-			throw invalid_argument("Invalid input format type.");
+			throw std::invalid_argument("Invalid input format type for input file '" + inputFileName + "'.");
 		}
 		
 		if (vm.count("reference_format")) {
-			referenceType = mapping::extension[ vm["reference_format"].as<string>() ];
+			referenceType = mapping::extension[ vm["reference_format"].as<std::string>() ];
 		} else {
 			if (inputType == data::raw || inputType == data::raw_ascn || inputType == data::raw_lrrbaf) {
 				referenceType = data::raw_ref;
@@ -200,11 +201,11 @@ private:
 			}
 		}
 		if (referenceType == data::invalid) {
-			throw invalid_argument("Invalid reference format type.");
+			throw std::invalid_argument("Invalid reference format type for reference file '" + referenceFileName + "'.");
 		}
 		
 		if (vm.count("output")) {
-			outputFileName = vm["output"].as<string>();
+			outputFileName = vm["output"].as<std::string>();
 		} else {
 			outputFileName = name::filestem(inputFileName) + ".filtered." + name::fileext(inputFileName);
 		}
@@ -216,7 +217,7 @@ private:
 		}
 		
 		if (vm.count("score")) {
-			score = vm["score"].as<string>();
+			score = vm["score"].as<std::string>();
 		} else {
 			score = "dice";
 		}

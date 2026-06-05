@@ -26,8 +26,8 @@ public:
 	typedef RawSampleSet<V> Base;
 private:
 	size_t dataColumn;
-	void _read(fstream& file);
-	void readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim);
+	void _read(std::fstream& file);
+	void readSampleValue(std::istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim);
 public:
 	SplitRawSampleSet() : dataColumn(1) {}
 	SplitRawSampleSet(size_t sampleDataColumn) : dataColumn(sampleDataColumn) {}
@@ -37,7 +37,7 @@ public:
 /* Template implementation */
 
 template <typename V>
-void SplitRawSampleSet<V>::_read(fstream& file)
+void SplitRawSampleSet<V>::_read(std::fstream& file)
 {
 	const char delim = Base::Base::io.delim;
 	const size_t nSkippedLines = Base::Base::io.nSkippedLines, headerLine = Base::Base::io.headerLine;
@@ -50,17 +50,17 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 	marker::Set::ChromosomeMarkers::const_iterator markerEnd = allMarkers.end();
 	
 	// Use fileName without extension as sampleName
-	string sampleName = name::filestem(Base::fileName);
+	std::string sampleName = name::filestem(Base::fileName);
 	typename Base::RawSample* sample = Base::create(sampleName);
 	
 	size_t lineCount = 0;
-	string line, markerName, chromName, discard;
+	std::string line, markerName, chromName, discard;
 	while (true) {
 		getline(file, line);
 		
 		if (file.eof()) break;
 		if (++lineCount > nSkippedLines && lineCount != headerLine) {
-			istringstream stream(line);
+			std::istringstream stream(line);
 			
 			// discard previous columns
 			size_t colCount = 0;
@@ -70,7 +70,7 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 			}
 			
 			if (markerIt == markerEnd) {
-				throw runtime_error("Number of markers do not match the number of values for sample");
+				throw std::runtime_error("Number of markers do not match the number of values for sample");
 			}
 			
 			readSampleValue(stream, sample, (*markerIt)->chromosome-1, delim);
@@ -84,9 +84,9 @@ void SplitRawSampleSet<V>::_read(fstream& file)
 }
 
 template <typename V> inline
-void SplitRawSampleSet<V>::readSampleValue(istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
+void SplitRawSampleSet<V>::readSampleValue(std::istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
 	typename Base::Value value;
-	string s;
+	std::string s;
 	getline(stream, s, delim);
 	value = atof(s.c_str());
 	sample->addToChromosome(chromIndex, value);

@@ -8,8 +8,9 @@
 #include <iostream>
 #include <cmath>
 #include <limits>
+#include <cmath>
 
-using namespace std;
+#include "logging.hpp"
 
 #include <boost/utility/enable_if.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
@@ -17,29 +18,21 @@ using namespace std;
 #include "typedefs.h"
 
 #include "config.h"
-#if genomic_DEBUG == 1
-#define trace(...) printf(__VA_ARGS__)
-#else
-#define trace(...)
-#endif
-
-
-#define ENABLE_IF_ARITHMETIC typename boost::enable_if<boost::is_arithmetic<T>, T>
 
 template <typename T>
-inline ENABLE_IF_ARITHMETIC::type absdiff(T a, T b) {
+inline typename boost::enable_if<boost::is_arithmetic<T>, T>::type absdiff(T a, T b) {
 	return (a > b) ? a - b : b - a;
 }
 
 template <typename T>
-inline bool eq(T a, T b, ENABLE_IF_ARITHMETIC::type epsilon=std::numeric_limits<T>::epsilon()) {
+inline typename boost::enable_if<boost::is_arithmetic<T>, bool>::type eq(T a, T b, T epsilon=std::numeric_limits<T>::epsilon()) {
 	// essentially equal
 	//return abs(a - b) <= ( (abs(a) > abs(b) ? abs(b) : abs(a)) * epsilon );
 	return absdiff(a, b) <= epsilon;
 }
 
 template <typename T>
-inline bool neq(T a, T b, ENABLE_IF_ARITHMETIC::type epsilon=std::numeric_limits<T>::epsilon()) {
+inline typename boost::enable_if<boost::is_arithmetic<T>, bool>::type neq(T a, T b, T epsilon=std::numeric_limits<T>::epsilon()) {
 	// essentially equal
 	//return abs(a - b) > ( (abs(a) > abs(b) ? abs(b) : abs(a)) * epsilon );
 	return absdiff(a, b) > epsilon;
@@ -64,8 +57,8 @@ namespace mapping
 	class ChromosomesMap
 	{
 	private:
-		typedef map<string, chromid> chr2index;
-		typedef map<chromid, string> index2chr;
+		typedef std::map<std::string, chromid> chr2index;
+		typedef std::map<chromid, std::string> index2chr;
 		chr2index index;
 		index2chr chr;
 	public:
@@ -81,7 +74,7 @@ namespace mapping
 			// Generate reverse mapping (while the mapping is still one-to-one)
 			chr2index::const_iterator it, end = index.end();
 			for (it = index.begin(); it != end; ++it) {
-				chr.insert( make_pair(it->second, it->first) );
+				chr.insert(std::make_pair(it->second, it->first));
 			}
 			
 			// Map special cases
@@ -99,7 +92,7 @@ namespace mapping
 			index["chrY"] = 24;
 		}	
 		
-		chromid operator[] (const string& chr) {
+		chromid operator[] (const std::string& chr) {
 			return index[chr];
 			/*
 			chr2index::const_iterator it = index.find(chr);
@@ -110,7 +103,7 @@ namespace mapping
 			*/
 		}
 		
-		string operator[] (chromid index) {
+		std::string operator[] (chromid index) {
 			return chr[index];
 			/*
 			index2chr::const_iterator it = chr.find(index);
@@ -123,8 +116,8 @@ namespace mapping
 		
 		void print() {
 			chr2index::const_iterator end = index.end();
-			for (map<string, chromid>::iterator it = index.begin(); it != end; ++it) {
-				cout << it->first << " -> " << it->second << endl;
+			for (std::map<std::string, chromid>::iterator it = index.begin(); it != end; ++it) {
+				std::cout << it->first << " -> " << it->second << std::endl;
 			}
 		}
 	};
@@ -134,8 +127,8 @@ namespace mapping
 	class ExtensionMap
 	{
 	private:
-		typedef map<string, data::Type> ext2type;
-		typedef map<data::Type, string> type2ext;
+		typedef std::map<std::string, data::Type> ext2type;
+		typedef std::map<data::Type, std::string> type2ext;
 		ext2type type;
 		type2ext ext;
 	public:
@@ -152,10 +145,10 @@ namespace mapping
 			// create reverse mapping
 			ext2type::const_iterator it, end = type.end();
 			for (it = type.begin(); it != end; ++it) {
-				ext.insert( make_pair(it->second, it->first) );
+				ext.insert(std::make_pair(it->second, it->first));
 			}
 		}
-		data::Type operator[] (const string& ext) {
+		data::Type operator[] (const std::string& ext) {
 			ext2type::const_iterator it = type.find(ext);
 			if (it == type.end()) {
 				return data::invalid;
@@ -163,7 +156,7 @@ namespace mapping
 				return it->second;
 			}
 		}
-		const string& operator[] (data::Type type) {
+		const std::string& operator[] (data::Type type) {
 			type2ext::const_iterator it = ext.find(type);
 			if (it == ext.end()) {
 				return ext[data::invalid];
@@ -179,17 +172,17 @@ namespace mapping
 namespace compare
 {
 	template <typename T1, typename T2>
-	bool pair(const pair<T1, T2>& a, const pair<T1, T2>& b) {
+	bool pair(const std::pair<T1, T2>& a, const std::pair<T1, T2>& b) {
 		return a.first < b.first;
 	}
 }
 
 namespace name
 {
-	string common(const string& a, const string& b);
-	string fileext(const string& s);
-	string filestem(const string& s);
-	string filepath(const string& s);
+	std::string common(const std::string& a, const std::string& b);
+	std::string fileext(const std::string& s);
+	std::string filestem(const std::string& s);
+	std::string filepath(const std::string& s);
 }
 
 

@@ -7,38 +7,36 @@ data::Type RawSampleSet<SPECIALIZATION_TYPE>::type() {
 }
 
 template <> inline
-void RawSampleSet<SPECIALIZATION_TYPE>::readSampleNames(istringstream& stream) {
-	while (!stream.eof()) {
-		string sampleName1, sampleName2;
-		stream >> sampleName1 >> sampleName2;
+void RawSampleSet<SPECIALIZATION_TYPE>::readSampleNames(std::istringstream& stream) {
+	std::string sampleName1, sampleName2;
+	while (stream >> sampleName1 >> sampleName2) {
 		create(name::common(sampleName1, sampleName2));
 	}
 }
 
 template <> inline
-void RawSampleSet<SPECIALIZATION_TYPE>::readSampleValues(istringstream& stream, size_t sampleStart, const string& chromName) {
+void RawSampleSet<SPECIALIZATION_TYPE>::readSampleValues(std::istringstream& stream, size_t sampleStart, const std::string& chromName) {
 	size_t i = sampleStart;
 	Value value;
-	while (!stream.eof()) {
-		stream >> value.a >> value.b;
+	while (stream >> value.a >> value.b) {
 		// create point at specified chromosome
 		samples[++i]->addToChromosome(chromName, value);
 	}
 }
 
 template <> inline
-void RawSampleSet<SPECIALIZATION_TYPE>::writeSampleNames(fstream& file, const char delim) {
+void RawSampleSet<SPECIALIZATION_TYPE>::writeSampleNames(std::fstream& file, const char delim) {
 	// print sample names
 	SamplesIterator it;
 	const SamplesIterator end = samples.end();
 	for (it = samples.begin(); it != end; ++it) {
 		file << delim << (**it).name << ".A" << delim << (**it).name << ".B";
 	}
-	file << endl;
+	file << std::endl;
 }
 
 template <> inline
-void RawSampleSet<SPECIALIZATION_TYPE>::writeSampleValues(fstream& file, size_t chr, size_t markerIndex, const char delim) {
+void RawSampleSet<SPECIALIZATION_TYPE>::writeSampleValues(std::fstream& file, size_t chr, size_t markerIndex, const char delim) {
 	// iterate through samples to print values, selected the specified chromosome and marker
 	SamplesIterator it;
 	const SamplesIterator end = samples.end();
@@ -46,5 +44,5 @@ void RawSampleSet<SPECIALIZATION_TYPE>::writeSampleValues(fstream& file, size_t 
 		const Value& value = (**it)[chr][markerIndex];
 		file << delim << value.a << delim << value.b;
 	}
-	file << endl;
+	file << std::endl;
 }

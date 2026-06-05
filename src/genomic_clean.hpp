@@ -22,9 +22,9 @@ public:
 		// Delcare options
 		opts.add_options()
 			("help", "print help message")
-			("input,i", po::value<string>(), "sample set file")
-			("output,o", po::value<string>(), "output file")
-			("format,f", po::value<string>(), "input file format [default: determined from file extension]")
+			("input,i", po::value<std::string>(), "sample set file")
+			("output,o", po::value<std::string>(), "output file")
+			("format,f", po::value<std::string>(), "input file format [default: determined from file extension]")
 			("inverse,v", po::value<bool>(), "select instead of filter overlapping segments")
 			("merge,m", po::value<bool>(), "merge filtered segments with upstream/downstream segments?")
 			("count", po::value<position>(), "threshold for number of markers in segment")
@@ -41,7 +41,7 @@ public:
 	
 	template <typename SampleSetType>
 	void clean(segmented<false>) {
-		throw logic_error("Cleaning functions for raw CN files have yet been implemented.");
+		throw std::logic_error("Cleaning functions for raw CN files have yet been implemented.");
 	}
 	
 	template <typename SampleSetType>
@@ -61,8 +61,8 @@ public:
 	void run() {
 		
 		if (vm.count("help")) {
-			cout << "usage:  " << progname << " clean [options] <sample set file> <output file>" << endl;
-			cout << opts << endl;
+			std::cout << "usage:  " << progname << " clean [options] <sample set file> <output file>" << std::endl;
+			std::cout << opts << std::endl;
 			return;
 		}
 		
@@ -89,14 +89,15 @@ public:
 				
 				clean< RawSampleSet<alleles_cn> >(segmented<false>());
 				break;
-				
+			default:
+				throw std::logic_error("Unsupported input type in clean.");
 		}
 		
 	}
 	
 private:
 	
-	string inputFileName, outputFileName;
+	std::string inputFileName, outputFileName;
 	data::Type inputType;
 	float diceThreshold;
 	bool inverse, merge, balanced;
@@ -106,22 +107,22 @@ private:
 	void getOptions() {
 		
 		if (vm.count("input")) {
-			inputFileName = vm["input"].as<string>();
+			inputFileName = vm["input"].as<std::string>();
 		} else {
-			throw invalid_argument("Input file not specified.");
+			throw std::invalid_argument("Input file not specified for clean command.");
 		}
 		
 		if (vm.count("format")) {
-			inputType = mapping::extension[ vm["format"].as<string>() ];
+			inputType = mapping::extension[ vm["format"].as<std::string>() ];
 		} else {
 			inputType = mapping::extension[ name::fileext(inputFileName) ];
 		}
 		if (inputType == data::invalid) {
-			throw invalid_argument("Invalid input format type.");
+			throw std::invalid_argument("Invalid input format type for input file '" + inputFileName + "'.");
 		}
 		
 		if (vm.count("output")) {
-			outputFileName = vm["output"].as<string>();
+			outputFileName = vm["output"].as<std::string>();
 		} else {
 			outputFileName = name::filestem(inputFileName) + ".filtered." + name::fileext(inputFileName);
 		}

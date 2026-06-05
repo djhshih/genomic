@@ -20,10 +20,10 @@ public:
 		//po::options_description opts("Convert options");
 		opts.add_options()
 			("help", "print help message")
-			("input,i", po::value< vector<string> >(), "input files")
-			("from,f", po::value<string>(), "input file format [default: determined from file extension]")
-			("output,o", po::value<string>(), "output file")
-			("to,t", po::value<string>(), "output file format [default: either seg(as) or cn(as), depending on input file format]")
+			("input,i", po::value< std::vector<std::string> >(), "input files")
+			("from,f", po::value<std::string>(), "input file format [default: determined from file extension]")
+			("output,o", po::value<std::string>(), "output file")
+			("to,t", po::value<std::string>(), "output file format [default: either seg(as) or cn(as), depending on input file format]")
 			;
 		popts.add("input", -1);
 	}
@@ -31,8 +31,8 @@ public:
 	void run() {
 		
 		if (vm.count("help")) {
-			cout << "usage:  " << progname << " convert [options] <input files>" << endl;
-			cout << opts << endl;
+			std::cout << "usage:  " << progname << " convert [options] <input files>" << std::endl;
+			std::cout << opts << std::endl;
 			return;
 		}
 		
@@ -40,23 +40,8 @@ public:
 		
 		
 		switch (inputType) {
-			case data::dchip: {
-				throw logic_error("Conversion not implemented");
-				break;
-			}
-			
 			case data::penncnv: {
-				throw logic_error("Conversion not implemented");
-				break;
-			}
-				
-			case data::cnag: {
-				throw logic_error("Conversion not implemented");
-				break;
-			}
-			
-			case data::picnic: {
-				throw logic_error("Conversion not implemented");
+				throw std::logic_error("Conversion not implemented for requested input format.");
 				break;
 			}
 					
@@ -175,43 +160,41 @@ public:
 				
 				break;
 			}
-					
+			default:
+				throw std::logic_error("Unsupported input type in convert.");
 		}
 		
 	}
 	
 private:
 	
-	vector<string> inputFileNames;
-	string outputFileName;
+	std::vector<std::string> inputFileNames;
+	std::string outputFileName;
 	data::Type inputType, outputType;
 
 	void getOptions() {
 		
 		if (vm.count("input")) {
-			inputFileNames = vm["input"].as< vector<string> >();
+			inputFileNames = vm["input"].as< std::vector<std::string> >();
 		} else {
-			throw invalid_argument("No input file specified.");
+			throw std::invalid_argument("No input file specified.");
 		}
 		
 		if (vm.count("from")) {
-			inputType = mapping::extension[ vm["from"].as<string>() ];
+			inputType = mapping::extension[ vm["from"].as<std::string>() ];
 		} else {
 			inputType = mapping::extension[ name::fileext(inputFileNames[0]) ];
 		}
 		if (inputType == data::invalid) {
-			throw invalid_argument("Invalid input format type.");
+			throw std::invalid_argument("Invalid input format type: '" + name::fileext(inputFileNames[0]) + "'.");
 		}
 		
 		data::Type defaultOutputType = data::invalid;
 		switch (inputType) {
 			case data::raw:
-			case data::cnag:
-			case data::dchip:
 			case data::penncnv:
 				defaultOutputType = data::segmented;
 				break;
-			case data::picnic:
 			case data::raw_ascn:
 				defaultOutputType = data::segmented_ascn;
 				break;
@@ -226,12 +209,12 @@ private:
 		}
 		
 		if (vm.count("output")) {
-			outputFileName = vm["output"].as<string>();
+			outputFileName = vm["output"].as<std::string>();
 		} else {
 			outputFileName = name::filestem(inputFileNames[0]);
 			if (vm.count("to")) {
 				// use specified output format extension
-				outputFileName += "." + vm["to"].as<string>();
+				outputFileName += "." + vm["to"].as<std::string>();
 			} else {
 				// use default output format
 				if (defaultOutputType != data::invalid) {
@@ -241,14 +224,14 @@ private:
 		}
 		
 		if (vm.count("to")) {
-			outputType = mapping::extension[ vm["to"].as<string>() ];
+			outputType = mapping::extension[ vm["to"].as<std::string>() ];
 		} else {
 			// determine output type from extension
 			// outputFileName must be previously defined
 			outputType = mapping::extension[ name::fileext(outputFileName) ];
 		}
 		if (outputType == data::invalid) {
-			throw invalid_argument("Invalid output format type.");
+			throw std::invalid_argument("Invalid output format type for output file '" + outputFileName + "'.");
 		}
 	}
 	

@@ -26,8 +26,8 @@ private:
 		return new GenericSampleSet(*this);
 	}
 	
-	void _read(fstream& file);
-	void _write(fstream& file);
+	void _read(std::fstream& file);
+	void _write(std::fstream& file);
 	
 public:
 	
@@ -71,7 +71,7 @@ public:
 class invalid_conversion : public std::logic_error
 {
 public:
-	explicit invalid_conversion(const string& what_arg)
+	explicit invalid_conversion(const std::string& what_arg)
 	: std::logic_error("Invalid conversion. " + what_arg) {}
 };
 
