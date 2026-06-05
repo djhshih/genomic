@@ -17,7 +17,7 @@ public:
 	bool aberrant;
 	bool valid;
 	
-	position length() {
+	position length() const {
 		return end - start + 1;
 	}
 	
