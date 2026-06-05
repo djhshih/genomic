@@ -237,6 +237,36 @@ BOOST_AUTO_TEST_CASE(RawSampleSet_Filter)
 	}
 }
 
+BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Find_ExactAndLowerBound)
+{
+	SegmentedSampleSet<rvalue> set;
+	SegmentedSampleSet<rvalue>::SegmentedSample* sample = set.create("sample1");
+
+	Segment<rvalue> seg1(1, 10, 19, 10, 1.0f);
+	Segment<rvalue> seg2(1, 20, 29, 10, 2.0f);
+	Segment<rvalue> seg3(1, 40, 49, 10, 3.0f);
+
+	sample->addToChromosome(0, seg1);
+	sample->addToChromosome(0, seg2);
+	sample->addToChromosome(0, seg3);
+
+	BOOST_CHECK_EQUAL(set.find(sample, 0, 10), 0u);
+	BOOST_CHECK_EQUAL(set.find(sample, 0, 20), 1u);
+	BOOST_CHECK_EQUAL(set.find(sample, 0, 40), 2u);
+	BOOST_CHECK_EQUAL(set.find(sample, 0, 25), 1u);
+	BOOST_CHECK_EQUAL(set.find(sample, 0, 39), 1u);
+	BOOST_CHECK_EQUAL(set.find(sample, 0, 5), 0u);
+	BOOST_CHECK_EQUAL(set.find(sample, 0, 100), 2u);
+}
+
+BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Find_EmptyChromosome)
+{
+	SegmentedSampleSet<rvalue> set;
+	SegmentedSampleSet<rvalue>::SegmentedSample* sample = set.create("sample1");
+
+	BOOST_CHECK_EQUAL(set.find(sample, 0, 10), 0u);
+}
+
 BOOST_AUTO_TEST_CASE(RawSampleSet_InvalidInputPath)
 {
 	BOOST_CHECK_THROW(RawSampleSet<rvalue>().read("does-not-exist.cn"), runtime_error);
