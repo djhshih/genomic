@@ -125,21 +125,20 @@ namespace marker {
 		}
 	}
 	
-	// TODO make more efficient
 	void Set::clean() {
 		GenomeMarkers::iterator it;
 		GenomeMarkers::const_iterator end = set.end();
 		for (it = set.begin(); it != end; ++it) {
-			ChromosomeMarkers::iterator chromIt = it->begin();
-			while (chromIt != it->end()) {
-				// VERY INEFFICIENT!
-				if ((*chromIt)->flag) {
-					//trace("Erasing %s...\n", chromIt->name.c_str());
-					it->erase(chromIt);
-				} else {
-					++chromIt;
-				}
-			}
+			ChromosomeMarkers& chromosome = *it;
+			const ChromosomeMarkers::iterator newEnd = std::remove_if(chromosome.begin(), chromosome.end(),
+				[](Marker* marker) {
+					if (marker->flag) {
+						delete marker;
+						return true;
+					}
+					return false;
+				});
+			chromosome.erase(newEnd, chromosome.end());
 		}
 	}
 	
