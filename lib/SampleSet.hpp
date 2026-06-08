@@ -10,13 +10,13 @@
 #include "Marker.hpp"
 #include "Properties.hpp"
 
-class GenericSampleSet;
-
 namespace cna {
+
+class GenericSampleSet;
 
 class SampleSet
 {
-	friend class ::GenericSampleSet;
+	friend class GenericSampleSet;
 	//  for accessing the private clone() function
 	//    and the read() and write() functions
 	

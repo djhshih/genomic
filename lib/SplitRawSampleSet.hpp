@@ -16,6 +16,8 @@
 
 extern marker::Manager marker::manager;
 
+namespace cna {
+
 template <typename V> 
 class SplitRawSampleSet : public RawSampleSet<V>
 {
@@ -101,5 +103,10 @@ void SplitRawSampleSet<V>::readSampleValue(std::istringstream& stream, typename 
 #define SPECIALIZATION_TYPE alleles_rcn
 #include "SplitRawSampleSet_special.hpp"
 #undef SPECIALIZATION_TYPE
+
+} // namespace cna
+
+template <typename V>
+using SplitRawSampleSet = cna::SplitRawSampleSet<V>;
 
 #endif

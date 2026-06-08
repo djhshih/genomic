@@ -1,6 +1,6 @@
 #include "GenericSampleSet.hpp"
 
-void GenericSampleSet::_read(std::fstream& file)
+void cna::GenericSampleSet::_read(std::fstream& file)
 {
 	const std::string& fileName = Base::fileName;
 	marker::Set* markers = Base::markers;
@@ -25,7 +25,7 @@ void GenericSampleSet::_read(std::fstream& file)
 	rep->_read(file);
 }
 
-void GenericSampleSet::_write(std::fstream& file)
+void cna::GenericSampleSet::_write(std::fstream& file)
 {
 	const std::string& fileName = Base::fileName;
 	

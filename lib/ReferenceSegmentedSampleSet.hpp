@@ -1,6 +1,8 @@
 #ifndef cna_ReferenceSegmentedSampleSet_h
 #define cna_ReferenceSegmentedSampleSet_h
 
+namespace cna {
+
 template <typename V>
 class ReferenceSegmentedSampleSet : public SegmentedSampleSet<V>
 {
@@ -16,5 +18,10 @@ private:
 		Base::positionsOnly = true;
 	}
 };
+
+} // namespace cna
+
+template <typename V>
+using ReferenceSegmentedSampleSet = cna::ReferenceSegmentedSampleSet<V>;
 
 #endif
