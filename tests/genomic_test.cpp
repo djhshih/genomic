@@ -238,6 +238,47 @@ BOOST_AUTO_TEST_CASE(RawSampleSet_Filter)
 	}
 }
 
+BOOST_AUTO_TEST_CASE(RawSampleSet_Filter_RemovesAlternatingMarkersAndPreservesAlignment)
+{
+	const char* set1fn = "cnfilt_cleanup_a.in";
+	const char* set2fn = "cnfilt_cleanup_b.in";
+	const char* outfn = "cnfilt_cleanup.out";
+	{
+		ofstream out(set1fn);
+		out << "marker\tchromosome\tposition\ts1\ts2\n";
+		out << "m1\tchr1\t10\t1\t10\n";
+		out << "m2\tchr1\t20\t2\t20\n";
+		out << "m3\tchr1\t30\t3\t30\n";
+		out << "m4\tchr1\t40\t4\t40\n";
+	}
+	{
+		ofstream out(set2fn);
+		out << "marker\tchromosome\tposition\n";
+		out << "m2\tchr1\t20\n";
+		out << "m4\tchr1\t40\n";
+	}
+
+	RawSampleSet<cnvalue> set1, set2;
+	set1.read(string(set1fn));
+	set2.read(string(set2fn));
+	set1.filter(set2);
+	set1.write(string(outfn));
+
+	ifstream in(outfn);
+	string line;
+	getline(in, line);
+	BOOST_CHECK_EQUAL(line, "marker\tchromosome\tposition\ts1\ts2");
+	getline(in, line);
+	BOOST_CHECK_EQUAL(line, "m1\t1\t10\t1\t10");
+	getline(in, line);
+	BOOST_CHECK_EQUAL(line, "m3\t1\t30\t3\t30");
+	BOOST_CHECK(!getline(in, line));
+
+	std::remove(set1fn);
+	std::remove(set2fn);
+	std::remove(outfn);
+}
+
 BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Find_ExactAndLowerBound)
 {
 	SegmentedSampleSet<rvalue> set;

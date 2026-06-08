@@ -144,6 +144,8 @@ public:
 			// pre-allocate space
 			samples.resize(oldSamples.size());
 			for (size_t sampleIndex = 0; sampleIndex < oldSamples.size(); ++sampleIndex) {
+				samples[sampleIndex] = new RawSample(oldSamples[sampleIndex]->name);
+				byNames[samples[sampleIndex]->name] = samples[sampleIndex];
 				// iterate through chromosomes
 				for (size_t chromIndex = 0; chromIndex < oldSamples[0]->size(); ++chromIndex) {
 					// resize chromosome to be as big as chromosome from old sample
