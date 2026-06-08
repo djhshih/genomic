@@ -12,9 +12,6 @@
 
 class GenericSampleSet;
 
-//TODO use boost::spirit for parsing
-//TODO allow use of input delimiter other than whitespace in all functions
-
 class SampleSet
 {
 	friend class GenericSampleSet;

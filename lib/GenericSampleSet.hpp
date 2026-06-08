@@ -8,9 +8,6 @@
 #include "RawSampleSet.hpp"
 #include "SegmentedSampleSet.hpp"
 
-//template <typename V> class SegmentedSampleSet;
-//template <typename V> class RawSampleSet;
-
 // Generic sample set, chooses appropriately between possible types of sample set
 // Use handle-body idiom
 class GenericSampleSet : public SampleSet
