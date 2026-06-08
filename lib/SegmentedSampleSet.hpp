@@ -17,6 +17,7 @@
 
 
 template <typename V> class RawSampleSet;
+template <typename V> class SegmentedSampleSet;
  
 template <typename V>
 class filter_operator
