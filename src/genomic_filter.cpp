@@ -145,9 +145,6 @@ void Filter::getOptions() {
 		aberrant = false;
 	}
 	
-	//TODO automatically determine stateDiff and refState
-	// current settings are suitable for LRR data
-	
 	if (vm.count("state_diff")) {
 		stateDiff = vm["state_diff"].as<float>();
 	} else {

@@ -92,9 +92,6 @@ void Clean::getOptions() {
 		length = 0;
 	}
 	
-	//TODO automatically determine stateDiff and refState
-	// current settings are suitable for LRR data
-	
 	if (vm.count("balanced")) {
 		balanced = vm["balanced"].as<bool>();
 	} else {
