@@ -47,7 +47,7 @@ extern chromid nChromosomes;
 namespace data
 {
 	enum Type {
-		invalid, generic, raw, segmented, raw_ref, segmented_ref, raw_ascn, segmented_ascn, raw_lrrbaf, penncnv
+		invalid, generic, raw, segmented, raw_ref, segmented_ref, raw_ascn, segmented_ascn, raw_lrrbaf
 	};
 };
 
@@ -140,7 +140,6 @@ namespace mapping
 			type["cnas"] = data::raw_ascn;
 			type["segas"] = data::segmented_ascn;
 			type["lrrbaf"] = data::raw_lrrbaf;
-			type["penncnv"] = data::penncnv;
 			
 			// create reverse mapping
 			ext2type::const_iterator it, end = type.end();

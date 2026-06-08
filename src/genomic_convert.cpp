@@ -23,10 +23,6 @@ void Convert::run() {
 	getOptions();
 	
 	switch (inputType) {
-		case data::penncnv: {
-			throw std::logic_error("Conversion not implemented for requested input format.");
-			break;
-		}
 		case data::segmented: {
 			SegmentedSampleSet<rvalue> set;
 			if (outputType != data::segmented_ref) {
@@ -159,9 +155,6 @@ void Convert::getOptions() {
 	data::Type defaultOutputType = data::invalid;
 	switch (inputType) {
 		case data::raw:
-		case data::penncnv:
-			defaultOutputType = data::segmented;
-			break;
 		case data::raw_ascn:
 			defaultOutputType = data::segmented_ascn;
 			break;
