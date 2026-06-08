@@ -2,15 +2,15 @@
 // include in RawSampleSet.hpp multiple times with different SPECIALIZATION_TYPE
 
 template <> inline
-data::Type RawSampleSet<SPECIALIZATION_TYPE>::type() {
-	return data::raw_ascn;
+cna::data::Type RawSampleSet<SPECIALIZATION_TYPE>::type() {
+	return cna::data::raw_ascn;
 }
 
 template <> inline
 void RawSampleSet<SPECIALIZATION_TYPE>::readSampleNames(FieldScanner& fields) {
 	std::string_view sampleName1, sampleName2;
 	while (fields.next(sampleName1) && fields.next(sampleName2)) {
-		create(name::common(std::string(sampleName1), std::string(sampleName2)));
+		create(cna::name::common(std::string(sampleName1), std::string(sampleName2)));
 	}
 }
 

@@ -172,7 +172,7 @@ public:
 		
 		//if (!aberrantOnly || seg.aberrant) {
 			chromid chri = seg.chromosome - 1;
-			const char* chrom = mapping::chromosome[chri+1].c_str();
+			const char* chrom = cna::mapping::chromosome[chri+1].c_str();
 			
 			// Compare against segments in all samples in reference set
 			typename ReferenceSet::Samples::const_iterator refIt, refEnd = ref.end();
@@ -311,8 +311,8 @@ public:
 	~SegmentedSampleSet() {
 		clear();
 	}
-	data::Type type() {
-		return data::segmented;
+	cna::data::Type type() {
+		return cna::data::segmented;
 	}
 	void clear() {
 		typename Samples::iterator it, end = samples.end();
@@ -431,7 +431,7 @@ SegmentedSampleSet<V>::SegmentedSampleSet(const RawSampleSet<V>& raw)
 				++markerIt;
 				markerIndex = 1;
 				while (markerIt != markerEnd) {
-					if (!eq(*markerIt, prevValue)) {
+					if (!cna::eq(*markerIt, prevValue)) {
 						// segment ended: store segment from $startMarkerIndex to $markerIndex-1
 						Segment<Value> seg(
 							chr+1,
@@ -489,7 +489,7 @@ void SegmentedSampleSet<V>::_read(std::fstream& file)
 			if (!fields.next(field)) continue;
 			chromName.assign(field.data(), field.size());
 			// ignore unknown chromosome: continue to next line
-			chromid chrom = mapping::chromosome[chromName];
+			chromid chrom = cna::mapping::chromosome[chromName];
 			if (chrom == 0) continue;
 			// create segment at specified chromosome
 			Segment<V> seg(chrom);
@@ -712,7 +712,7 @@ void mergeSegments(Segment<V>* seg1, Segment<V>* seg2) {
 	seg1->count += seg2->count;
 	
 	// update value with weighted average
-	if (neq(seg1->value, seg2->value)) {
+	if (cna::neq(seg1->value, seg2->value)) {
 		float totalCount = seg1->count + seg2->count;
 		seg1->value = 
 			seg1->value * (seg1->count/totalCount) + 
@@ -753,7 +753,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
 			typename Segments::iterator segIt;
 			typename Segments::const_iterator segEnd = chrIt->end();
-			const char* chrom = mapping::chromosome[chri+1].c_str();
+			const char* chrom = cna::mapping::chromosome[chri+1].c_str();
 			
 			Segment<V>* prevUnmarkedSegment = NULL, *nextUnmarkedSegment;
 			// prevUnmarkedSegment will point to previous unmarked segment in the samples
@@ -779,7 +779,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 						if (!nextUnmarkedSegment->flag && nextUnmarkedSegment->valid && merge) {
 							// check if values are essentially the same for the two segments
 							if ( prevUnmarkedSegment != NULL && nextUnmarkedSegment != NULL &&
-									 absdiff(prevUnmarkedSegment->value, nextUnmarkedSegment->value) <= cna.deviation ) {
+									 cna::absdiff(prevUnmarkedSegment->value, nextUnmarkedSegment->value) <= cna.deviation ) {
 
 								log_trace(__FILE__, __LINE__, __func__, "Merge segments from chr%s:%d-%d to chr%s:%d-%d in %s",
 									chrom, prevUnmarkedSegment->start, prevUnmarkedSegment->end,
@@ -829,7 +829,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 					} else {
 						
 						if ( prevUnmarkedSegment != NULL && nextUnmarkedSegment != NULL &&
-							   absdiff(prevUnmarkedSegment->value, nextUnmarkedSegment->value) <= cna.deviation ) {
+							   cna::absdiff(prevUnmarkedSegment->value, nextUnmarkedSegment->value) <= cna.deviation ) {
 							// previous and next segments are essentially the same
 							
 							log_trace(__FILE__, __LINE__, __func__, "Merge segments from chr%s:%d-%d to chr%s:%d-%d in %s",

@@ -31,8 +31,8 @@ public:
 	
 	Sample(const std::string& sampleName) : name(sampleName) {
 		// always allocate for all chromosomes
-		items.reserve(nChromosomes);
-		for (chromid i = 0; i < nChromosomes; ++i) {
+		items.reserve(cna::nChromosomes);
+		for (chromid i = 0; i < cna::nChromosomes; ++i) {
 			items.push_back(Chromosome(i));
 		}
 	}
@@ -63,7 +63,7 @@ public:
 		}
 	}
 	Chromosome& operator[](const std::string& chromName) {
-		chromid k = mapping::chromosome[chromName];
+		chromid k = cna::mapping::chromosome[chromName];
 		if (k != 0) return items[k-1];
 		throw std::logic_error("Chromosome name is not found.");
 	}
@@ -86,7 +86,7 @@ public:
 		return NULL;
 	}
 	Chromosome* chromosome(const std::string& chromName) {
-		chromid k = mapping::chromosome[chromName];
+		chromid k = cna::mapping::chromosome[chromName];
 		if (k != 0) return &(items[k-1]);
 		return NULL;
 	}
@@ -99,7 +99,7 @@ public:
 		return NULL;
 	}
 	T* addToChromosome(const std::string& chromName, const T& item) {
-		chromid k = mapping::chromosome[chromName];
+		chromid k = cna::mapping::chromosome[chromName];
 		if (k != 0) {
 			Chromosome& chrom = items[k-1];
 			chrom.push_back(item);

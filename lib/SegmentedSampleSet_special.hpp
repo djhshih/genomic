@@ -2,8 +2,8 @@
 // include in SegmentedSampleSet.h multiple times with different SPECIALIZATION_TYPE
 
 template <> inline
-data::Type SegmentedSampleSet<SPECIALIZATION_TYPE>::type() {
-	return data::segmented_ascn;
+cna::data::Type SegmentedSampleSet<SPECIALIZATION_TYPE>::type() {
+	return cna::data::segmented_ascn;
 }
 
 template <> inline

@@ -50,7 +50,7 @@ void SplitRawSampleSet<V>::_read(std::fstream& file)
 	marker::Set::ChromosomeMarkers::const_iterator markerEnd = allMarkers.end();
 	
 	// Use fileName without extension as sampleName
-	std::string sampleName = name::filestem(Base::fileName);
+	std::string sampleName = cna::name::filestem(Base::fileName);
 	typename Base::RawSample* sample = Base::create(sampleName);
 	
 	size_t lineCount = 0;

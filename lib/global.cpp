@@ -1,8 +1,9 @@
 #include "global.hpp"
 
+namespace cna {
+
 chromid nAutosomes = 22;
 chromid nChromosomes = 24;
-
 
 namespace mapping {
 	ChromosomesMap chromosome;
@@ -55,3 +56,5 @@ namespace name
 	}
 		
 }
+
+} // namespace cna

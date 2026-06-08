@@ -40,7 +40,7 @@ namespace marker {
 					chromName.assign(field.data(), field.size());
 					if (!fields.next(field) || !parseNumber(field, pos)) continue;
 					
-					size_t chr = mapping::chromosome[chromName];
+					size_t chr = cna::mapping::chromosome[chromName];
 					// ignore unknown chromosome: continue to next line
 					if (chr == 0) continue;
 					// create marker
@@ -88,7 +88,7 @@ namespace marker {
 				if (namedMarkers) {
 					file << marker->name << delim;
 				}
-				file << mapping::chromosome[marker->chromosome] << delim << marker->pos << std::endl;
+				file << cna::mapping::chromosome[marker->chromosome] << delim << marker->pos << std::endl;
 			}
 		}
 	}

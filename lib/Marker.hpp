@@ -55,7 +55,7 @@ namespace marker
 		
 		Set(const std::string& markerSetPlatform)
 		: platform(markerSetPlatform), namedMarkers(true),
-		  set(nChromosomes), unsortedChromIndex(0), refCount(1) {
+		  set(cna::nChromosomes), unsortedChromIndex(0), refCount(1) {
 		}
 		
 		~Set() {

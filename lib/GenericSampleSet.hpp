@@ -54,8 +54,8 @@ public:
 		}
 	}
 	
-	data::Type type() {
-		return data::generic;
+	cna::data::Type type() {
+		return cna::data::generic;
 	}
 	size_t size() {
 		if (rep != NULL) {

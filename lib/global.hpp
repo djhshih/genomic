@@ -19,6 +19,8 @@
 
 #include "config.h"
 
+namespace cna {
+
 template <typename T>
 inline typename boost::enable_if<boost::is_arithmetic<T>, T>::type absdiff(T a, T b) {
 	return (a > b) ? a - b : b - a;
@@ -26,18 +28,13 @@ inline typename boost::enable_if<boost::is_arithmetic<T>, T>::type absdiff(T a, 
 
 template <typename T>
 inline typename boost::enable_if<boost::is_arithmetic<T>, bool>::type eq(T a, T b, T epsilon=std::numeric_limits<T>::epsilon()) {
-	// essentially equal
-	//return abs(a - b) <= ( (abs(a) > abs(b) ? abs(b) : abs(a)) * epsilon );
 	return absdiff(a, b) <= epsilon;
 }
 
 template <typename T>
 inline typename boost::enable_if<boost::is_arithmetic<T>, bool>::type neq(T a, T b, T epsilon=std::numeric_limits<T>::epsilon()) {
-	// essentially equal
-	//return abs(a - b) > ( (abs(a) > abs(b) ? abs(b) : abs(a)) * epsilon );
 	return absdiff(a, b) > epsilon;
 }
-
 
 // Number of human autosomes
 extern chromid nAutosomes;
@@ -66,7 +63,7 @@ namespace mapping
 			
 			// Map numeric values of chromosomes and alternatives prefixed with chr
 			char s[6];
-			for (chromid i = 1; i <= nChromosomes; ++i) {
+			for (chromid i = 1; i <= cna::nChromosomes; ++i) {
 				sprintf(s, "%d", i); index[s] = i;
 				index[s] = i;
 			}
@@ -84,7 +81,7 @@ namespace mapping
 			chr[24] = "Y";
 			
 			// Map alternative names for chromosomes prefixed with chr
-			for (chromid i = 1; i <= nChromosomes; ++i) {
+			for (chromid i = 1; i <= cna::nChromosomes; ++i) {
 				sprintf(s, "chr%d", i);
 				index[s] = i;
 			}
@@ -97,7 +94,7 @@ namespace mapping
 			/*
 			chr2index::const_iterator it = index.find(chr);
 			if (it == index.end()) {
-				return nChromosomes+1;
+				return cna::nChromosomes+1;
 			}
 			return it->second;
 			*/
@@ -184,5 +181,6 @@ namespace name
 	std::string filepath(const std::string& s);
 }
 
+} // namespace cna
 
 #endif

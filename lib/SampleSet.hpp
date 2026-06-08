@@ -69,7 +69,7 @@ public:
 	
 	virtual void clear() = 0;
 	virtual void sort() = 0;
-	virtual data::Type type() = 0;
+	virtual cna::data::Type type() = 0;
 	virtual size_t size() = 0;
 	
 protected:

@@ -30,9 +30,11 @@ ENABLE_IF_ALLELE_SPECIFIC::type operator+(const allele_specific_type& x, const a
 	return allele_specific_type(x.a + y.a, x.b + y.b);
 }
 
+namespace cna {
 template <typename allele_specific_type> inline
 ENABLE_IF_ALLELE_SPECIFIC::type absdiff(const allele_specific_type& x, const allele_specific_type& y) {
-	return allele_specific_type(::absdiff(x.a, y.a), ::absdiff(x.b, y.b));
+	return allele_specific_type(cna::absdiff(x.a, y.a), cna::absdiff(x.b, y.b));
+}
 }
 
 template <typename allele_specific_type> inline
@@ -62,12 +64,12 @@ bool operator>=(const alleles_rcn& x, float z) {
 
 template <typename allele_specific_type> inline
 bool operator!=(const allele_specific_type& x, const ENABLE_IF_ALLELE_SPECIFIC::type& y) {
-	return !( eq(x.a, y.a) && eq(y.b, y.b) );
+	return !( cna::eq(x.a, y.a) && cna::eq(y.b, y.b) );
 }
 
 template <typename allele_specific_type> inline
 bool operator==(const allele_specific_type& x, const ENABLE_IF_ALLELE_SPECIFIC::type& y) {
-	return eq(x.a, y.a) && eq(x.b, y.b);
+	return cna::eq(x.a, y.a) && cna::eq(x.b, y.b);
 }
 
 template <typename allele_specific_type> inline
@@ -75,14 +77,16 @@ std::istream& operator>>(std::istream& is, ENABLE_IF_ALLELE_SPECIFIC::type& x)  
 	return is >> x.a >> ' ' >> x.b;
 }
 
+namespace cna {
 template <typename allele_specific_type>
 inline bool eq(const allele_specific_type& x, const ENABLE_IF_ALLELE_SPECIFIC::type& y) {
-	return ::eq(x.a, y.a) && ::eq(x.b, y.b);
+	return cna::eq(x.a, y.a) && cna::eq(x.b, y.b);
 }
 
 template <typename allele_specific_type>
 inline bool neq(const allele_specific_type& x, const ENABLE_IF_ALLELE_SPECIFIC::type& y) {
-	return ::neq(x.a, y.a) || ::neq(x.b, y.b);
+	return cna::neq(x.a, y.a) || cna::neq(x.b, y.b);
+}
 }
 
 #endif

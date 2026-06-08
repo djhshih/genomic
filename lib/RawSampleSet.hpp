@@ -80,8 +80,8 @@ public:
 	~RawSampleSet() {
 		clear();
 	}
-	data::Type type() {
-		return data::raw;
+	cna::data::Type type() {
+		return cna::data::raw;
 	}
 	void clear() {
 		SamplesIterator i, end = samples.end();
@@ -244,7 +244,7 @@ void RawSampleSet<V>::_read(std::fstream& file)
 				chromName.assign(field.data(), field.size());
 				if (!fields.next(field) || !parseNumber(field, pos)) continue;
 				if (readMarkers) {
-					size_t chr = mapping::chromosome[chromName];
+					size_t chr = cna::mapping::chromosome[chromName];
 					// ignore unknown chromosome: continue to next line
 					if (chr == 0) continue;
 					// create marker
@@ -362,7 +362,7 @@ void RawSampleSet<V>::sort()
 		
 		// Sort on the order vector instead of the original vector<Markers*>,
 		//   in order to obtain the sorted index
-		std::sort(order.begin(), order.end(), &compare::pair<position, size_t>);
+		std::sort(order.begin(), order.end(), &cna::compare::pair<position, size_t>);
 		
 		// Now, order is sorted by chromosome position, and order[i].second
 		//   contains each sorted index
