@@ -6,8 +6,6 @@
   - `RawSampleSet<V>::RawSampleSet(const SegmentedSampleSet<V>& set)` is currently a stub
   - currently throws even when marker information is present
   - requires defining behavior for markers not covered by any segment
-- [ ] Implement conversion from PennCNV input in `src/genomic_convert.cpp`
-  - currently throws `"Conversion not implemented for requested input format."`
 
 ## Cleaning features
 
