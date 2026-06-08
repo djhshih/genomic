@@ -113,6 +113,7 @@ namespace marker
 		
 		bool empty();
 		
+		// Remove flagged markers from chromosome vectors and delete the owned Marker objects.
 		void clean();
 		
 		void filter(const std::vector<std::string>& refMarkers) {
@@ -130,6 +131,7 @@ namespace marker
 		
 	private:
 		
+		// Owned marker storage, partitioned by chromosome.
 		GenomeMarkers set;
 		size_t unsortedChromIndex;
 		size_t refCount;
