@@ -1,28 +1,28 @@
 # Architecture Overview
 
 ## Purpose
-`genomic` is a C++ command-line toolkit for reading, transforming, filtering, cleaning, and sorting genomic copy-number style data. The codebase is organized around a small CLI front end and a reusable in-memory data model for markers, samples, chromosomes, raw measurements, and segmented intervals.
+`cna` is a C++ command-line toolkit for reading, transforming, filtering, cleaning, and sorting copy-number style data. The codebase is organized around a small CLI front end and a reusable in-memory data model for markers, samples, chromosomes, raw measurements, and segmented intervals.
 
 ## High-level structure
 
 ### 1. Application entry point
-- **`genomic.cpp`**
+- **`cna.cpp`**
   - Creates the available subcommands: `convert`, `filter`, `clean`, and `sort`.
   - Dispatches based on the first CLI argument.
   - Prints usage/version information.
 
 ### 2. Command layer
-- **`genomic_common.hpp/cpp`**
+- **`cna_common.hpp/cpp`**
   - Defines the `Command` base class used by all CLI commands.
   - Wraps Boost Program Options parsing.
   - Exposes global `progname` and stream formatting for commands.
-- **`genomic_convert.hpp`**
+- **`cna_convert.hpp`**
   - Implements format conversion workflows.
-- **`genomic_filter.hpp`**
+- **`cna_filter.hpp`**
   - Implements filtering against reference datasets.
-- **`genomic_clean.hpp`**
+- **`cna_clean.hpp`**
   - Implements rule-based cleanup of segmented data.
-- **`genomic_sort.hpp`**
+- **`cna_sort.hpp`**
   - Implements marker-file sorting.
 
 This layer is thin: it mostly parses options, chooses the right dataset types, and invokes domain operations.
@@ -46,7 +46,7 @@ This layer is thin: it mostly parses options, chooses the right dataset types, a
 These files act as shared infrastructure for the rest of the system.
 
 ### 4. Generic biological/container hierarchy
-The domain model is layered from low-level genomic coordinates upward:
+The domain model is layered from low-level chromosome coordinates upward:
 
 - **Markers** describe probe/marker positions on chromosomes.
 - **Chromosomes** hold ordered sequences of values or segments.
@@ -55,7 +55,7 @@ The domain model is layered from low-level genomic coordinates upward:
 
 #### `Marker` subsystem
 - **`Marker.hpp/cpp`**
-  - `marker::Marker` stores marker name, chromosome, genomic position, and filter flag.
+  - `marker::Marker` stores marker name, chromosome, position, and filter flag.
   - `marker::Set` stores per-chromosome collections of markers.
   - Supports reading, writing, sorting, filtering, distribution of unsorted markers, and cleanup.
   - `marker::Manager` is a global registry/reference-count manager for shared marker sets.
@@ -184,7 +184,7 @@ These files extend the core raw/segmented model for particular external formats 
 
 ### Sort
 1. Marker file is read.
-2. Markers are sorted by chromosome and genomic position.
+2. Markers are sorted by chromosome and position.
 3. Sorted marker file is written.
 
 ## Architectural patterns used
@@ -204,9 +204,9 @@ These files extend the core raw/segmented model for particular external formats 
 ## Module boundaries
 
 ### 11. Main dependencies between modules
-- `genomic.cpp` depends on the command classes.
+- `cna.cpp` depends on the command classes.
 - Command classes depend on:
-  - `genomic_common`
+  - `cna_common`
   - `global`
   - `SampleSets.hpp`
 - `SampleSets.hpp` aggregates all sample-set variants.
@@ -228,8 +228,8 @@ CLI main
 
 ### 12. Build
 - **`CMakeLists.txt`** builds the main executable from a small set of translation units:
-  - `genomic.cpp`
-  - `genomic_common.cpp`
+  - `cna.cpp`
+  - `cna_common.cpp`
   - `global.cpp`
   - `SampleSet.cpp`
   - `GenericSampleSet.cpp`
@@ -242,7 +242,7 @@ CLI main
   - Confirms the architecture’s main contract: datasets can be read, transformed, and written reproducibly.
 
 ## Summary
-The codebase is centered on a reusable in-memory model for genomic sample data, with a CLI layer on top. The dominant architectural idea is a combination of:
+The codebase is centered on a reusable in-memory model for copy-number sample data, with a CLI layer on top. The dominant architectural idea is a combination of:
 - abstract base classes for shared workflows,
 - templates for value/type specialization,
 - and file-extension-driven dispatch for format selection.

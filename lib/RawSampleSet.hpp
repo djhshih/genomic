@@ -364,7 +364,7 @@ void RawSampleSet<V>::sort()
 		//   in order to obtain the sorted index
 		std::sort(order.begin(), order.end(), &compare::pair<position, size_t>);
 		
-		// Now, order is sorted by genomic position, and order[i].second
+		// Now, order is sorted by chromosome position, and order[i].second
 		//   contains each sorted index
 		
 		// Sort the markers on current chromosome, and each sample

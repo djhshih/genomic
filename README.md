@@ -1,7 +1,7 @@
-genomic
-=======
+cna
+===
 
-C++ command-line toolkit for reading, transforming, filtering, cleaning, and sorting genomic copy-number style data.
+C++ command-line toolkit for reading, transforming, filtering, cleaning, and sorting copy-number style data.
 
 ### Dependencies ###
 

@@ -19,7 +19,7 @@
 
 ## Default value interference
 
-- [ ] Determine sane default values for stateDiff and refState for genomic clean and
+- [ ] Determine sane default values for stateDiff and refState for cna clean and
       filter based on input type (current defaults are for LRR input)
 
 ## Chromosome number

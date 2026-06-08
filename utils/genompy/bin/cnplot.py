@@ -81,7 +81,7 @@ def read_sample(sample_path, exts):
 
 
 
-pr = argparse.ArgumentParser(description='To generate genomic plot for a sample')
+pr = argparse.ArgumentParser(description='To generate a copy-number plot for a sample')
 pr.add_argument('sample', help='name of sample')
 pr.add_argument('coord', help='coordinates to plot')
 pr.add_argument('coord2', help='zoomed coordinates to plot')

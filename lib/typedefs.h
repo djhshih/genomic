@@ -4,10 +4,10 @@
 // chromosome index
 typedef unsigned int chromid;
 
-// genomic position
+// chromosome position
 typedef unsigned long position;
 
-// difference in genomic position
+// difference in chromosome position
 typedef signed long position_diff;
 
 // copy number value
