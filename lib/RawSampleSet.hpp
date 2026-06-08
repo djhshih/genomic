@@ -11,6 +11,7 @@
 #include <stdexcept>
 
 #include "AlleleSpecific.hpp"
+#include "parse.hpp"
 #include "SampleSet.hpp"
 
 
@@ -54,8 +55,8 @@ private:
 	void _read(std::fstream& file);
 	void _write(std::fstream& file);
 
-	void readSampleNames(std::istringstream& stream);
-	void readSampleValues(std::istringstream& stream, size_t sampleStart, const std::string& chromName);
+	void readSampleNames(FieldScanner& fields);
+	void readSampleValues(FieldScanner& fields, size_t sampleStart, const std::string& chromName);
 
 	void writeSampleNames(std::fstream& file, const char delim);
 	void writeSampleValues(std::fstream& file, size_t chr, size_t markerIndex, const char delim);
@@ -210,6 +211,7 @@ RawSampleSet<V>::RawSampleSet(const SegmentedSampleSet<V>& set)
 template <typename V>
 void RawSampleSet<V>::_read(std::fstream& file)
 {
+	const char delim = Base::io.delim;
 	const size_t nSkippedLines = Base::io.nSkippedLines, headerLine = Base::io.headerLine;
 	marker::Set* markers = Base::markers;
 	
@@ -220,23 +222,25 @@ void RawSampleSet<V>::_read(std::fstream& file)
 	
 	size_t lineCount = 0;
 	size_t sampleStart = samples.size()-1; 
-	std::string line, markerName, chromName, discard;
+	std::string line, markerName, chromName;
+	std::string_view field;
 	while (true) {
 		getline(file, line);
 		
 		if (file.eof()) break;
 		if (++lineCount > nSkippedLines) {
+			FieldScanner fields(line, delim);
 			if (lineCount == headerLine) {
-				std::istringstream stream(line);
-				// discard the marker information columns (3)
-				stream >> discard >> discard >> discard;
-				
-				readSampleNames(stream);
+				for (size_t i = 0; i < 3 && fields.next(field); ++i) {
+				}
+				readSampleNames(fields);
 			} else {
-				std::istringstream stream(line);
 				position pos;
-				stream >> markerName >> chromName >> pos;
-				
+				if (!fields.next(field)) continue;
+				markerName.assign(field.data(), field.size());
+				if (!fields.next(field)) continue;
+				chromName.assign(field.data(), field.size());
+				if (!fields.next(field) || !parseNumber(field, pos)) continue;
 				if (readMarkers) {
 					size_t chr = mapping::chromosome[chromName];
 					// ignore unknown chromosome: continue to next line
@@ -245,8 +249,7 @@ void RawSampleSet<V>::_read(std::fstream& file)
 					marker::Marker* marker = new marker::Marker(markerName, chr, pos);
 					markers->addToChromosome(chr-1, marker);
 				}
-				
-				readSampleValues(stream, sampleStart, chromName);
+				readSampleValues(fields, sampleStart, chromName);
 			}
 		} else {
 			// discard line
@@ -255,19 +258,22 @@ void RawSampleSet<V>::_read(std::fstream& file)
 }
 
 template <typename V> inline
-void RawSampleSet<V>::readSampleNames(std::istringstream& stream) {
-	std::string sampleName;
-	while (stream >> sampleName) {
-		// create sample with $sampleName
-		create(sampleName);
+void RawSampleSet<V>::readSampleNames(FieldScanner& fields) {
+	std::string_view field;
+	while (fields.next(field)) {
+		create(std::string(field));
 	}
 }
 
 template <typename V> inline
-void RawSampleSet<V>::readSampleValues(std::istringstream& stream, size_t sampleStart, const std::string& chromName) {
+void RawSampleSet<V>::readSampleValues(FieldScanner& fields, size_t sampleStart, const std::string& chromName) {
 	size_t i = sampleStart;
 	Value value;
-	while (stream >> value) {
+	std::string_view field;
+	while (fields.next(field)) {
+		if (!parseNumber(field, value)) {
+			continue;
+		}
 		// create point at specified chromosome
 		samples[++i]->addToChromosome(chromName, value);
 	}

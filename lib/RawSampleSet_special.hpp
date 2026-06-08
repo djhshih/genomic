@@ -7,18 +7,22 @@ data::Type RawSampleSet<SPECIALIZATION_TYPE>::type() {
 }
 
 template <> inline
-void RawSampleSet<SPECIALIZATION_TYPE>::readSampleNames(std::istringstream& stream) {
-	std::string sampleName1, sampleName2;
-	while (stream >> sampleName1 >> sampleName2) {
-		create(name::common(sampleName1, sampleName2));
+void RawSampleSet<SPECIALIZATION_TYPE>::readSampleNames(FieldScanner& fields) {
+	std::string_view sampleName1, sampleName2;
+	while (fields.next(sampleName1) && fields.next(sampleName2)) {
+		create(name::common(std::string(sampleName1), std::string(sampleName2)));
 	}
 }
 
 template <> inline
-void RawSampleSet<SPECIALIZATION_TYPE>::readSampleValues(std::istringstream& stream, size_t sampleStart, const std::string& chromName) {
+void RawSampleSet<SPECIALIZATION_TYPE>::readSampleValues(FieldScanner& fields, size_t sampleStart, const std::string& chromName) {
 	size_t i = sampleStart;
 	Value value;
-	while (stream >> value.a >> value.b) {
+	std::string_view a, b;
+	while (fields.next(a) && fields.next(b)) {
+		if (!parseNumber(a, value.a) || !parseNumber(b, value.b)) {
+			continue;
+		}
 		// create point at specified chromosome
 		samples[++i]->addToChromosome(chromName, value);
 	}

@@ -10,6 +10,7 @@
 #include <fstream>
 #include <queue>
 #include <stdexcept>
+#include <cstdio>
 
 using namespace std;
 
@@ -265,6 +266,64 @@ BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Find_EmptyChromosome)
 	SegmentedSampleSet<rvalue>::SegmentedSample* sample = set.create("sample1");
 
 	BOOST_CHECK_EQUAL(set.find(sample, 0, 10), 0u);
+}
+
+BOOST_AUTO_TEST_CASE(RawSampleSet_Read_WithConfiguredDelimiter)
+{
+	const char* input = "raw_delim_test.in";
+	const char* output = "raw_delim_test.out";
+	{
+		ofstream out(input);
+		out << "marker,chromosome,position,s1,s2\n";
+		out << "m1,chr1,10,1.5,2.5\n";
+		out << "m2,chr1,20,3.5,4.5\n";
+	}
+
+	RawSampleSet<rvalue> set;
+	set.setIO(IOProperties(',', 1, 0, false));
+	set.read(string(input));
+	set.write(string(output));
+
+	ifstream in(output);
+	string line;
+	getline(in, line);
+	BOOST_CHECK_EQUAL(line, "marker,chromosome,position,s1,s2");
+	getline(in, line);
+	BOOST_CHECK_EQUAL(line, "m1,1,10,1.5,2.5");
+	getline(in, line);
+	BOOST_CHECK_EQUAL(line, "m2,1,20,3.5,4.5");
+
+	std::remove(input);
+	std::remove(output);
+}
+
+BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Read_WithConfiguredDelimiter)
+{
+	const char* input = "seg_delim_test.in";
+	const char* output = "seg_delim_test.out";
+	{
+		ofstream out(input);
+		out << "sample,chromosome,start,end,count,state\n";
+		out << "s1,chr1,10,20,3,1.5\n";
+		out << "s1,chr1,21,30,2,2.5\n";
+	}
+
+	SegmentedSampleSet<rvalue> set;
+	set.setIO(IOProperties(',', 1, 0, false));
+	set.read(string(input));
+	set.write(string(output));
+
+	ifstream in(output);
+	string line;
+	getline(in, line);
+	BOOST_CHECK_EQUAL(line, "sample,chromosome,start,end,count,state");
+	getline(in, line);
+	BOOST_CHECK_EQUAL(line, "s1,1,10,20,3,1.5");
+	getline(in, line);
+	BOOST_CHECK_EQUAL(line, "s1,1,21,30,2,2.5");
+
+	std::remove(input);
+	std::remove(output);
 }
 
 BOOST_AUTO_TEST_CASE(RawSampleSet_InvalidInputPath)

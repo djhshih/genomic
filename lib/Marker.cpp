@@ -1,4 +1,5 @@
 #include "Marker.hpp"
+#include "parse.hpp"
 
 namespace marker {
 
@@ -26,16 +27,18 @@ namespace marker {
 		size_t lineCount = 0;
 		std::string line;
 		position pos;
-		std::string markerName = "", chromName, s;
+		std::string markerName = "", chromName;
+		std::string_view field;
 		while (std::getline(file, line)) {
 			if (++lineCount > io.nSkippedLines && lineCount != io.headerLine) {
-					std::istringstream stream(line);
+					FieldScanner fields(line, delim);
 					if (named) {
-						getline(stream, markerName, delim);
+						if (!fields.next(field)) continue;
+						markerName.assign(field.data(), field.size());
 					}
-					getline(stream, chromName, delim);
-					getline(stream, s, delim);
-					pos = atol(s.c_str());
+					if (!fields.next(field)) continue;
+					chromName.assign(field.data(), field.size());
+					if (!fields.next(field) || !parseNumber(field, pos)) continue;
 					
 					size_t chr = mapping::chromosome[chromName];
 					// ignore unknown chromosome: continue to next line

@@ -12,6 +12,7 @@
 
 #include "AlleleSpecific.hpp"
 #include "SampleSet.hpp"
+#include "parse.hpp"
 
 #define ENABLE_IF_OVERLAPPER typename boost::enable_if<boost::is_base_and_derived<overlapper_base, overlapper_type>, overlapper_type>
 
@@ -270,12 +271,15 @@ private:
 	void _read(std::fstream& file);
 	void _write(std::fstream& file);
 	
-	void readSegment(std::istringstream& stream, Segment<V>& seg) {
-		stream >> seg.start >> seg.end;
+	void readSegment(FieldScanner& fields, Segment<V>& seg) {
+		std::string_view field;
+		if (!fields.next(field) || !parseNumber(field, seg.start)) return;
+		if (!fields.next(field) || !parseNumber(field, seg.end)) return;
 		if (positionsOnly) {
 			seg.count = seg.value = 0;
 		} else {
-			stream >> seg.count >> seg.value;
+			if (!fields.next(field) || !parseNumber(field, seg.count)) return;
+			if (!fields.next(field) || !parseNumber(field, seg.value)) return;
 		}
 	}
 	
@@ -472,21 +476,26 @@ void SegmentedSampleSet<V>::_read(std::fstream& file)
 	// assume M x 6 data matrix
 	// columns: sample, chr, start, end, markers, value
 	
+	const char delim = Base::io.delim;
 	size_t lineCount = 0;
 	std::string line, sampleName, chromName;
+	std::string_view field;
 	while (true) {
 		getline(file, line);
 		
 		if (file.eof()) break;
 		if (++lineCount > io.nSkippedLines && lineCount != io.headerLine) {
-			std::istringstream stream(line);
-			stream >> sampleName >> chromName;
+			FieldScanner fields(line, delim);
+			if (!fields.next(field)) continue;
+			sampleName.assign(field.data(), field.size());
+			if (!fields.next(field)) continue;
+			chromName.assign(field.data(), field.size());
 			// ignore unknown chromosome: continue to next line
 			chromid chrom = mapping::chromosome[chromName];
 			if (chrom == 0) continue;
 			// create segment at specified chromosome
 			Segment<V> seg(chrom);
-			readSegment(stream, seg);
+			readSegment(fields, seg);
 			if (mergeSamples) sampleName = "ALL";
 			create(sampleName)->addToChromosome(chrom-1, seg);
 			//trace("%s %s %d %d %d %f\n", sampleName.c_str(), chromName.c_str(), seg.start, seg.end, seg.count, seg.value);

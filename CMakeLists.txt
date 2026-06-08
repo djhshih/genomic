@@ -36,6 +36,7 @@ set(genomic_LIB_SRCS
 	src/genomic_filter.cpp
 	lib/global.cpp
 	lib/logging.cpp
+	lib/parse.cpp
 	lib/Sample.cpp
 	lib/SampleSet.cpp
 	lib/GenericSampleSet.cpp

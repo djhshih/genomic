@@ -7,10 +7,14 @@ data::Type SegmentedSampleSet<SPECIALIZATION_TYPE>::type() {
 }
 
 template <> inline
-void SegmentedSampleSet<SPECIALIZATION_TYPE>::readSegment(std::istringstream& stream, Segment<SPECIALIZATION_TYPE>& seg) {
-	stream >> seg.start >> seg.end;
+void SegmentedSampleSet<SPECIALIZATION_TYPE>::readSegment(FieldScanner& fields, Segment<SPECIALIZATION_TYPE>& seg) {
+	std::string_view field;
+	if (!fields.next(field) || !parseNumber(field, seg.start)) return;
+	if (!fields.next(field) || !parseNumber(field, seg.end)) return;
 	if (!positionsOnly) {
-		stream >> seg.count >> seg.value.a >> seg.value.b;
+		if (!fields.next(field) || !parseNumber(field, seg.count)) return;
+		if (!fields.next(field) || !parseNumber(field, seg.value.a)) return;
+		if (!fields.next(field) || !parseNumber(field, seg.value.b)) return;
 	}
 }
 
