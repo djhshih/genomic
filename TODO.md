@@ -21,3 +21,8 @@
 
 - [ ] Determine sane default values for stateDiff and refState for genomic clean and
       filter based on input type (current defaults are for LRR input)
+
+## Chromosome number
+
+- [ ] Support different number of chromosomes (i.e. for non-humans)
+
