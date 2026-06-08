@@ -51,15 +51,13 @@ public:
 };
 
 // filter out balanced segments
-template <typename V, typename T=float>
+template <typename V>
 class balanced_segment_filter : public filter_operator<V>
 {
-	// note: T cannot be an unsigned type; operator+ and operator- must be defined
-	// TODO: use one template type instead of two
-	T reference;
-	T deviation;
+	float reference;
+	float deviation;
 public:
-	balanced_segment_filter(T referenceState, T stateDeviation)
+	balanced_segment_filter(float referenceState, float stateDeviation)
 	: reference(referenceState), deviation(stateDeviation) {}
 	bool operator()(Segment<V>& seg) const {
 		return (seg.value <= reference - deviation || seg.value >= reference + deviation);

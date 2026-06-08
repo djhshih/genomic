@@ -42,12 +42,12 @@ ENABLE_IF_ALLELE_SPECIFIC::type operator*(const allele_specific_type& x, float z
 
 template <typename allele_specific_type> inline
 bool operator<=(const allele_specific_type& x, float z) {
-	return x.a <= z;
+	return (x.a + x.b) <= z;
 }
 
 template <typename allele_specific_type> inline
 bool operator>=(const allele_specific_type& x, float z) {
-	return x.a >= z;
+	return (x.a + x.b) >= z;
 }
 
 inline
