@@ -279,6 +279,32 @@ BOOST_AUTO_TEST_CASE(RawSampleSet_Filter_RemovesAlternatingMarkersAndPreservesAl
 	std::remove(outfn);
 }
 
+BOOST_AUTO_TEST_CASE(SpuriousSegmentFilter_UsesStrictCountThreshold)
+{
+	spurious_segment_filter<rvalue> filter(3);
+
+	Segment<rvalue> below(1, 1, 10, 2, 0.0f);
+	Segment<rvalue> atThreshold(1, 1, 10, 3, 0.0f);
+	Segment<rvalue> above(1, 1, 10, 4, 0.0f);
+
+	BOOST_CHECK_EQUAL(filter(below), true);
+	BOOST_CHECK_EQUAL(filter(atThreshold), false);
+	BOOST_CHECK_EQUAL(filter(above), false);
+}
+
+BOOST_AUTO_TEST_CASE(SmallSegmentFilter_UsesStrictLengthThreshold)
+{
+	small_segment_filter<rvalue> filter(10);
+
+	Segment<rvalue> below(1, 1, 9, 1, 0.0f);
+	Segment<rvalue> atThreshold(1, 1, 10, 1, 0.0f);
+	Segment<rvalue> above(1, 1, 11, 1, 0.0f);
+
+	BOOST_CHECK_EQUAL(filter(below), true);
+	BOOST_CHECK_EQUAL(filter(atThreshold), false);
+	BOOST_CHECK_EQUAL(filter(above), false);
+}
+
 BOOST_AUTO_TEST_CASE(BalancedSegmentFilter_ScalarThresholds)
 {
 	balanced_segment_filter<rvalue> filter(0.0f, 0.2f);
