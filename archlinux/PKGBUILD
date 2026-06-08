@@ -1,10 +1,10 @@
-pkgname=genomic-git
-_pkgname=genomic
-pkgver=20110812
+pkgname=cna-git
+_pkgname=cna
+pkgver=20260608
 pkgrel=1
 pkgdesc="A tool for copy number analysis"
 arch=('i686' 'x86_64')
-url="http://kwan.ignorelist.com"
+url="http://github.com/djhshih/cna"
 license=('GPL3')
 depends=('boost')
 makedepends=('cmake' 'git')
@@ -13,9 +13,9 @@ conflicts=($_pkgname)
 source=()
 md5sums=()
 
-_gitroot="ssh://git@kwan.ignorelist.com:2244/~/genomic"
-_gitname="genomic"
-_gitbranch="master"
+_gitroot="ssh://git@github.com:djhshih/cna"
+_gitname="cna"
+_gitbranch="main"
 
 build() {
 	cd $srcdir
