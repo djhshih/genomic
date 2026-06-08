@@ -279,6 +279,53 @@ BOOST_AUTO_TEST_CASE(RawSampleSet_Filter_RemovesAlternatingMarkersAndPreservesAl
 	std::remove(outfn);
 }
 
+BOOST_AUTO_TEST_CASE(BalancedSegmentFilter_ScalarThresholds)
+{
+	balanced_segment_filter<rvalue> filter(0.0f, 0.2f);
+
+	Segment<rvalue> inside(1, 1, 10, 1, 0.1f);
+	Segment<rvalue> lowerEdge(1, 1, 10, 1, -0.2f);
+	Segment<rvalue> upperEdge(1, 1, 10, 1, 0.2f);
+	Segment<rvalue> below(1, 1, 10, 1, -0.3f);
+	Segment<rvalue> above(1, 1, 10, 1, 0.3f);
+
+	BOOST_CHECK_EQUAL(filter(inside), false);
+	BOOST_CHECK_EQUAL(filter(lowerEdge), true);
+	BOOST_CHECK_EQUAL(filter(upperEdge), true);
+	BOOST_CHECK_EQUAL(filter(below), true);
+	BOOST_CHECK_EQUAL(filter(above), true);
+}
+
+BOOST_AUTO_TEST_CASE(BalancedSegmentFilter_AlleleSpecificUsesTotalSignal)
+{
+	balanced_segment_filter<alleles_cn> filter(2.0f, 0.3f);
+
+	Segment<alleles_cn> balanced(1, 1, 10, 1, alleles_cn(1, 1));
+	Segment<alleles_cn> highTotal(1, 1, 10, 1, alleles_cn(2, 1));
+	Segment<alleles_cn> lowTotal(1, 1, 10, 1, alleles_cn(1, 0));
+	Segment<alleles_cn> imbalancedButSameTotal(1, 1, 10, 1, alleles_cn(2, 0));
+
+	BOOST_CHECK_EQUAL(filter(balanced), false);
+	BOOST_CHECK_EQUAL(filter(highTotal), true);
+	BOOST_CHECK_EQUAL(filter(lowTotal), true);
+	BOOST_CHECK_EQUAL(filter(imbalancedButSameTotal), false);
+}
+
+BOOST_AUTO_TEST_CASE(BalancedSegmentFilter_AlleleSpecificRelativeCNUsesTotalSignal)
+{
+	balanced_segment_filter<alleles_rcn> filter(0.0f, 0.2f);
+
+	Segment<alleles_rcn> balanced(1, 1, 10, 1, alleles_rcn(0, 0));
+	Segment<alleles_rcn> highTotal(1, 1, 10, 1, alleles_rcn(1, 0));
+	Segment<alleles_rcn> lowTotal(1, 1, 10, 1, alleles_rcn(-1, 0));
+	Segment<alleles_rcn> imbalancedButSameTotal(1, 1, 10, 1, alleles_rcn(1, -1));
+
+	BOOST_CHECK_EQUAL(filter(balanced), false);
+	BOOST_CHECK_EQUAL(filter(highTotal), true);
+	BOOST_CHECK_EQUAL(filter(lowTotal), true);
+	BOOST_CHECK_EQUAL(filter(imbalancedButSameTotal), false);
+}
+
 BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Find_ExactAndLowerBound)
 {
 	SegmentedSampleSet<rvalue> set;
