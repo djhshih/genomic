@@ -16,6 +16,8 @@
 #include "AlleleSpecific.hpp"
 #include "Segment.hpp"
 
+namespace cna {
+
 template <typename Chromosome>
 class Sample
 {
@@ -125,5 +127,9 @@ public:
 	}
 };
 
+} // namespace cna
+
+template <typename Chromosome>
+using Sample = cna::Sample<Chromosome>;
 
 #endif

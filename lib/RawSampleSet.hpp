@@ -22,8 +22,8 @@
 
 extern marker::Manager marker::manager;
 
-template <typename T> class LinearChromosome;
-template <typename Chromosome> class Sample;
+namespace cna {
+
 class GenericSampleSet;
 template <typename V> class SegmentedSampleSet;
 
@@ -194,7 +194,10 @@ public:
 	}
 };
 
+} // namespace cna
 
+template <typename V>
+using RawSampleSet = cna::RawSampleSet<V>;
 
 /* Template implementation */
 

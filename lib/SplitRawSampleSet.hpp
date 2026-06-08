@@ -16,9 +16,6 @@
 
 extern marker::Manager marker::manager;
 
-template <typename V> class RawSampleSet;
-
-
 template <typename V> 
 class SplitRawSampleSet : public RawSampleSet<V>
 {

@@ -8,6 +8,7 @@
 
 //#include "Tree.hpp"
 
+namespace cna {
 
 template <typename V> class Segment;
 
@@ -116,5 +117,13 @@ public:
 	}
 };
 */
+
+} // namespace cna
+
+template <typename T>
+using Chromosome = cna::Chromosome<T>;
+
+template <typename T>
+using LinearChromosome = cna::LinearChromosome<T>;
 
 #endif

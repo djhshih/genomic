@@ -1,8 +1,6 @@
 #ifndef cna_ReferenceRawSampleSet_h
 #define cna_ReferenceRawSampleSet_h
 
-template <typename V> class RawSampleSet;
-
 // same as RawSampleSet
 template <typename V>
 class ReferenceRawSampleSet : public RawSampleSet<V>

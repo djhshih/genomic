@@ -8,6 +8,8 @@
 #include "RawSampleSet.hpp"
 #include "SegmentedSampleSet.hpp"
 
+namespace cna {
+
 // Generic sample set, chooses appropriately between possible types of sample set
 // Use handle-body idiom
 class GenericSampleSet : public SampleSet
@@ -71,5 +73,10 @@ public:
 	explicit invalid_conversion(const std::string& what_arg)
 	: std::logic_error("Invalid conversion. " + what_arg) {}
 };
+
+} // namespace cna
+
+using GenericSampleSet = cna::GenericSampleSet;
+using invalid_conversion = cna::invalid_conversion;
 
 #endif

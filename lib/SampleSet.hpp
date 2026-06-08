@@ -12,9 +12,11 @@
 
 class GenericSampleSet;
 
+namespace cna {
+
 class SampleSet
 {
-	friend class GenericSampleSet;
+	friend class ::GenericSampleSet;
 	//  for accessing the private clone() function
 	//    and the read() and write() functions
 	
@@ -89,5 +91,9 @@ private:
 	virtual SampleSet* clone() const = 0;
 	
 };
+
+} // namespace cna
+
+using SampleSet = cna::SampleSet;
 
 #endif

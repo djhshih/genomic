@@ -16,6 +16,7 @@
 
 #define ENABLE_IF_OVERLAPPER typename boost::enable_if<boost::is_base_and_derived<overlapper_base, overlapper_type>, overlapper_type>
 
+namespace cna {
 
 template <typename V> class RawSampleSet;
 template <typename V> class SegmentedSampleSet;
@@ -913,5 +914,30 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 #define SPECIALIZATION_TYPE alleles_rcn
 #include "SegmentedSampleSet_special.hpp"
 #undef SPECIALIZATION_TYPE
+
+} // namespace cna
+
+template <typename V>
+using SegmentedSampleSet = cna::SegmentedSampleSet<V>;
+
+template <typename V>
+using filter_operator = cna::filter_operator<V>;
+
+template <typename V>
+using spurious_segment_filter = cna::spurious_segment_filter<V>;
+
+template <typename V>
+using small_segment_filter = cna::small_segment_filter<V>;
+
+template <typename V>
+using balanced_segment_filter = cna::balanced_segment_filter<V>;
+
+using overlapper_base = cna::overlapper_base;
+using reference_overlapper = cna::reference_overlapper;
+using query_overlapper = cna::query_overlapper;
+using union_overlapper = cna::union_overlapper;
+using min_overlapper = cna::min_overlapper;
+using max_overlapper = cna::max_overlapper;
+using dice_overlapper = cna::dice_overlapper;
 
 #endif

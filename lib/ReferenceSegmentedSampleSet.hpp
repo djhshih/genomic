@@ -1,8 +1,6 @@
 #ifndef cna_ReferenceSegmentedSampleSet_h
 #define cna_ReferenceSegmentedSampleSet_h
 
-template <typename V> class SegmentedSampleSet;
-
 template <typename V>
 class ReferenceSegmentedSampleSet : public SegmentedSampleSet<V>
 {
