@@ -1,5 +1,5 @@
-#ifndef genomic_SampleSet_h
-#define genomic_SampleSet_h
+#ifndef cna_SampleSet_h
+#define cna_SampleSet_h
 
 #include <string>
 #include <stdexcept>

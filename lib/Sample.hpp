@@ -1,5 +1,5 @@
-#ifndef genomic_Sample_h
-#define genomic_Sample_h
+#ifndef cna_Sample_h
+#define cna_Sample_h
 
 #include <iostream>
 #include <fstream>

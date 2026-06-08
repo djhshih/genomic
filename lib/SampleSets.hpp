@@ -1,5 +1,5 @@
-#ifndef genomic_SampleSets_h
-#define genomic_SampleSets_h
+#ifndef cna_SampleSets_h
+#define cna_SampleSets_h
 
 #include "SampleSet.hpp"
 #include "RawSampleSet.hpp"

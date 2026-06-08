@@ -1,5 +1,5 @@
-#ifndef genomic_Tree_h
-#define genomic_Tree_h
+#ifndef cna_Tree_h
+#define cna_Tree_h
 
 #include <iostream>
 #include <stdexcept>

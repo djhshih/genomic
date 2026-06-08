@@ -1,5 +1,5 @@
-#ifndef genomic_Properties_h
-#define genomic_Properties_h
+#ifndef cna_Properties_h
+#define cna_Properties_h
 
 struct IOProperties
 {

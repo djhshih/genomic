@@ -1,5 +1,5 @@
-#ifndef genomic_AlleleSpecific_h
-#define genomic_AlleleSpecific_h
+#ifndef cna_AlleleSpecific_h
+#define cna_AlleleSpecific_h
 
 #include <cmath>
 #include <limits>

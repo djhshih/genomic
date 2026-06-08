@@ -1,5 +1,5 @@
-#ifndef genomic_SegmentedSampleSet_h
-#define genomic_SegmentedSampleSet_h
+#ifndef cna_SegmentedSampleSet_h
+#define cna_SegmentedSampleSet_h
 
 #include <iostream>
 #include <fstream>

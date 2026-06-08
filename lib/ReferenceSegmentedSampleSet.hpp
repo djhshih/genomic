@@ -1,5 +1,5 @@
-#ifndef genomic_ReferenceSegmentedSampleSet_h
-#define genomic_ReferenceSegmentedSampleSet_h
+#ifndef cna_ReferenceSegmentedSampleSet_h
+#define cna_ReferenceSegmentedSampleSet_h
 
 template <typename V> class SegmentedSampleSet;
 

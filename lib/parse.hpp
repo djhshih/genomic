@@ -1,5 +1,5 @@
-#ifndef genomic_parse_h
-#define genomic_parse_h
+#ifndef cna_parse_h
+#define cna_parse_h
 
 #include <string>
 #include <string_view>

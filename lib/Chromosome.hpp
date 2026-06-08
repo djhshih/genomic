@@ -1,5 +1,5 @@
-#ifndef genomic_Chromosome_h
-#define genomic_Chromosome_h
+#ifndef cna_Chromosome_h
+#define cna_Chromosome_h
 
 #include <vector>
 

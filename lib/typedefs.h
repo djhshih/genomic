@@ -1,5 +1,5 @@
-#ifndef genomic_typedefs_h
-#define genomic_typedefs_h
+#ifndef cna_typedefs_h
+#define cna_typedefs_h
 
 // chromosome index
 typedef unsigned int chromid;

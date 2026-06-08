@@ -1,5 +1,5 @@
-#ifndef genomic_logging_h
-#define genomic_logging_h
+#ifndef cna_logging_h
+#define cna_logging_h
 
 #include <cstdarg>
 

@@ -1,5 +1,5 @@
-#ifndef genomic_SplitRawSampleSet_h
-#define genomic_SplitRawSampleSet_h
+#ifndef cna_SplitRawSampleSet_h
+#define cna_SplitRawSampleSet_h
 
 #include <iostream>
 #include <fstream>

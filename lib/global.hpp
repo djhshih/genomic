@@ -1,5 +1,5 @@
-#ifndef genomic_global_h
-#define genomic_global_h
+#ifndef cna_global_h
+#define cna_global_h
 
 #include <vector>
 #include <map>

@@ -1,5 +1,5 @@
-#ifndef genomic_FilesDiff_h
-#define genomic_FilesDiff_h
+#ifndef cna_FilesDiff_h
+#define cna_FilesDiff_h
 
 #include <fstream>
 #include <string>

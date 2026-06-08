@@ -6,7 +6,7 @@
 
 namespace {
 	LogLevel current_level =
-#if genomic_DEBUG == 1
+#if cna_DEBUG == 1
 		LOG_DEBUG_LEVEL;
 #else
 		LOG_WARN_LEVEL;

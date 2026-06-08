@@ -1,5 +1,5 @@
-#ifndef genomic_Segment_h
-#define genomic_Segment_h
+#ifndef cna_Segment_h
+#define cna_Segment_h
 
 #include "typedefs.h"
 

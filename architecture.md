@@ -237,7 +237,7 @@ CLI main
 - Much of the functional code is header-only through templates.
 
 ### 13. Tests
-- **`tests/genomic_test.cpp`**
+- **`tests/cna_test.cpp`**
   - Exercises I/O, conversions, copy behavior, filtering, and mapping utilities.
   - Confirms the architecture’s main contract: datasets can be read, transformed, and written reproducibly.
 

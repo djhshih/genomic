@@ -1,39 +1,34 @@
 cmake_minimum_required(VERSION 4.0)
-project(genomic)
+project(cna)
 enable_testing()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(GENOMIC_ENABLE_WARNINGS "Enable extra compiler warnings" ON)
-
-# configure project properties
+option(CNA_ENABLE_WARNINGS "Enable extra compiler warnings" ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	message("Building Debug version")
-	set(genomic_DEBUG 1)
+	set(debug_build 1)
 else()
-	set(genomic_DEBUG 0)
+	set(debug_build 0)
 endif()
 
-set(genomic_VERSION_MAJOR 0)
-set(genomic_VERSION_MINOR 0)
+set(version_major 0)
+set(version_minor 0)
 
 configure_file(
 	"${PROJECT_SOURCE_DIR}/config.h.in"
 	"${PROJECT_BINARY_DIR}/config.h"
 )
 
-# include custom modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Modules" ${CMAKE_MODULE_PATH})
-
-
 
 find_package(Boost REQUIRED CONFIG)
 
-set(genomic_LIB_SRCS
-	src/genomic_common.cpp
-	src/genomic_clean.cpp
-	src/genomic_convert.cpp
-	src/genomic_filter.cpp
+set(lib_sources
+	src/cna_common.cpp
+	src/cna_clean.cpp
+	src/cna_convert.cpp
+	src/cna_filter.cpp
 	lib/global.cpp
 	lib/logging.cpp
 	lib/parse.cpp
@@ -43,28 +38,27 @@ set(genomic_LIB_SRCS
 	lib/Marker.cpp
 )
 
-add_library(genomic_lib ${genomic_LIB_SRCS})
-target_include_directories(genomic_lib PUBLIC ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src)
-set_target_properties(genomic_lib PROPERTIES OUTPUT_NAME "genomic")
+add_library(cna_lib ${lib_sources})
+target_include_directories(cna_lib PUBLIC ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src)
+set_target_properties(cna_lib PROPERTIES OUTPUT_NAME "cna")
 
-if(GENOMIC_ENABLE_WARNINGS)
-	target_compile_options(genomic_lib PRIVATE
+if(CNA_ENABLE_WARNINGS)
+	target_compile_options(cna_lib PRIVATE
 		$<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
 	)
 endif()
 
-add_executable(genomic src/genomic.cpp)
-target_include_directories(genomic PRIVATE ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(genomic genomic_lib boost_program_options)
+add_executable(cna src/cna.cpp)
+target_include_directories(cna PRIVATE ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(cna cna_lib boost_program_options)
 
-if(GENOMIC_ENABLE_WARNINGS)
-	target_compile_options(genomic PRIVATE
+if(CNA_ENABLE_WARNINGS)
+	target_compile_options(cna PRIVATE
 		$<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
 	)
 endif()
 
-install(TARGETS genomic RUNTIME DESTINATION bin)
-
+install(TARGETS cna RUNTIME DESTINATION bin)
 
 add_subdirectory(tests)
 #add_subdirectory(examples)

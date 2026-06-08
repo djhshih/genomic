@@ -1,5 +1,5 @@
-#ifndef genomic_Marker_h
-#define genomic_Marker_h
+#ifndef cna_Marker_h
+#define cna_Marker_h
 
 #include <fstream>
 #include <vector>

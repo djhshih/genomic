@@ -9,7 +9,7 @@
 
 ## Cleaning features
 
-- [ ] Implement cleaning for raw CN files in `src/genomic_clean.hpp`
+- [ ] Implement cleaning for raw CN files in `src/cna_clean.hpp`
   - `Clean::clean(segmented<false>)` currently throws
 
 ## Sample / container behavior
