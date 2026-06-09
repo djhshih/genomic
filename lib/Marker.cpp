@@ -1,7 +1,10 @@
 #include "Marker.hpp"
 #include "parse.hpp"
 
+namespace cna {
 namespace marker {
+
+	Manager manager;
 
 	void Set::read(const std::string& fileName, const std::string& platform, bool doSort, bool named) {
 		std::ifstream file(fileName.c_str(), std::ios::in);
@@ -44,7 +47,7 @@ namespace marker {
 					// ignore unknown chromosome: continue to next line
 					if (chr == 0) continue;
 					// create marker
-					marker::Marker* marker = new Marker(markerName, chr, pos);
+					Marker* marker = new Marker(markerName, chr, pos);
 					
 					if (doSort) {
 						// add marker onto appropriate chromosome
@@ -244,4 +247,5 @@ namespace marker {
 		return set;
 	}
 	
-}
+} // namespace marker
+} // namespace cna

@@ -14,8 +14,6 @@
 #include "AlleleSpecific.hpp"
 #include "SampleSet.hpp"
 
-extern marker::Manager marker::manager;
-
 namespace cna {
 
 template <typename V> 
@@ -44,9 +42,9 @@ void cna::SplitRawSampleSet<V>::_read(std::fstream& file)
 	// assume M makers and N samples
 	// no headerLine
 	
-	marker::Set::ChromosomeMarkers& allMarkers = Base::Base::markers->unsortedChromosome();
-	marker::Set::ChromosomeMarkers::iterator markerIt = allMarkers.begin();
-	marker::Set::ChromosomeMarkers::const_iterator markerEnd = allMarkers.end();
+	cna::marker::Set::ChromosomeMarkers& allMarkers = Base::Base::markers->unsortedChromosome();
+	cna::marker::Set::ChromosomeMarkers::iterator markerIt = allMarkers.begin();
+	cna::marker::Set::ChromosomeMarkers::const_iterator markerEnd = allMarkers.end();
 	
 	// Use fileName without extension as sampleName
 	std::string sampleName = cna::name::filestem(Base::fileName);

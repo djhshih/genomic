@@ -42,7 +42,7 @@ public:
 		
 		std::string platform = "";
 		
-		marker::Set set(platform);
+		cna::marker::Set set(platform);
 		
 		// read and sort markers
 		// all recognized chromosomes are discarded

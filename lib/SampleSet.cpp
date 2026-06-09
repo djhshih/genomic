@@ -4,7 +4,7 @@ void cna::SampleSet::read(const std::vector<std::string>& fileNames, const std::
 	if (fileNames.size() < 1) return;
 	
 	// Read markers, do not sort markers yet
-	markers = marker::manager.create(platform);
+	markers = cna::marker::manager.create(platform);
 	if (!markersFileName.empty()) {
 		markers->setIO(io);
 		markers->read(markersFileName, platform, false);
@@ -31,7 +31,7 @@ void cna::SampleSet::read(const std::string& fileName, const std::string& platfo
 
 void cna::SampleSet::read(std::fstream& file, const std::string& platform, const std::string& fileName, bool append) {
 	if (!append) clear();
-	markers = marker::manager.create(platform);
+	markers = cna::marker::manager.create(platform);
 	this->fileName = fileName;
 	
 	_read(file);

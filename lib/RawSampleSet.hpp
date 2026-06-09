@@ -20,8 +20,6 @@
 // data can be sorted => segment data should be stored as pointers, but raw data can be stored as values
 
 
-extern marker::Manager marker::manager;
-
 namespace cna {
 
 class GenericSampleSet;
@@ -63,7 +61,7 @@ private:
 	
 public:
 	RawSampleSet() {}
-	RawSampleSet(marker::Set* markerSet) : SampleSet(markerSet) {}
+	RawSampleSet(cna::marker::Set* markerSet) : SampleSet(markerSet) {}
 	RawSampleSet(const RawSampleSet& raw)
 	: SampleSet(raw.markers), samples(raw.samples)  {
 		byNames.clear();
@@ -73,8 +71,8 @@ public:
 			byNames[samples[i]->name] = samples[i];
 		}
 		// ref the marker
-		marker::manager.ref(markers);
-		//markers = marker::manager.create(raw.markers.platform);
+		cna::marker::manager.ref(markers);
+		//markers = cna::marker::manager.create(raw.markers.platform);
 	}
 	RawSampleSet(const cna::SegmentedSampleSet<V>& segmented);
 	~RawSampleSet() {
@@ -91,7 +89,7 @@ public:
 		}
 		samples.clear();
 		byNames.clear();
-		marker::manager.unref(markers);
+		cna::marker::manager.unref(markers);
 	}
 	
 	RawSample* create(const std::string& sampleName) {
@@ -122,7 +120,7 @@ public:
 		filter(*ref.markers);
 	}
 	
-	void filter(const marker::Set& refMarkers) {
+	void filter(const cna::marker::Set& refMarkers) {
 		if (markers == NULL) {
 			throw std::invalid_argument("Markers in sample set are missing.");
 		}
@@ -215,7 +213,7 @@ void cna::RawSampleSet<V>::_read(std::fstream& file)
 {
 	const char delim = Base::io.delim;
 	const size_t nSkippedLines = Base::io.nSkippedLines, headerLine = Base::io.headerLine;
-	marker::Set* markers = Base::markers;
+	cna::marker::Set* markers = Base::markers;
 	
 	// assume M x (3+N) data matrix with M makers and N samples
 	// columns: marker, chromosome, position, samples...
@@ -248,7 +246,7 @@ void cna::RawSampleSet<V>::_read(std::fstream& file)
 					// ignore unknown chromosome: continue to next line
 					if (chr == 0) continue;
 					// create marker
-					marker::Marker* marker = new marker::Marker(markerName, chr, pos);
+					cna::marker::Marker* marker = new cna::marker::Marker(markerName, chr, pos);
 					markers->addToChromosome(chr-1, marker);
 				}
 				readSampleValues(fields, sampleStart, chromName);
@@ -285,7 +283,7 @@ template <typename V>
 void cna::RawSampleSet<V>::_write(std::fstream& file)
 {
 	const char delim = Base::io.delim;
-	marker::Set* markers = Base::markers;
+	cna::marker::Set* markers = Base::markers;
 	
 	file << "marker" << delim << "chromosome" << delim << "position";
 	
@@ -328,10 +326,10 @@ void cna::RawSampleSet<V>::writeSampleValues(std::fstream& file, size_t chr, siz
 template <typename V>
 void cna::RawSampleSet<V>::sort()
 {
-	marker::Set* markers = Base::markers;
+	cna::marker::Set* markers = Base::markers;
 	
 	// Construct order vector for obtaining a sorted index of markers
-	marker::Set::ChromosomeMarkers chromosomeMarkers;
+	cna::marker::Set::ChromosomeMarkers chromosomeMarkers;
 	std::vector<RawChromosome> samplesChromosomeCopy;
 	std::vector< std::pair<position, size_t> > order;
 	
@@ -341,7 +339,7 @@ void cna::RawSampleSet<V>::sort()
 		// Additionally, replicate the markers on the curent chromosome;
 		//               replicate the chromosome for all samples
 		
-		marker::Set::ChromosomeMarkers& currentMarkers = markers->at(chri);
+		cna::marker::Set::ChromosomeMarkers& currentMarkers = markers->at(chri);
 		size_t numMarkers = currentMarkers.size();
 		
 		chromosomeMarkers.clear();

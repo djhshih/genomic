@@ -292,7 +292,7 @@ public:
 	SegmentedSampleSet() {
 		_setIO();
 	}
-	SegmentedSampleSet(marker::Set* markerSet) : SampleSet(markerSet) {
+	SegmentedSampleSet(cna::marker::Set* markerSet) : SampleSet(markerSet) {
 		_setIO();
 	}
 	SegmentedSampleSet(const SegmentedSampleSet& segmented)
@@ -305,8 +305,8 @@ public:
 			byNames[samples[i]->name] = samples[i];
 		}
 		// ref the marker
-		marker::manager.ref(markers);
-		//markers = marker::manager.create(raw.markers.platform);
+		cna::marker::manager.ref(markers);
+		//markers = cna::marker::manager.create(raw.markers.platform);
 	}
 	SegmentedSampleSet(const cna::RawSampleSet<V>& raw);
 	~SegmentedSampleSet() {

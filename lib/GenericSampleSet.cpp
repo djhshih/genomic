@@ -3,7 +3,7 @@
 void cna::GenericSampleSet::_read(std::fstream& file)
 {
 	const std::string& fileName = Base::fileName;
-	marker::Set* markers = Base::markers;
+	cna::marker::Set* markers = Base::markers;
 	
 	std::string ext = cna::name::fileext(fileName);
 	switch (cna::mapping::extension[ext]) {

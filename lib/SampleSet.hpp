@@ -24,11 +24,11 @@ public:
 	
 	SampleSet() : markers(NULL) {}
 	
-	SampleSet(marker::Set* markerSet) : markers(markerSet) {}
+	SampleSet(cna::marker::Set* markerSet) : markers(markerSet) {}
 	
 	SampleSet(const SampleSet& other)
 	: io(other.io), fileName(other.fileName), markers(other.markers) {
-		marker::manager.ref(markers);
+		cna::marker::manager.ref(markers);
 	}
 	
 	virtual ~SampleSet() {
@@ -45,7 +45,7 @@ public:
 	
 	void read(const std::vector<std::string>& fileNames, const std::string& markersFileName, bool isSorted=false) {
 		std::string platform;
-		marker::manager.newSetName(platform);
+		cna::marker::manager.newSetName(platform);
 		read(fileNames, markersFileName, platform, isSorted);
 	}
 	
@@ -53,7 +53,7 @@ public:
 	
 	void read(const std::string& fileName, bool append=false) {
 		std::string platform;
-		marker::manager.newSetName(platform);
+		cna::marker::manager.newSetName(platform);
 		read(fileName, platform, append);
 	}
 	
@@ -80,7 +80,7 @@ protected:
 	CNACriteria cna;
 	
 	std::string fileName;
-	marker::Set* markers;
+	cna::marker::Set* markers;
 	
 private:
 	

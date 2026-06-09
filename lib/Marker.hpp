@@ -228,7 +228,7 @@ namespace marker {
 		}
 		
 	};
-	static Manager manager;
+	extern Manager manager;
 
 } // namespace marker
 } // namespace cna
