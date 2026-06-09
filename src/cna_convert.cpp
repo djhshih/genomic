@@ -45,7 +45,7 @@ void Convert::run() {
 					break;
 				}
 				default:
-					throw invalid_conversion("Unsupported output type.");
+					throw cna::invalid_conversion("Unsupported output type.");
 			}
 			
 			break;
@@ -72,7 +72,7 @@ void Convert::run() {
 					break;
 				}
 				default:
-					throw invalid_conversion("Unsupported output type.");
+					throw cna::invalid_conversion("Unsupported output type.");
 			}
 			
 			break;
@@ -99,7 +99,7 @@ void Convert::run() {
 					break;
 				}
 				default:
-					throw invalid_conversion("Unsupported output type.");
+					throw cna::invalid_conversion("Unsupported output type.");
 			}
 			
 			break;
@@ -126,7 +126,7 @@ void Convert::run() {
 					break;
 				}
 				default:
-					throw invalid_conversion("Unsupported output type.");
+					throw cna::invalid_conversion("Unsupported output type.");
 			}
 			
 			break;

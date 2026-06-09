@@ -17,8 +17,8 @@
 #include "global.hpp"
 #include "Properties.hpp"
 
-namespace marker
-{
+namespace cna {
+namespace marker {
 
 	class Marker
 	{
@@ -230,6 +230,7 @@ namespace marker
 	};
 	static Manager manager;
 
-}
+} // namespace marker
+} // namespace cna
 
 #endif

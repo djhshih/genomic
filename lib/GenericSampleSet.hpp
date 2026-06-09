@@ -1,5 +1,5 @@
-#ifndef cna_cna::GenericSampleSet_h
-#define cna_cna::GenericSampleSet_h
+#ifndef cna_GenericSampleSet_h
+#define cna_GenericSampleSet_h
 
 #include <algorithm>
 #include <stdexcept>
@@ -12,17 +12,17 @@ namespace cna {
 
 // Generic sample set, chooses appropriately between possible types of sample set
 // Use handle-body idiom
-class cna::Genericcna::SampleSet : public SampleSet
+class GenericSampleSet : public SampleSet
 {
 public:
-	typedef cna::SampleSet Base;
+	typedef SampleSet Base;
 private:
 	// body representation
-	// N.B. can only point to derived classes of cna::SampleSet other than this class
-	cna::SampleSet* rep;
+	// N.B. can only point to derived classes of SampleSet other than this class
+	SampleSet* rep;
 	
-	cna::SampleSet* clone() const {
-		return new cna::GenericSampleSet(*this);
+	SampleSet* clone() const {
+		return new GenericSampleSet(*this);
 	}
 	
 	void _read(std::fstream& file);
@@ -30,18 +30,18 @@ private:
 	
 public:
 	
-	cna::GenericSampleSet() : rep(NULL) {}
+	GenericSampleSet() : rep(NULL) {}
 	
-	cna::GenericSampleSet(const cna::GenericSampleSet& other)
+	GenericSampleSet(const GenericSampleSet& other)
 	: Base(other), rep(other.clone()) {}
 	
-	cna::GenericSampleSet& operator= (cna::Genericcna::SampleSet other) {
+	GenericSampleSet& operator= (GenericSampleSet other) {
 		// pass other by value to automatically create temporary copy
 		std::swap(rep, other.rep);
 		return *this;
 	}
 	
-	~cna::GenericSampleSet() {
+	~GenericSampleSet() {
 		clear();
 	}
 	
@@ -76,7 +76,5 @@ public:
 
 } // namespace cna
 
-using cna::Genericcna::SampleSet = cna::GenericSampleSet;
-using invalid_conversion = cna::invalid_conversion;
 
 #endif

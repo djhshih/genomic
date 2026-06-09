@@ -129,7 +129,5 @@ public:
 
 } // namespace cna
 
-template <typename Chromosome>
-using Sample = cna::Sample<Chromosome>;
 
 #endif

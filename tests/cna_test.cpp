@@ -38,7 +38,7 @@ struct IOFixture
 	cna::SegmentedSampleSet<rvalue> sset;
 	cna::SegmentedSampleSet<alleles_rcn> sset_as;
 	
-	cna::Genericcna::SampleSet gset;
+	cna::GenericSampleSet gset;
 	
 	vector< queue<cna::SampleSet*> > sets;
 	vector< queue<string> > filenames;
@@ -71,13 +71,13 @@ struct IOFixture
 					s = s.substr(1);
 					if (s == "RawSampleSet") {
 						sets[type].push(&rset);
-					} else if (s == "cna::RawSampleSet<alleles_cn>" || s == "cna::RawSampleSet<alleles_cn>") {
+					} else if (s == "RawSampleSet<alleles_cn>" || s == "cna::RawSampleSet<alleles_cn>") {
 						sets[type].push(&rset_as);
 					} else if (s == "SegmentedSampleSet") {
 						sets[type].push(&sset);
-					} else if (s == "cna::SegmentedSampleSet<alleles_cn>" || s == "cna::SegmentedSampleSet<alleles_cn>") {
+					} else if (s == "SegmentedSampleSet<alleles_cn>" || s == "cna::SegmentedSampleSet<alleles_cn>") {
 						sets[type].push(&sset_as);
-					} else if (s == "cna::GenericSampleSet" || s == "cna::GenericSampleSet") {
+					} else if (s == "GenericSampleSet" || s == "cna::GenericSampleSet") {
 						sets[type].push(&gset);
 					} else {
 						throw runtime_error("Invalid class specified");
@@ -141,7 +141,7 @@ BOOST_FIXTURE_TEST_CASE(InputOutput, IOFixture)
 
 BOOST_AUTO_TEST_CASE(RawSampleSet_CopyConstructor)
 {
-	BOOST_TEST_MESSAGE("Rawcna::SampleSet copy constructor");
+	BOOST_TEST_MESSAGE("RawSampleSet copy constructor");
 	
 	FilesDiff diff;
 	
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(RawSampleSet_CopyConstructor)
 
 BOOST_AUTO_TEST_CASE(SegmentedSampleSet_CopyConstructor)
 {
-	BOOST_TEST_MESSAGE("Segmentedcna::SampleSet copy constructor");
+	BOOST_TEST_MESSAGE("SegmentedSampleSet copy constructor");
 	
 	FilesDiff diff;
 	
@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_CASE(SegmentedSampleSet_CopyConstructor)
 
 BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Filter)
 {
-	BOOST_TEST_MESSAGE("Segmentedcna::SampleSet filter");
+	BOOST_TEST_MESSAGE("SegmentedSampleSet filter");
 	
 	FilesDiff diff;
 	
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Filter)
 
 BOOST_AUTO_TEST_CASE(RawSampleSet_Filter)
 {
-	BOOST_TEST_MESSAGE("Rawcna::SampleSet filter");
+	BOOST_TEST_MESSAGE("RawSampleSet filter");
 	
 	FilesDiff diff;
 	
@@ -445,7 +445,7 @@ BOOST_AUTO_TEST_CASE(RawSampleSet_InvalidInputPath)
 	BOOST_CHECK_THROW(cna::RawSampleSet<rvalue>().read("does-not-exist.cn"), runtime_error);
 }
 
-BOOST_AUTO_TEST_CASE(cna::GenericSampleSet_InvalidInputPath)
+BOOST_AUTO_TEST_CASE(GenericSampleSet_InvalidInputPath)
 {
 	BOOST_CHECK_THROW(cna::GenericSampleSet().read("does-not-exist.cn"), runtime_error);
 }

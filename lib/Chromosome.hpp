@@ -120,10 +120,5 @@ public:
 
 } // namespace cna
 
-template <typename T>
-using Chromosome = cna::Chromosome<T>;
-
-template <typename T>
-using LinearChromosome = cna::LinearChromosome<T>;
 
 #endif

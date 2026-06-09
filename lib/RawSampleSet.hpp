@@ -15,7 +15,7 @@
 #include "SampleSet.hpp"
 
 
-// samples can be rearranged => Rawcna::SampleSet store samples as pointers
+// samples can be rearranged => RawSampleSet store samples as pointers
 // chromosomes are not ever rearranged => Sample stores chromosomes as objects
 // data can be sorted => segment data should be stored as pointers, but raw data can be stored as values
 
@@ -24,19 +24,19 @@ extern marker::Manager marker::manager;
 
 namespace cna {
 
-class cna::GenericSampleSet;
+class GenericSampleSet;
 template <typename V> class SegmentedSampleSet;
 
 template <typename V = rvalue>
-class Rawcna::SampleSet : public SampleSet
+class RawSampleSet : public SampleSet
 {
-	friend class cna::GenericSampleSet;
-	friend class cna::SegmentedSampleSet<V>;
+	friend class GenericSampleSet;
+	friend class SegmentedSampleSet<V>;
 public:
-	typedef cna::SampleSet Base;
+	typedef SampleSet Base;
 	typedef V Value;
-	typedef cna::Linearcna::Chromosome<Value> RawChromosome;
-	typedef cna::Sample<RawChromosome> RawSample;
+	typedef LinearChromosome<Value> RawChromosome;
+	typedef Sample<RawChromosome> RawSample;
 	typedef std::vector<RawSample*> Samples;
 	typedef typename Samples::iterator SamplesIterator;
 	typedef typename RawSample::Chromosomes::iterator ChromosomesIterator;
@@ -48,7 +48,7 @@ protected:
 private:
 	std::map<std::string, RawSample*> byNames;
 	
-	Rawcna::SampleSet* clone() const {
+	RawSampleSet* clone() const {
 		return new RawSampleSet(*this);
 	}
 	
@@ -196,9 +196,6 @@ public:
 
 } // namespace cna
 
-template <typename V>
-using Rawcna::SampleSet = cna::RawSampleSet<V>;
-
 /* Template implementation */
 
 template <typename V>
@@ -207,10 +204,10 @@ cna::RawSampleSet<V>::RawSampleSet(const cna::SegmentedSampleSet<V>& set)
 	//TODO
 	
 	if (set.markers == NULL) {
-		throw std::runtime_error("Marker information is required for converting from Segmentedcna::SampleSet to RawSampleSet.");
+		throw std::runtime_error("Marker information is required for converting from SegmentedSampleSet to RawSampleSet.");
 	}
 	
-	throw std::runtime_error("RawSampleSet(cna::SegmentedSampleSet<V>&) has not been implemented.");
+	throw std::runtime_error("RawSampleSet(SegmentedSampleSet<V>&) has not been implemented.");
 }
 
 template <typename V>

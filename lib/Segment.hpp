@@ -41,7 +41,5 @@ public:
 
 } // namespace cna
 
-template <typename V>
-using Segment = cna::Segment<V>;
 
 #endif

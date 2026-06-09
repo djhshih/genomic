@@ -77,60 +77,60 @@ public:
 	virtual bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const = 0;
 };
 
-class cna::reference_overlapper : public overlapper_base
+class reference_overlapper : public overlapper_base
 {
 public:
-	cna::reference_overlapper(float threshold) : overlapper_base(threshold) {}
+	reference_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position, position reference_length, float& score) const {
 		score = float(intersection) / (reference_length);
 		return (score >= threshold);
 	}
 };
 
-class cna::query_overlapper : public overlapper_base
+class query_overlapper : public overlapper_base
 {
 public:
-	cna::query_overlapper(float threshold) : overlapper_base(threshold) {}
+	query_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position, float& score) const {
 		score = float(intersection) / (query_length);
 		return (score >= threshold);
 	}
 };
 
-class cna::union_overlapper : public overlapper_base
+class union_overlapper : public overlapper_base
 {
 public:
-	cna::union_overlapper(float threshold) : overlapper_base(threshold) {}
+	union_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
 		score = float(intersection) / (query_length + reference_length - intersection);
 		return (score >= threshold);
 	}
 };
 
-class cna::min_overlapper : public overlapper_base
+class min_overlapper : public overlapper_base
 {
 public:
-	cna::min_overlapper(float threshold) : overlapper_base(threshold) {}
+	min_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
 		score = float(intersection) / std::max(query_length, reference_length);
 		return (score >= threshold);
 	}
 };
 
-class cna::max_overlapper : public overlapper_base
+class max_overlapper : public overlapper_base
 {
 public:
-	cna::max_overlapper(float threshold) : overlapper_base(threshold) {}
+	max_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
 		score = float(intersection) / std::min(query_length, reference_length);
 		return (score >= threshold);
 	}
 };
 
-class cna::dice_overlapper : public overlapper_base
+class dice_overlapper : public overlapper_base
 {
 public:
-	cna::dice_overlapper(float threshold) : overlapper_base(threshold) {}
+	dice_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool bounds(position start, position end, position_diff& lower, position_diff& upper) const {
 		lower = 2*(threshold-1)/threshold*end + (2-threshold)/threshold*(start - 1) + 1;
 		if (lower < 0) lower = 0;
@@ -235,7 +235,7 @@ public:
 };
 
 template <typename V = rvalue>
-class Segmentedcna::SampleSet : public SampleSet
+class SegmentedSampleSet : public SampleSet
 {
 	
 	friend class cna::GenericSampleSet;
@@ -245,7 +245,7 @@ public:
 	
 	typedef cna::SampleSet Base;
 	typedef V Value;
-	typedef cna::Linearcna::Chromosome< cna::Segment<Value> > Segments;
+	typedef cna::LinearChromosome< cna::Segment<Value> > Segments;
 	typedef cna::Sample<Segments> SegmentedSample;
 	
 	typedef std::vector<SegmentedSample*> Samples;
@@ -263,7 +263,7 @@ private:
 	Samples samples;
 	std::map<std::string, SegmentedSample*> byNames;
 	
-	Segmentedcna::SampleSet* clone() const {
+	SegmentedSampleSet* clone() const {
 		return new SegmentedSampleSet(*this);
 	}
 	
@@ -404,7 +404,7 @@ template <typename V>
 cna::SegmentedSampleSet<V>::SegmentedSampleSet(const cna::RawSampleSet<V>& raw)
 {
 	clear();
-	// use iterators to avoid assuming Rawcna::SampleSet stores data in vectors
+	// use iterators to avoid assuming RawSampleSet stores data in vectors
 	// however, need to assume that markers are stored in vectors, for looking up marker information
 	
 	typedef typename cna::RawSampleSet<V>::Samples::const_iterator RawSamplesIterator;
@@ -917,27 +917,5 @@ void cna::SegmentedSampleSet<V>::removeFlagged(bool merge)
 
 } // namespace cna
 
-template <typename V>
-using Segmentedcna::SampleSet = cna::SegmentedSampleSet<V>;
-
-template <typename V>
-using filter_operator = cna::filter_operator<V>;
-
-template <typename V>
-using spurious_segment_filter = cna::spurious_segment_filter<V>;
-
-template <typename V>
-using small_segment_filter = cna::small_segment_filter<V>;
-
-template <typename V>
-using balanced_segment_filter = cna::balanced_segment_filter<V>;
-
-using overlapper_base = cna::overlapper_base;
-using cna::reference_overlapper = cna::reference_overlapper;
-using cna::query_overlapper = cna::query_overlapper;
-using cna::union_overlapper = cna::union_overlapper;
-using cna::min_overlapper = cna::min_overlapper;
-using cna::max_overlapper = cna::max_overlapper;
-using cna::dice_overlapper = cna::dice_overlapper;
 
 #endif
