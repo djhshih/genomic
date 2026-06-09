@@ -5,15 +5,15 @@ namespace cna {
 
 // same as RawSampleSet
 template <typename V>
-class ReferenceRawSampleSet : public RawSampleSet<V>
+class ReferenceRawcna::SampleSet : public cna::RawSampleSet<V>
 {
 public:
-	typedef RawSampleSet<V> Base;
+	typedef cna::RawSampleSet<V> Base;
 };
 
 } // namespace cna
 
 template <typename V>
-using ReferenceRawSampleSet = cna::ReferenceRawSampleSet<V>;
+using ReferenceRawcna::SampleSet = cna::Referencecna::RawSampleSet<V>;
 
 #endif

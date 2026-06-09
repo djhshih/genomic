@@ -4,10 +4,10 @@
 namespace cna {
 
 template <typename V>
-class ReferenceSegmentedSampleSet : public SegmentedSampleSet<V>
+class ReferenceSegmentedcna::SampleSet : public cna::SegmentedSampleSet<V>
 {
 public:
-	typedef SegmentedSampleSet<V> Base;
+	typedef cna::SegmentedSampleSet<V> Base;
 public:
 	ReferenceSegmentedSampleSet() {
 		_setIO();
@@ -22,6 +22,6 @@ private:
 } // namespace cna
 
 template <typename V>
-using ReferenceSegmentedSampleSet = cna::ReferenceSegmentedSampleSet<V>;
+using ReferenceSegmentedcna::SampleSet = cna::Referencecna::SegmentedSampleSet<V>;
 
 #endif

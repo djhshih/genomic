@@ -19,10 +19,10 @@ extern marker::Manager marker::manager;
 namespace cna {
 
 template <typename V> 
-class SplitRawSampleSet : public RawSampleSet<V>
+class SplitRawcna::SampleSet : public cna::RawSampleSet<V>
 {
 public:
-	typedef RawSampleSet<V> Base;
+	typedef cna::RawSampleSet<V> Base;
 private:
 	size_t dataColumn;
 	void _read(std::fstream& file);
@@ -36,7 +36,7 @@ public:
 /* Template implementation */
 
 template <typename V>
-void SplitRawSampleSet<V>::_read(std::fstream& file)
+void Splitcna::RawSampleSet<V>::_read(std::fstream& file)
 {
 	const char delim = Base::Base::io.delim;
 	const size_t nSkippedLines = Base::Base::io.nSkippedLines, headerLine = Base::Base::io.headerLine;
@@ -83,7 +83,7 @@ void SplitRawSampleSet<V>::_read(std::fstream& file)
 }
 
 template <typename V> inline
-void SplitRawSampleSet<V>::readSampleValue(std::istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
+void Splitcna::RawSampleSet<V>::readSampleValue(std::istringstream& stream, typename Base::RawSample* sample, size_t chromIndex, const char delim) {
 	typename Base::Value value;
 	std::string s;
 	getline(stream, s, delim);
@@ -107,6 +107,6 @@ void SplitRawSampleSet<V>::readSampleValue(std::istringstream& stream, typename 
 } // namespace cna
 
 template <typename V>
-using SplitRawSampleSet = cna::SplitRawSampleSet<V>;
+using SplitRawcna::SampleSet = cna::Splitcna::RawSampleSet<V>;
 
 #endif

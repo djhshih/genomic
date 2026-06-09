@@ -15,7 +15,7 @@
 #include "SampleSet.hpp"
 
 
-// samples can be rearranged => RawSampleSet store samples as pointers
+// samples can be rearranged => Rawcna::SampleSet store samples as pointers
 // chromosomes are not ever rearranged => Sample stores chromosomes as objects
 // data can be sorted => segment data should be stored as pointers, but raw data can be stored as values
 
@@ -24,19 +24,19 @@ extern marker::Manager marker::manager;
 
 namespace cna {
 
-class GenericSampleSet;
+class cna::GenericSampleSet;
 template <typename V> class SegmentedSampleSet;
 
 template <typename V = rvalue>
-class RawSampleSet : public SampleSet
+class Rawcna::SampleSet : public SampleSet
 {
-	friend class GenericSampleSet;
-	friend class SegmentedSampleSet<V>;
+	friend class cna::GenericSampleSet;
+	friend class cna::SegmentedSampleSet<V>;
 public:
-	typedef SampleSet Base;
+	typedef cna::SampleSet Base;
 	typedef V Value;
-	typedef LinearChromosome<Value> RawChromosome;
-	typedef Sample<RawChromosome> RawSample;
+	typedef cna::Linearcna::Chromosome<Value> RawChromosome;
+	typedef cna::Sample<RawChromosome> RawSample;
 	typedef std::vector<RawSample*> Samples;
 	typedef typename Samples::iterator SamplesIterator;
 	typedef typename RawSample::Chromosomes::iterator ChromosomesIterator;
@@ -48,7 +48,7 @@ protected:
 private:
 	std::map<std::string, RawSample*> byNames;
 	
-	RawSampleSet* clone() const {
+	Rawcna::SampleSet* clone() const {
 		return new RawSampleSet(*this);
 	}
 	
@@ -76,7 +76,7 @@ public:
 		marker::manager.ref(markers);
 		//markers = marker::manager.create(raw.markers.platform);
 	}
-	RawSampleSet(const SegmentedSampleSet<V>& segmented);
+	RawSampleSet(const cna::SegmentedSampleSet<V>& segmented);
 	~RawSampleSet() {
 		clear();
 	}
@@ -197,24 +197,24 @@ public:
 } // namespace cna
 
 template <typename V>
-using RawSampleSet = cna::RawSampleSet<V>;
+using Rawcna::SampleSet = cna::RawSampleSet<V>;
 
 /* Template implementation */
 
 template <typename V>
-RawSampleSet<V>::RawSampleSet(const SegmentedSampleSet<V>& set)
+cna::RawSampleSet<V>::RawSampleSet(const cna::SegmentedSampleSet<V>& set)
 {
 	//TODO
 	
 	if (set.markers == NULL) {
-		throw std::runtime_error("Marker information is required for converting from SegmentedSampleSet to RawSampleSet.");
+		throw std::runtime_error("Marker information is required for converting from Segmentedcna::SampleSet to RawSampleSet.");
 	}
 	
-	throw std::runtime_error("RawSampleSet(SegmentedSampleSet<V>&) has not been implemented.");
+	throw std::runtime_error("RawSampleSet(cna::SegmentedSampleSet<V>&) has not been implemented.");
 }
 
 template <typename V>
-void RawSampleSet<V>::_read(std::fstream& file)
+void cna::RawSampleSet<V>::_read(std::fstream& file)
 {
 	const char delim = Base::io.delim;
 	const size_t nSkippedLines = Base::io.nSkippedLines, headerLine = Base::io.headerLine;
@@ -263,7 +263,7 @@ void RawSampleSet<V>::_read(std::fstream& file)
 }
 
 template <typename V> inline
-void RawSampleSet<V>::readSampleNames(FieldScanner& fields) {
+void cna::RawSampleSet<V>::readSampleNames(FieldScanner& fields) {
 	std::string_view field;
 	while (fields.next(field)) {
 		create(std::string(field));
@@ -271,7 +271,7 @@ void RawSampleSet<V>::readSampleNames(FieldScanner& fields) {
 }
 
 template <typename V> inline
-void RawSampleSet<V>::readSampleValues(FieldScanner& fields, size_t sampleStart, const std::string& chromName) {
+void cna::RawSampleSet<V>::readSampleValues(FieldScanner& fields, size_t sampleStart, const std::string& chromName) {
 	size_t i = sampleStart;
 	Value value;
 	std::string_view field;
@@ -285,7 +285,7 @@ void RawSampleSet<V>::readSampleValues(FieldScanner& fields, size_t sampleStart,
 }
 
 template <typename V>
-void RawSampleSet<V>::_write(std::fstream& file)
+void cna::RawSampleSet<V>::_write(std::fstream& file)
 {
 	const char delim = Base::io.delim;
 	marker::Set* markers = Base::markers;
@@ -307,7 +307,7 @@ void RawSampleSet<V>::_write(std::fstream& file)
 }
 
 template <typename V> inline
-void RawSampleSet<V>::writeSampleNames(std::fstream& file, const char delim) {
+void cna::RawSampleSet<V>::writeSampleNames(std::fstream& file, const char delim) {
 	// print sample names
 	SamplesIterator it;
 	const SamplesIterator end = samples.end();
@@ -318,7 +318,7 @@ void RawSampleSet<V>::writeSampleNames(std::fstream& file, const char delim) {
 }
 
 template <typename V> inline
-void RawSampleSet<V>::writeSampleValues(std::fstream& file, size_t chr, size_t markerIndex, const char delim) {
+void cna::RawSampleSet<V>::writeSampleValues(std::fstream& file, size_t chr, size_t markerIndex, const char delim) {
 	// iterate through samples to print values, selected the specified chromosome and marker
 	SamplesIterator it;
 	const SamplesIterator end = samples.end();
@@ -329,7 +329,7 @@ void RawSampleSet<V>::writeSampleValues(std::fstream& file, size_t chr, size_t m
 }
 
 template <typename V>
-void RawSampleSet<V>::sort()
+void cna::RawSampleSet<V>::sort()
 {
 	marker::Set* markers = Base::markers;
 	

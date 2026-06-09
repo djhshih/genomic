@@ -26,41 +26,41 @@ class filter_operator
 {
 public:
 	filter_operator() {}
-	virtual bool operator()(Segment<V>& seg) const = 0;
+	virtual bool operator()(cna::Segment<V>& seg) const = 0;
 };
 
 template <typename V>
-class spurious_segment_filter : public filter_operator<V>
+class spurious_segment_filter : public cna::filter_operator<V>
 {
 	position count;
 public:
 	spurious_segment_filter(position countThreshold) : count(countThreshold) {}
-	bool operator()(Segment<V>& seg) const {
+	bool operator()(cna::Segment<V>& seg) const {
 		return seg.count < count;
 	}
 };
 
 template <typename V>
-class small_segment_filter : public filter_operator<V>
+class small_segment_filter : public cna::filter_operator<V>
 {
 	position length;
 public:
 	small_segment_filter(size_t lengthThreshold) : length(lengthThreshold) {}
-	bool operator()(Segment<V>& seg) const {
+	bool operator()(cna::Segment<V>& seg) const {
 		return (seg.end - seg.start + 1) < length;
 	}
 };
 
 // filter out balanced segments
 template <typename V>
-class balanced_segment_filter : public filter_operator<V>
+class balanced_segment_filter : public cna::filter_operator<V>
 {
 	float reference;
 	float deviation;
 public:
 	balanced_segment_filter(float referenceState, float stateDeviation)
 	: reference(referenceState), deviation(stateDeviation) {}
-	bool operator()(Segment<V>& seg) const {
+	bool operator()(cna::Segment<V>& seg) const {
 		return (seg.value <= reference - deviation || seg.value >= reference + deviation);
 	}
 };
@@ -77,60 +77,60 @@ public:
 	virtual bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const = 0;
 };
 
-class reference_overlapper : public overlapper_base
+class cna::reference_overlapper : public overlapper_base
 {
 public:
-	reference_overlapper(float threshold) : overlapper_base(threshold) {}
+	cna::reference_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position, position reference_length, float& score) const {
 		score = float(intersection) / (reference_length);
 		return (score >= threshold);
 	}
 };
 
-class query_overlapper : public overlapper_base
+class cna::query_overlapper : public overlapper_base
 {
 public:
-	query_overlapper(float threshold) : overlapper_base(threshold) {}
+	cna::query_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position, float& score) const {
 		score = float(intersection) / (query_length);
 		return (score >= threshold);
 	}
 };
 
-class union_overlapper : public overlapper_base
+class cna::union_overlapper : public overlapper_base
 {
 public:
-	union_overlapper(float threshold) : overlapper_base(threshold) {}
+	cna::union_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
 		score = float(intersection) / (query_length + reference_length - intersection);
 		return (score >= threshold);
 	}
 };
 
-class min_overlapper : public overlapper_base
+class cna::min_overlapper : public overlapper_base
 {
 public:
-	min_overlapper(float threshold) : overlapper_base(threshold) {}
+	cna::min_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
 		score = float(intersection) / std::max(query_length, reference_length);
 		return (score >= threshold);
 	}
 };
 
-class max_overlapper : public overlapper_base
+class cna::max_overlapper : public overlapper_base
 {
 public:
-	max_overlapper(float threshold) : overlapper_base(threshold) {}
+	cna::max_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool overlap(position_diff intersection, position query_length, position reference_length, float& score) const {
 		score = float(intersection) / std::min(query_length, reference_length);
 		return (score >= threshold);
 	}
 };
 
-class dice_overlapper : public overlapper_base
+class cna::dice_overlapper : public overlapper_base
 {
 public:
-	dice_overlapper(float threshold) : overlapper_base(threshold) {}
+	cna::dice_overlapper(float threshold) : overlapper_base(threshold) {}
 	bool bounds(position start, position end, position_diff& lower, position_diff& upper) const {
 		lower = 2*(threshold-1)/threshold*end + (2-threshold)/threshold*(start - 1) + 1;
 		if (lower < 0) lower = 0;
@@ -145,9 +145,9 @@ public:
 
 // filter out segments in reference set
 template <typename V, typename overlapper_type>
-class reference_segment_filter : public filter_operator<V>
+class reference_segment_filter : public cna::filter_operator<V>
 {
-	typedef SegmentedSampleSet<V> ReferenceSet;
+	typedef cna::SegmentedSampleSet<V> ReferenceSet;
 	
 	const ReferenceSet& ref;
 	overlapper_type overlap_checker;
@@ -167,7 +167,7 @@ public:
 	: ref(reference), overlap_checker(_overlap_checker), optimize(_optimize)
 	{}
 	
-	bool operator()(Segment<V>& seg) const {
+	bool operator()(cna::Segment<V>& seg) const {
 		
 		bool filterSegment = false;
 		
@@ -235,23 +235,23 @@ public:
 };
 
 template <typename V = rvalue>
-class SegmentedSampleSet : public SampleSet
+class Segmentedcna::SampleSet : public SampleSet
 {
 	
-	friend class GenericSampleSet;
-	friend class RawSampleSet<V>;
+	friend class cna::GenericSampleSet;
+	friend class cna::RawSampleSet<V>;
 	
 public:
 	
-	typedef SampleSet Base;
+	typedef cna::SampleSet Base;
 	typedef V Value;
-	typedef LinearChromosome< Segment<Value> > Segments;
-	typedef Sample<Segments> SegmentedSample;
+	typedef cna::Linearcna::Chromosome< cna::Segment<Value> > Segments;
+	typedef cna::Sample<Segments> SegmentedSample;
 	
 	typedef std::vector<SegmentedSample*> Samples;
 	typedef typename SegmentedSample::Chromosomes Chromosomes;
 	
-	typedef std::vector< filter_operator<V>* > filter_operators;
+	typedef std::vector< cna::filter_operator<V>* > filter_operators;
 	
 // 	typedef typename Samples::iterator SamplesIterator;
 // 	typedef typename Chromosomes::iterator ChromosomesIterator;
@@ -263,14 +263,14 @@ private:
 	Samples samples;
 	std::map<std::string, SegmentedSample*> byNames;
 	
-	SegmentedSampleSet* clone() const {
+	Segmentedcna::SampleSet* clone() const {
 		return new SegmentedSampleSet(*this);
 	}
 	
 	void _read(std::fstream& file);
 	void _write(std::fstream& file);
 	
-	void readSegment(FieldScanner& fields, Segment<V>& seg) {
+	void readSegment(FieldScanner& fields, cna::Segment<V>& seg) {
 		std::string_view field;
 		if (!fields.next(field) || !parseNumber(field, seg.start)) return;
 		if (!fields.next(field) || !parseNumber(field, seg.end)) return;
@@ -308,7 +308,7 @@ public:
 		marker::manager.ref(markers);
 		//markers = marker::manager.create(raw.markers.platform);
 	}
-	SegmentedSampleSet(const RawSampleSet<V>& raw);
+	SegmentedSampleSet(const cna::RawSampleSet<V>& raw);
 	~SegmentedSampleSet() {
 		clear();
 	}
@@ -380,8 +380,8 @@ public:
 	void filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool inverse=false, bool merge=false, bool aberrantOnly=false, bool optimize=true);
 	
 	void filter(SegmentedSampleSet& ref, float diceThreshold, bool inverse=false, bool merge=false, bool aberrantOnly=false, bool optimize=true) {
-		dice_overlapper checker(diceThreshold);
-		filter<dice_overlapper>(ref, checker, inverse, merge, aberrantOnly, optimize);
+		cna::dice_overlapper checker(diceThreshold);
+		filter<cna::dice_overlapper>(ref, checker, inverse, merge, aberrantOnly, optimize);
 	}
 	
 	
@@ -401,15 +401,15 @@ private:
 /* Template implementation */
 
 template <typename V>
-SegmentedSampleSet<V>::SegmentedSampleSet(const RawSampleSet<V>& raw)
+cna::SegmentedSampleSet<V>::SegmentedSampleSet(const cna::RawSampleSet<V>& raw)
 {
 	clear();
-	// use iterators to avoid assuming RawSampleSet stores data in vectors
+	// use iterators to avoid assuming Rawcna::SampleSet stores data in vectors
 	// however, need to assume that markers are stored in vectors, for looking up marker information
 	
-	typedef typename RawSampleSet<V>::Samples::const_iterator RawSamplesIterator;
-	typedef typename RawSampleSet<V>::RawSample::Chromosomes::const_iterator RawChromosomesIterator;
-	typedef typename RawSampleSet<V>::RawChromosome::const_iterator RawDataIterator;
+	typedef typename cna::RawSampleSet<V>::Samples::const_iterator RawSamplesIterator;
+	typedef typename cna::RawSampleSet<V>::RawSample::Chromosomes::const_iterator RawChromosomesIterator;
+	typedef typename cna::RawSampleSet<V>::RawChromosome::const_iterator RawDataIterator;
 	
 	// iterate through samples in $raw
 	RawSamplesIterator it, end = raw.samples.end();
@@ -434,7 +434,7 @@ SegmentedSampleSet<V>::SegmentedSampleSet(const RawSampleSet<V>& raw)
 				while (markerIt != markerEnd) {
 					if (!cna::eq(*markerIt, prevValue)) {
 						// segment ended: store segment from $startMarkerIndex to $markerIndex-1
-						Segment<Value> seg(
+						cna::Segment<Value> seg(
 							chr+1,
 							raw.markers->at(chr)[startMarkerIndex]->pos,
 							raw.markers->at(chr)[markerIndex-1]->pos,
@@ -452,7 +452,7 @@ SegmentedSampleSet<V>::SegmentedSampleSet(const RawSampleSet<V>& raw)
 				// store last segment
 				// handling is same whether last segment is the last marker alone or
 				// 	laste segment ends on the last marker
-				Segment<Value> seg(
+				cna::Segment<Value> seg(
 					chr+1,
 					raw.markers->at(chr)[startMarkerIndex]->pos,
 					raw.markers->at(chr)[markerIndex-1]->pos,
@@ -467,7 +467,7 @@ SegmentedSampleSet<V>::SegmentedSampleSet(const RawSampleSet<V>& raw)
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::_read(std::fstream& file)
+void cna::SegmentedSampleSet<V>::_read(std::fstream& file)
 {
 	//const char delim = Base::delim;
 	//const size_t nSkippedLines = Base::nSkippedLines, headerLine = Base::headerLine;
@@ -493,7 +493,7 @@ void SegmentedSampleSet<V>::_read(std::fstream& file)
 			chromid chrom = cna::mapping::chromosome[chromName];
 			if (chrom == 0) continue;
 			// create segment at specified chromosome
-			Segment<V> seg(chrom);
+			cna::Segment<V> seg(chrom);
 			readSegment(fields, seg);
 			if (mergeSamples) sampleName = "ALL";
 			create(sampleName)->addToChromosome(chrom-1, seg);
@@ -505,7 +505,7 @@ void SegmentedSampleSet<V>::_read(std::fstream& file)
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::_write(std::fstream& file)
+void cna::SegmentedSampleSet<V>::_write(std::fstream& file)
 {
 	const char delim = Base::io.delim;
 	
@@ -524,7 +524,7 @@ void SegmentedSampleSet<V>::_write(std::fstream& file)
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::sort()
+void cna::SegmentedSampleSet<V>::sort()
 {
 	// Sort samples by name
 	std::sort(samples.begin(), samples.end(), &SegmentedSample::pcompare);
@@ -535,14 +535,14 @@ void SegmentedSampleSet<V>::sort()
 		typename Chromosomes::iterator chrIt;
 		typename Chromosomes::iterator chrEnd = (*it)->end();
 		for (chrIt = (*it)->begin(); chrIt != chrEnd; ++chrIt) {
-			std::sort(chrIt->begin(), chrIt->end(), &Segment<Value>::compare);
+			std::sort(chrIt->begin(), chrIt->end(), &cna::Segment<Value>::compare);
 		}
 	}
 }
 
 // find segments that start at specified position
 template <typename V>
-size_t SegmentedSampleSet<V>::_find(Segments& array, position x) const {
+size_t cna::SegmentedSampleSet<V>::_find(Segments& array, position x) const {
 	// Initialize left and right beyond array bounds
 	if (array.size() == 0) {
 		return 0;
@@ -572,7 +572,7 @@ size_t SegmentedSampleSet<V>::_find(Segments& array, position x) const {
 
 /*
 template <typename V>
-void SegmentedSampleSet<V>::markAberrant() {
+void cna::SegmentedSampleSet<V>::markAberrant() {
 	size_t count =  0;
 	// iterate through samples
 	typename Samples::iterator it;
@@ -600,7 +600,7 @@ void SegmentedSampleSet<V>::markAberrant() {
 */
 
 template <typename V>
-void SegmentedSampleSet<V>::reset() {
+void cna::SegmentedSampleSet<V>::reset() {
 	// iterate through samples
 	typename Samples::iterator it;
 	typename Samples::const_iterator end = samples.end();
@@ -623,7 +623,7 @@ void SegmentedSampleSet<V>::reset() {
 
 template <typename V>
 template <typename filter_operator_type>
-void SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool inverse, bool merge)
+void cna::SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool inverse, bool merge)
 {
 	size_t filteredCount = 0;
 	// iterate through samples
@@ -652,7 +652,7 @@ void SegmentedSampleSet<V>::filter(const filter_operator_type& f, bool inverse, 
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator filterBegin, typename filter_operators::const_iterator filterEnd, bool inverse, bool merge) {
+void cna::SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator filterBegin, typename filter_operators::const_iterator filterEnd, bool inverse, bool merge) {
 	size_t filteredCount = 0;
 	// iterate through samples
 	typename Samples::iterator it;
@@ -691,12 +691,12 @@ void SegmentedSampleSet<V>::filter(typename filter_operators::const_iterator fil
 
 template <typename V>
 template <typename overlapper_type>
-void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool inverse, bool merge, bool aberrantOnly, bool optimize)
+void cna::SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, const ENABLE_IF_OVERLAPPER::type& overlap_checker, bool inverse, bool merge, bool aberrantOnly, bool optimize)
 {
 	filter_operators filters;
 	
 	if (aberrantOnly) {
-		balanced_segment_filter<V> balancedFilter(cna.reference, cna.deviation);
+		cna::balanced_segment_filter<V> balancedFilter(cna.reference, cna.deviation);
 		filters.push_back(&balancedFilter);
 	}
 	
@@ -707,7 +707,7 @@ void SegmentedSampleSet<V>::filter(SegmentedSampleSet& ref, const ENABLE_IF_OVER
 }
 
 template <typename V>
-void mergeSegments(Segment<V>* seg1, Segment<V>* seg2) {
+void mergeSegments(cna::Segment<V>* seg1, cna::Segment<V>* seg2) {
 	// merge next unmarked segment to previous unmarked segment
 	seg1->end = seg2->end;
 	seg1->count += seg2->count;
@@ -727,7 +727,7 @@ void mergeSegments(Segment<V>* seg1, Segment<V>* seg2) {
 }
 
 template <typename V>
-void SegmentedSampleSet<V>::removeFlagged(bool merge)
+void cna::SegmentedSampleSet<V>::removeFlagged(bool merge)
 {
 	Samples oldSamples;
 	
@@ -756,7 +756,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 			typename Segments::const_iterator segEnd = chrIt->end();
 			const char* chrom = cna::mapping::chromosome[chri+1].c_str();
 			
-			Segment<V>* prevUnmarkedSegment = NULL, *nextUnmarkedSegment;
+			cna::Segment<V>* prevUnmarkedSegment = NULL, *nextUnmarkedSegment;
 			// prevUnmarkedSegment will point to previous unmarked segment in the samples
 			//  so that the unmarked segment is modified after being copied to samples
 			// nextUnmarkedSegment will point to the next unmarked segment in the oldSamples
@@ -767,7 +767,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 				if (!segIt->flag) {
 					
 					// only create new copy of unflagged segments
-					Segment<V> seg(chri+1, segIt->start, segIt->end, segIt->count, segIt->value);
+					cna::Segment<V> seg(chri+1, segIt->start, segIt->end, segIt->count, segIt->value);
 					prevUnmarkedSegment = sample->addToChromosome(chri, seg);
 
 					// mark the segment for removal, since it has been merged
@@ -918,7 +918,7 @@ void SegmentedSampleSet<V>::removeFlagged(bool merge)
 } // namespace cna
 
 template <typename V>
-using SegmentedSampleSet = cna::SegmentedSampleSet<V>;
+using Segmentedcna::SampleSet = cna::SegmentedSampleSet<V>;
 
 template <typename V>
 using filter_operator = cna::filter_operator<V>;
@@ -933,11 +933,11 @@ template <typename V>
 using balanced_segment_filter = cna::balanced_segment_filter<V>;
 
 using overlapper_base = cna::overlapper_base;
-using reference_overlapper = cna::reference_overlapper;
-using query_overlapper = cna::query_overlapper;
-using union_overlapper = cna::union_overlapper;
-using min_overlapper = cna::min_overlapper;
-using max_overlapper = cna::max_overlapper;
-using dice_overlapper = cna::dice_overlapper;
+using cna::reference_overlapper = cna::reference_overlapper;
+using cna::query_overlapper = cna::query_overlapper;
+using cna::union_overlapper = cna::union_overlapper;
+using cna::min_overlapper = cna::min_overlapper;
+using cna::max_overlapper = cna::max_overlapper;
+using cna::dice_overlapper = cna::dice_overlapper;
 
 #endif

@@ -2,12 +2,12 @@
 // include in SegmentedSampleSet.h multiple times with different SPECIALIZATION_TYPE
 
 template <> inline
-cna::data::Type SegmentedSampleSet<SPECIALIZATION_TYPE>::type() {
+cna::data::Type cna::SegmentedSampleSet<SPECIALIZATION_TYPE>::type() {
 	return cna::data::segmented_ascn;
 }
 
 template <> inline
-void SegmentedSampleSet<SPECIALIZATION_TYPE>::readSegment(FieldScanner& fields, Segment<SPECIALIZATION_TYPE>& seg) {
+void cna::SegmentedSampleSet<SPECIALIZATION_TYPE>::readSegment(FieldScanner& fields, cna::Segment<SPECIALIZATION_TYPE>& seg) {
 	std::string_view field;
 	if (!fields.next(field) || !parseNumber(field, seg.start)) return;
 	if (!fields.next(field) || !parseNumber(field, seg.end)) return;
@@ -19,7 +19,7 @@ void SegmentedSampleSet<SPECIALIZATION_TYPE>::readSegment(FieldScanner& fields, 
 }
 
 template <> inline
-void SegmentedSampleSet<SPECIALIZATION_TYPE>::_write(std::fstream& file)
+void cna::SegmentedSampleSet<SPECIALIZATION_TYPE>::_write(std::fstream& file)
 {
 	const char delim = Base::io.delim;
 	

@@ -2,12 +2,12 @@
 // include in RawSampleSet.hpp multiple times with different SPECIALIZATION_TYPE
 
 template <> inline
-cna::data::Type RawSampleSet<SPECIALIZATION_TYPE>::type() {
+cna::data::Type cna::RawSampleSet<SPECIALIZATION_TYPE>::type() {
 	return cna::data::raw_ascn;
 }
 
 template <> inline
-void RawSampleSet<SPECIALIZATION_TYPE>::readSampleNames(FieldScanner& fields) {
+void cna::RawSampleSet<SPECIALIZATION_TYPE>::readSampleNames(FieldScanner& fields) {
 	std::string_view sampleName1, sampleName2;
 	while (fields.next(sampleName1) && fields.next(sampleName2)) {
 		create(cna::name::common(std::string(sampleName1), std::string(sampleName2)));
@@ -15,7 +15,7 @@ void RawSampleSet<SPECIALIZATION_TYPE>::readSampleNames(FieldScanner& fields) {
 }
 
 template <> inline
-void RawSampleSet<SPECIALIZATION_TYPE>::readSampleValues(FieldScanner& fields, size_t sampleStart, const std::string& chromName) {
+void cna::RawSampleSet<SPECIALIZATION_TYPE>::readSampleValues(FieldScanner& fields, size_t sampleStart, const std::string& chromName) {
 	size_t i = sampleStart;
 	Value value;
 	std::string_view a, b;
@@ -29,7 +29,7 @@ void RawSampleSet<SPECIALIZATION_TYPE>::readSampleValues(FieldScanner& fields, s
 }
 
 template <> inline
-void RawSampleSet<SPECIALIZATION_TYPE>::writeSampleNames(std::fstream& file, const char delim) {
+void cna::RawSampleSet<SPECIALIZATION_TYPE>::writeSampleNames(std::fstream& file, const char delim) {
 	// print sample names
 	SamplesIterator it;
 	const SamplesIterator end = samples.end();
@@ -40,7 +40,7 @@ void RawSampleSet<SPECIALIZATION_TYPE>::writeSampleNames(std::fstream& file, con
 }
 
 template <> inline
-void RawSampleSet<SPECIALIZATION_TYPE>::writeSampleValues(std::fstream& file, size_t chr, size_t markerIndex, const char delim) {
+void cna::RawSampleSet<SPECIALIZATION_TYPE>::writeSampleValues(std::fstream& file, size_t chr, size_t markerIndex, const char delim) {
 	// iterate through samples to print values, selected the specified chromosome and marker
 	SamplesIterator it;
 	const SamplesIterator end = samples.end();

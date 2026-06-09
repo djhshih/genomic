@@ -12,11 +12,11 @@
 
 namespace cna {
 
-class GenericSampleSet;
+class cna::GenericSampleSet;
 
 class SampleSet
 {
-	friend class GenericSampleSet;
+	friend class cna::GenericSampleSet;
 	//  for accessing the private clone() function
 	//    and the read() and write() functions
 	
@@ -88,12 +88,12 @@ private:
 	//  file IO is the responsibiliity of the base class
 	virtual void _read(std::fstream& file) = 0;
 	virtual void _write(std::fstream& file) = 0;
-	virtual SampleSet* clone() const = 0;
+	virtual cna::SampleSet* clone() const = 0;
 	
 };
 
 } // namespace cna
 
-using SampleSet = cna::SampleSet;
+using cna::SampleSet = cna::SampleSet;
 
 #endif
