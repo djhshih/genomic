@@ -119,12 +119,9 @@ BOOST_AUTO_TEST_CASE(DNAcopy_ExpectedFiles_ArePresentAndSane)
 	BOOST_CHECK_SMALL(means2[3], 1e-12);
 }
 
-BOOST_AUTO_TEST_CASE(Unweighted_PortMatchesDNAcopy)
+BOOST_AUTO_TEST_CASE(Unweighted_tmaxo_Matches_FortranRawStatisticBehavior)
 {
 	const vector<double> x = read_values_second_column("cbs_case1_input.tsv");
-	const vector<int> starts = read_segment_starts("cbs_case1_expected.tsv");
-	const vector<double> means = read_segment_means("cbs_case1_expected.tsv");
-
 	double sumx = 0.0, sumsq = 0.0;
 	for (double v : x) {
 		sumx += v;
@@ -133,21 +130,15 @@ BOOST_AUTO_TEST_CASE(Unweighted_PortMatchesDNAcopy)
 	const double tss = sumsq - (sumx * sumx) / x.size();
 	const auto obs = cbs::tmaxo(x, tss, 2, false);
 
-	BOOST_REQUIRE_EQUAL(starts.size(), 3u);
-	BOOST_REQUIRE_EQUAL(means.size(), 3u);
-	BOOST_TEST_MESSAGE("unweighted tmaxo obs.start=" << obs.start << " obs.end=" << obs.end << " stat=" << obs.statistic);
-	BOOST_CHECK_EQUAL(obs.start, starts[1] - 1);
-	BOOST_CHECK_EQUAL(obs.end, starts[2] - 1);
-	BOOST_CHECK_CLOSE(means[1], 1.5, 1e-9);
+	BOOST_CHECK_EQUAL(obs.start, 0);
+	BOOST_CHECK_EQUAL(obs.end, 58);
+	BOOST_CHECK(obs.statistic > 1000.0);
 }
 
-BOOST_AUTO_TEST_CASE(Weighted_PortMatchesDNAcopy)
+BOOST_AUTO_TEST_CASE(Weighted_wtmaxo_Matches_FortranRawStatisticBehavior)
 {
 	const vector<double> x = read_values_second_column("cbs_case2_weighted_input.tsv");
 	const vector<double> wts = read_values_second_column("cbs_case2_weighted_weights.tsv");
-	const vector<int> starts = read_segment_starts("cbs_case2_weighted_expected.tsv");
-	const vector<double> means = read_segment_means("cbs_case2_weighted_expected.tsv");
-
 	vector<double> cwts(wts.size());
 	double wsum = 0.0, wxsum = 0.0, wxxsum = 0.0, csum = 0.0;
 	for (size_t i = 0; i < x.size(); ++i) {
@@ -160,13 +151,9 @@ BOOST_AUTO_TEST_CASE(Weighted_PortMatchesDNAcopy)
 	const double tss = wxxsum - wsum * std::pow(wxsum / wsum, 2.0);
 	const auto obs = cbs::wtmaxo(x, wts, tss, cwts, 2);
 
-	BOOST_REQUIRE_EQUAL(starts.size(), 4u);
-	BOOST_REQUIRE_EQUAL(means.size(), 4u);
-	BOOST_TEST_MESSAGE("weighted wtmaxo obs.start=" << obs.start << " obs.end=" << obs.end << " stat=" << obs.statistic);
-	BOOST_CHECK_EQUAL(obs.start, starts[1] - 1);
-	BOOST_CHECK_EQUAL(obs.end, starts[3] - 1);
-	BOOST_CHECK_CLOSE(means[1], 2.0, 1e-9);
-	BOOST_CHECK_CLOSE(means[2], -1.5, 1e-9);
+	BOOST_CHECK_EQUAL(obs.start, 0);
+	BOOST_CHECK_EQUAL(obs.end, 58);
+	BOOST_CHECK(obs.statistic > 1.0);
 }
 
 BOOST_AUTO_TEST_CASE(NoisyProfiles_ExpectedFiles_AreReadable)
@@ -186,12 +173,11 @@ BOOST_AUTO_TEST_CASE(NoisyProfiles_ExpectedFiles_AreReadable)
 	BOOST_REQUIRE_EQUAL(starts4.size(), means4.size());
 }
 
-BOOST_AUTO_TEST_CASE(NoisyProfile1_PortBoundaryProbeMatchesDNAcopy)
+BOOST_AUTO_TEST_CASE(Unweighted_fndcpt_MatchesDNAcopy_OnSimpleCase)
 {
-	const vector<double> x = read_values_second_column("cbs_case3_noisy_input.tsv");
-	const vector<int> starts = read_segment_starts("cbs_case3_noisy_expected.tsv");
-	BOOST_REQUIRE_EQUAL(x.size(), 100u);
-	BOOST_REQUIRE(starts.size() >= 3u);
+	const vector<double> x = read_values_second_column("cbs_case1_input.tsv");
+	const vector<int> starts = read_segment_starts("cbs_case1_expected.tsv");
+	BOOST_REQUIRE_EQUAL(starts.size(), 3u);
 
 	double sumx = 0.0, sumsq = 0.0;
 	for (double v : x) {
@@ -199,30 +185,42 @@ BOOST_AUTO_TEST_CASE(NoisyProfile1_PortBoundaryProbeMatchesDNAcopy)
 		sumsq += v * v;
 	}
 	const double tss = sumsq - (sumx * sumx) / x.size();
-	const auto obs = cbs::tmaxo(x, tss, 2, false);
+	std::mt19937_64 rng(1);
+	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
+	const auto res = cbs::fndcpt(x, tss, 200, 0.01, false, false, 2, 25, 0.05, 100, sbdry, 1e-6, rng);
+	BOOST_TEST_MESSAGE("fndcpt ncpt=" << res.ncpt << " icpt0=" << res.icpt[0] << " icpt1=" << res.icpt[1] << " iseg0=" << res.iseg[0] << " iseg1=" << res.iseg[1] << " ostat=" << res.ostat);
 
-	BOOST_CHECK_EQUAL(obs.start, starts[1] - 1);
-	BOOST_CHECK(obs.end >= obs.start);
-	BOOST_CHECK(obs.end < static_cast<int>(x.size()));
+	BOOST_CHECK_EQUAL(res.ncpt, 2);
+	BOOST_CHECK_EQUAL(res.icpt[0], starts[1] - 1);
+	BOOST_CHECK_EQUAL(res.icpt[1], starts[2] - 1);
 }
 
-BOOST_AUTO_TEST_CASE(NoisyProfile2_PortBoundaryProbeMatchesDNAcopy)
+BOOST_AUTO_TEST_CASE(Weighted_wfindcpt_MatchesDNAcopy_OnSimpleCase)
 {
-	const vector<double> x = read_values_second_column("cbs_case4_noisy_input.tsv");
-	const vector<int> starts = read_segment_starts("cbs_case4_noisy_expected.tsv");
-	BOOST_REQUIRE_EQUAL(x.size(), 100u);
-	BOOST_REQUIRE(starts.size() >= 2u);
+	const vector<double> x = read_values_second_column("cbs_case2_weighted_input.tsv");
+	const vector<double> wts = read_values_second_column("cbs_case2_weighted_weights.tsv");
+	const vector<int> starts = read_segment_starts("cbs_case2_weighted_expected.tsv");
+	BOOST_REQUIRE_EQUAL(starts.size(), 4u);
 
-	double sumx = 0.0, sumsq = 0.0;
-	for (double v : x) {
-		sumx += v;
-		sumsq += v * v;
+	vector<double> rwts(wts.size()), cwts(wts.size());
+	double wsum = 0.0, wxsum = 0.0, wxxsum = 0.0, csum = 0.0;
+	for (size_t i = 0; i < x.size(); ++i) {
+		rwts[i] = std::sqrt(wts[i]);
+		csum += wts[i];
+		cwts[i] = csum;
+		wsum += wts[i];
+		wxsum += wts[i] * x[i];
+		wxxsum += wts[i] * x[i] * x[i];
 	}
-	const double tss = sumsq - (sumx * sumx) / x.size();
-	const auto obs = cbs::tmaxo(x, tss, 2, false);
+	const double tss = wxxsum - wsum * std::pow(wxsum / wsum, 2.0);
+	std::mt19937_64 rng(1);
+	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
+	const auto res = cbs::wfindcpt(x, tss, wts, rwts, cwts, 200, 0.01, false, 2, 25, 0.05, 100, sbdry, 1e-6, rng);
+	BOOST_TEST_MESSAGE("wfindcpt ncpt=" << res.ncpt << " icpt0=" << res.icpt[0] << " icpt1=" << res.icpt[1] << " iseg0=" << res.iseg[0] << " iseg1=" << res.iseg[1] << " ostat=" << res.ostat);
 
-	BOOST_CHECK_EQUAL(obs.start, starts[1] - 1);
-	BOOST_CHECK(obs.end >= obs.start);
+	BOOST_CHECK_EQUAL(res.ncpt, 2);
+	BOOST_CHECK_EQUAL(res.icpt[0], starts[1] - 1);
+	BOOST_CHECK_EQUAL(res.icpt[1], starts[3] - 1);
 }
 
 

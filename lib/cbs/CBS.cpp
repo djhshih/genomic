@@ -741,7 +741,9 @@ ChangePointResult fndcpt(const std::vector<double>& x, double tss, int nperm, do
     double ostat1 = std::sqrt(obs.statistic);
     double ostat = obs.statistic * 0.99999;
     if (ostat1 <= 0.1) return res;
-    const int l = std::min(obs.end - obs.start, n - obs.end + obs.start);
+    const int iseg1_for_l = obs.start + 1;
+    const int iseg2_for_l = obs.end + 1;
+    const int l = std::min(iseg2_for_l - iseg1_for_l, n - iseg2_for_l + iseg1_for_l);
     if (!((ostat1 >= 7.0) && (l >= 10))) {
         int nrej = 0;
         if (hybrid) {
@@ -768,17 +770,19 @@ ChangePointResult fndcpt(const std::vector<double>& x, double tss, int nperm, do
             }
         }
     }
-    if (obs.end == n) {
+    const int iseg1 = obs.start + 1;
+    const int iseg2 = obs.end + 1;
+    if (iseg2 == n) {
         res.ncpt = 1; res.icpt[0] = obs.start;
-    } else if (obs.start == 0) {
+    } else if (iseg1 == 0) {
         res.ncpt = 1; res.icpt[0] = obs.end;
     } else {
-        int n1 = obs.start, n12 = obs.end, n2 = n12 - n1;
+        int n1 = iseg1, n12 = iseg2, n2 = n12 - n1;
         double tpval = tpermp(n1, n2, n12, x.data(), px, nperm, rng);
         if (tpval <= cpval) { res.ncpt = 1; res.icpt[0] = obs.start; }
-        const int offset = obs.start;
-        n12 = n - obs.start;
-        n2 = n - obs.end;
+        const int offset = iseg1;
+        n12 = n - iseg1;
+        n2 = n - iseg2;
         n1 = n12 - n2;
         tpval = tpermp(n1, n2, n12, x.data() + offset, px, nperm, rng);
         if (tpval <= cpval) res.icpt[res.ncpt++] = obs.end;
@@ -796,7 +800,9 @@ ChangePointResult wfindcpt(const std::vector<double>& x, double tss, const std::
     double ostat1 = std::sqrt(obs.statistic);
     double ostat = obs.statistic * 0.99999;
     if (ostat1 <= 0.1) return res;
-    const int l = std::min(obs.end - obs.start, n - obs.end + obs.start);
+    const int iseg1_for_l = obs.start + 1;
+    const int iseg2_for_l = obs.end + 1;
+    const int l = std::min(iseg2_for_l - iseg1_for_l, n - iseg2_for_l + iseg1_for_l);
     if (!((ostat1 >= 7.0) && (l >= 10))) {
         int nrej = 0;
         if (hybrid) {
@@ -824,17 +830,19 @@ ChangePointResult wfindcpt(const std::vector<double>& x, double tss, const std::
             }
         }
     }
-    if (obs.end == n) {
+    const int iseg1 = obs.start + 1;
+    const int iseg2 = obs.end + 1;
+    if (iseg2 == n) {
         res.ncpt = 1; res.icpt[0] = obs.start;
-    } else if (obs.start == 0) {
+    } else if (iseg1 == 0) {
         res.ncpt = 1; res.icpt[0] = obs.end;
     } else {
-        int n1 = obs.start, n12 = obs.end, n2 = n12 - n1;
+        int n1 = iseg1, n12 = iseg2, n2 = n12 - n1;
         double tpval = wtpermp(n1, n2, n12, x.data(), px, wts.data(), rwts.data(), nperm, rng);
         if (tpval <= cpval) { res.ncpt = 1; res.icpt[0] = obs.start; }
-        const int offset = obs.start;
-        n12 = n - obs.start;
-        n2 = n - obs.end;
+        const int offset = iseg1;
+        n12 = n - iseg1;
+        n2 = n - iseg2;
         n1 = n12 - n2;
         tpval = wtpermp(n1, n2, n12, x.data() + offset, px, wts.data() + offset, rwts.data() + offset, nperm, rng);
         if (tpval <= cpval) res.icpt[res.ncpt++] = obs.end;
