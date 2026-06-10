@@ -1,5 +1,10 @@
 # TODO
 
+## External algorithms
+
+- [ ] Port NCList and test it to ensure correctness
+- [ ] Port CBS and test it to ensure correctness
+
 ## Conversion features
 
 - [ ] Implement segmented-to-raw conversion in `lib/RawSampleSet.hpp`
