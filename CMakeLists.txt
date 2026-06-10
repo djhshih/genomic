@@ -36,6 +36,7 @@ set(lib_sources
 	lib/SampleSet.cpp
 	lib/GenericSampleSet.cpp
 	lib/Marker.cpp
+	lib/cbs/CBS.cpp
 )
 
 add_library(cna_lib ${lib_sources})
