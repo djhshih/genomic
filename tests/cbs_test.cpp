@@ -135,6 +135,7 @@ BOOST_AUTO_TEST_CASE(Unweighted_PortMatchesDNAcopy)
 
 	BOOST_REQUIRE_EQUAL(starts.size(), 3u);
 	BOOST_REQUIRE_EQUAL(means.size(), 3u);
+	BOOST_TEST_MESSAGE("unweighted tmaxo obs.start=" << obs.start << " obs.end=" << obs.end << " stat=" << obs.statistic);
 	BOOST_CHECK_EQUAL(obs.start, starts[1] - 1);
 	BOOST_CHECK_EQUAL(obs.end, starts[2] - 1);
 	BOOST_CHECK_CLOSE(means[1], 1.5, 1e-9);
@@ -161,6 +162,7 @@ BOOST_AUTO_TEST_CASE(Weighted_PortMatchesDNAcopy)
 
 	BOOST_REQUIRE_EQUAL(starts.size(), 4u);
 	BOOST_REQUIRE_EQUAL(means.size(), 4u);
+	BOOST_TEST_MESSAGE("weighted wtmaxo obs.start=" << obs.start << " obs.end=" << obs.end << " stat=" << obs.statistic);
 	BOOST_CHECK_EQUAL(obs.start, starts[1] - 1);
 	BOOST_CHECK_EQUAL(obs.end, starts[3] - 1);
 	BOOST_CHECK_CLOSE(means[1], 2.0, 1e-9);

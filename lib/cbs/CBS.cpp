@@ -284,7 +284,7 @@ double btmax(const std::vector<double>& x) {
 
 BinarySegmentationResult tmaxo(const std::vector<double>& x, double tss, int al0, bool ibin) {
     const auto r = tmaxo_impl(x, tss, al0, ibin, true);
-    return {r.statistic, r.left, r.right};
+    return {r.statistic, r.left - 1, r.right - 1};
 }
 
 double tmaxp(const std::vector<double>& px, double tss, int al0, bool ibin) {
@@ -639,7 +639,7 @@ BinarySegmentationResult wtmaxo(const std::vector<double>& x, const std::vector<
     }
 
     if (tss <= bssmax + 0.0001) tss = bssmax + 1.0;
-    return {bssmax / ((tss - bssmax) / (rn - 2.0)), tmaxi, tmaxj};
+    return {bssmax / ((tss - bssmax) / (rn - 2.0)), tmaxi - 1, tmaxj - 1};
 }
 
 double wtmaxp(const std::vector<double>& px, const std::vector<double>& wts, const std::vector<double>& cwts, int al0) {
