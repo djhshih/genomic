@@ -16,6 +16,7 @@ endif()
 
 file(COPY data/ DESTINATION . FILES_MATCHING REGEX "/.*\\.(cfg|in|ans|cn|seg|cnas|segas|txt|tsv)$")
 file(COPY cbs_compare.R DESTINATION .)
+file(COPY nclist_compare.R DESTINATION .)
 
 add_test(cna_test cna_test)
 
@@ -30,6 +31,18 @@ if(CNA_ENABLE_WARNINGS)
 endif()
 
 add_test(cbs_test cbs_test)
+
+add_executable(nclist_test nclist_test.cpp)
+target_include_directories(nclist_test PRIVATE ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
+target_link_libraries(nclist_test cna_lib boost_unit_test_framework)
+
+if(CNA_ENABLE_WARNINGS)
+	target_compile_options(nclist_test PRIVATE
+		$<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+	)
+endif()
+
+add_test(nclist_test nclist_test)
 
 #add_executable(cna_cn_test cna_cn_test.cpp)
 # target_include_directories(cna_cn_test PRIVATE ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
