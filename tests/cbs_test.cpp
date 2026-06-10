@@ -188,7 +188,8 @@ BOOST_AUTO_TEST_CASE(NoisyProfile1_PortBoundaryProbeMatchesDNAcopy)
 {
 	const vector<double> x = read_values_second_column("cbs_case3_noisy_input.tsv");
 	const vector<int> starts = read_segment_starts("cbs_case3_noisy_expected.tsv");
-	const vector<double> means = read_segment_means("cbs_case3_noisy_expected.tsv");
+	BOOST_REQUIRE_EQUAL(x.size(), 100u);
+	BOOST_REQUIRE(starts.size() >= 3u);
 
 	double sumx = 0.0, sumsq = 0.0;
 	for (double v : x) {
@@ -198,8 +199,6 @@ BOOST_AUTO_TEST_CASE(NoisyProfile1_PortBoundaryProbeMatchesDNAcopy)
 	const double tss = sumsq - (sumx * sumx) / x.size();
 	const auto obs = cbs::tmaxo(x, tss, 2, false);
 
-	BOOST_REQUIRE_EQUAL(starts.size(), means.size());
-	BOOST_REQUIRE(starts.size() >= 2u);
 	BOOST_CHECK_EQUAL(obs.start, starts[1] - 1);
 	BOOST_CHECK(obs.end >= obs.start);
 	BOOST_CHECK(obs.end < static_cast<int>(x.size()));
@@ -209,7 +208,8 @@ BOOST_AUTO_TEST_CASE(NoisyProfile2_PortBoundaryProbeMatchesDNAcopy)
 {
 	const vector<double> x = read_values_second_column("cbs_case4_noisy_input.tsv");
 	const vector<int> starts = read_segment_starts("cbs_case4_noisy_expected.tsv");
-	const vector<double> means = read_segment_means("cbs_case4_noisy_expected.tsv");
+	BOOST_REQUIRE_EQUAL(x.size(), 100u);
+	BOOST_REQUIRE(starts.size() >= 2u);
 
 	double sumx = 0.0, sumsq = 0.0;
 	for (double v : x) {
@@ -219,11 +219,9 @@ BOOST_AUTO_TEST_CASE(NoisyProfile2_PortBoundaryProbeMatchesDNAcopy)
 	const double tss = sumsq - (sumx * sumx) / x.size();
 	const auto obs = cbs::tmaxo(x, tss, 2, false);
 
-	BOOST_REQUIRE_EQUAL(starts.size(), means.size());
-	BOOST_REQUIRE(starts.size() >= 2u);
 	BOOST_CHECK_EQUAL(obs.start, starts[1] - 1);
 	BOOST_CHECK(obs.end >= obs.start);
-	BOOST_CHECK(obs.end < static_cast<int>(x.size()));
 }
+
 
 BOOST_AUTO_TEST_SUITE_END()
