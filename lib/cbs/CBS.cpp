@@ -226,6 +226,99 @@ BlockScanResult tmaxo_impl(const std::vector<double>& x, double tss, int al0, bo
     return {bssmax, track_loc ? tmaxi : 0, track_loc ? tmaxj : 0};
 }
 
+double errssq(const std::vector<int>& lseg, const std::vector<double>& sx, const std::vector<int>& loc, int k) {
+    double out = 0.0;
+    double segsx = 0.0;
+    int segnx = 0;
+    for (int i = 0; i <= loc[0]; ++i) {
+        segsx += sx[i];
+        segnx += lseg[i];
+    }
+    out += segsx * segsx / static_cast<double>(segnx);
+    for (int j = 1; j < k; ++j) {
+        segsx = 0.0;
+        segnx = 0;
+        for (int i = loc[j - 1] + 1; i <= loc[j]; ++i) {
+            segsx += sx[i];
+            segnx += lseg[i];
+        }
+        out += segsx * segsx / static_cast<double>(segnx);
+    }
+    segsx = 0.0;
+    segnx = 0;
+    for (int i = loc[k - 1] + 1; i < static_cast<int>(lseg.size()); ++i) {
+        segsx += sx[i];
+        segnx += lseg[i];
+    }
+    out += segsx * segsx / static_cast<double>(segnx);
+    return out;
+}
+
+void next_combination(std::vector<int>& loc, int r, int nmr, bool& left) {
+    int i = r - 1;
+    while (i >= 0 && loc[i] == nmr + i) --i;
+    if (i < 0) { left = false; return; }
+    ++loc[i];
+    for (int j = i + 1; j < r; ++j) loc[j] = loc[j - 1] + 1;
+    if (loc[0] == nmr) left = false;
+}
+
+std::vector<int> prune_segments(const std::vector<double>& x, const std::vector<int>& lseg, double pcut) {
+    const int n = static_cast<int>(x.size());
+    const int nseg = static_cast<int>(lseg.size());
+    const int ncpt = nseg - 1;
+    if (ncpt <= 0) return lseg;
+    double ssq = 0.0;
+    for (double v : x) ssq += v * v;
+    std::vector<double> sx(nseg, 0.0);
+    int kk = 0;
+    for (int i = 0; i < nseg; ++i) {
+        for (int j = 0; j < lseg[i]; ++j) sx[i] += x[kk++];
+    }
+    int k = nseg - 1;
+    std::vector<int> loc(k), best_prev(k), best_cur(k);
+    for (int i = 0; i < k; ++i) {
+        loc[i] = i;
+        best_prev[i] = i;
+    }
+    double wssqk = ssq - errssq(lseg, sx, loc, k);
+    for (int j = k - 1; j >= 1; --j) {
+        const int kmj = k - j;
+        bool left = true;
+        for (int i = 0; i < j; ++i) {
+            loc[i] = i;
+            best_cur[i] = i;
+        }
+        double wssqj = ssq - errssq(lseg, sx, loc, j);
+        while (left) {
+            next_combination(loc, j, kmj, left);
+            if (!left) break;
+            const double wssq1 = ssq - errssq(lseg, sx, loc, j);
+            if (wssq1 <= wssqj) {
+                wssqj = wssq1;
+                for (int i = 0; i < j; ++i) best_cur[i] = loc[i];
+            }
+        }
+        if (wssqj / wssqk > 1.0 + pcut) {
+            std::vector<int> pruned_cpts(j + 1);
+            for (int i = 0; i <= j; ++i) pruned_cpts[i] = best_prev[i];
+            std::vector<int> cums(nseg);
+            int s = 0;
+            for (int i = 0; i < nseg; ++i) { s += lseg[i]; cums[i] = s; }
+            std::vector<int> out;
+            int prev = 0;
+            for (int idx : pruned_cpts) {
+                out.push_back(cums[idx] - prev);
+                prev = cums[idx];
+            }
+            out.push_back(n - prev);
+            return out;
+        }
+        for (int i = 0; i < j; ++i) best_prev[i] = best_cur[i];
+    }
+    return std::vector<int>{n};
+}
+
 } // namespace
 
 double tailp(double b, double delta, int m, int ngrid, double tol) {
@@ -848,6 +941,145 @@ ChangePointResult wfindcpt(const std::vector<double>& x, double tss, const std::
         if (tpval <= cpval) res.icpt[res.ncpt++] = obs.end;
     }
     return res;
+}
+
+SegmentationResult segment(const std::vector<double>& x,
+                           bool ibin,
+                           double alpha,
+                           int nperm,
+                           bool hybrid,
+                           int min_width,
+                           int kmax,
+                           int nmin,
+                           double eta,
+                           const std::vector<int>& sbdry,
+                           double tol,
+                           std::mt19937_64& rng,
+                           bool undo_prune,
+                           double undo_prune_cutoff) {
+    std::vector<int> seg_end{0, static_cast<int>(x.size())};
+    std::vector<int> change_loc;
+    while (seg_end.size() > 1) {
+        const int k = static_cast<int>(seg_end.size()) - 1;
+        const int lo = seg_end[k - 1];
+        const int hi = seg_end[k];
+        const int current_n = hi - lo;
+        ChangePointResult zzz;
+        if (current_n >= 2 * min_width) {
+            std::vector<double> cur(x.begin() + lo, x.begin() + hi);
+            bool use_hybrid = hybrid && (nmin < current_n);
+            double delta = use_hybrid ? static_cast<double>(kmax + 1) / static_cast<double>(current_n) : 0.0;
+            if (!std::all_of(cur.begin(), cur.end(), [&](double v) { return std::abs(v - cur.front()) < 1e-12; })) {
+                const double avg = std::accumulate(cur.begin(), cur.end(), 0.0) / static_cast<double>(cur.size());
+                for (double& v : cur) v -= avg;
+                double tss = 0.0;
+                for (double v : cur) tss += v * v;
+                zzz = fndcpt(cur, tss, nperm, alpha, ibin, use_hybrid, min_width, kmax, delta, 100, sbdry, tol, rng);
+            }
+        }
+        if (zzz.ncpt == 0) {
+            change_loc.push_back(seg_end[k]);
+            seg_end.erase(seg_end.begin() + k);
+        } else if (zzz.ncpt == 1) {
+            seg_end.insert(seg_end.begin() + k, lo + zzz.icpt[0] + 1);
+        } else {
+            seg_end.insert(seg_end.begin() + k, lo + zzz.icpt[0] + 1);
+            seg_end.insert(seg_end.begin() + k + 1, lo + zzz.icpt[1] + 1);
+        }
+    }
+    std::reverse(change_loc.begin(), change_loc.end());
+    std::vector<int> lseg;
+    int prev = 0;
+    for (int e : change_loc) {
+        lseg.push_back(e - prev);
+        prev = e;
+    }
+    if (undo_prune && lseg.size() > 1) lseg = prune_segments(x, lseg, undo_prune_cutoff);
+    std::vector<double> means;
+    int ll = 0;
+    for (int len : lseg) {
+        const int uu = ll + len;
+        double s = 0.0;
+        for (int i = ll; i < uu; ++i) s += x[i];
+        means.push_back(s / static_cast<double>(len));
+        ll = uu;
+    }
+    return {lseg, means};
+}
+
+SegmentationResult segment_weighted(const std::vector<double>& x,
+                                    const std::vector<double>& weights,
+                                    double alpha,
+                                    int nperm,
+                                    bool hybrid,
+                                    int min_width,
+                                    int kmax,
+                                    int nmin,
+                                    double eta,
+                                    const std::vector<int>& sbdry,
+                                    double tol,
+                                    std::mt19937_64& rng,
+                                    bool undo_prune,
+                                    double undo_prune_cutoff) {
+    std::vector<int> seg_end{0, static_cast<int>(x.size())};
+    std::vector<int> change_loc;
+    while (seg_end.size() > 1) {
+        const int k = static_cast<int>(seg_end.size()) - 1;
+        const int lo = seg_end[k - 1];
+        const int hi = seg_end[k];
+        const int current_n = hi - lo;
+        ChangePointResult zzz;
+        if (current_n >= 2 * min_width) {
+            std::vector<double> cur(x.begin() + lo, x.begin() + hi);
+            std::vector<double> w(weights.begin() + lo, weights.begin() + hi), rw(w.size()), cw(w.size());
+            bool use_hybrid = hybrid && (nmin < current_n);
+            double delta = use_hybrid ? static_cast<double>(kmax + 1) / static_cast<double>(current_n) : 0.0;
+            if (!std::all_of(cur.begin(), cur.end(), [&](double v) { return std::abs(v - cur.front()) < 1e-12; })) {
+                double wsum = 0.0, wxsum = 0.0, wxxsum = 0.0, csum = 0.0;
+                for (size_t i = 0; i < w.size(); ++i) {
+                    rw[i] = std::sqrt(w[i]);
+                    wsum += w[i];
+                    wxsum += w[i] * cur[i];
+                }
+                const double avg = wxsum / wsum;
+                const double cwscale = std::sqrt(wsum);
+                for (size_t i = 0; i < cur.size(); ++i) {
+                    cur[i] -= avg;
+                    wxxsum += w[i] * cur[i] * cur[i];
+                    csum += w[i];
+                    cw[i] = csum / cwscale;
+                }
+                zzz = wfindcpt(cur, wxxsum, w, rw, cw, nperm, alpha, use_hybrid, min_width, kmax, delta, 100, sbdry, tol, rng);
+            }
+        }
+        if (zzz.ncpt == 0) {
+            change_loc.push_back(seg_end[k]);
+            seg_end.erase(seg_end.begin() + k);
+        } else if (zzz.ncpt == 1) {
+            seg_end.insert(seg_end.begin() + k, lo + zzz.icpt[0] + 1);
+        } else {
+            seg_end.insert(seg_end.begin() + k, lo + zzz.icpt[0] + 1);
+            seg_end.insert(seg_end.begin() + k + 1, lo + zzz.icpt[1] + 1);
+        }
+    }
+    std::reverse(change_loc.begin(), change_loc.end());
+    std::vector<int> lseg;
+    int prev = 0;
+    for (int e : change_loc) {
+        lseg.push_back(e - prev);
+        prev = e;
+    }
+    if (undo_prune && lseg.size() > 1) lseg = prune_segments(x, lseg, undo_prune_cutoff);
+    std::vector<double> means;
+    int ll = 0;
+    for (int len : lseg) {
+        const int uu = ll + len;
+        double sw = 0.0, swx = 0.0;
+        for (int i = ll; i < uu; ++i) { sw += weights[i]; swx += weights[i] * x[i]; }
+        means.push_back(swx / sw);
+        ll = uu;
+    }
+    return {lseg, means};
 }
 
 } // namespace cbs

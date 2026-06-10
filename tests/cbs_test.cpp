@@ -173,54 +173,44 @@ BOOST_AUTO_TEST_CASE(NoisyProfiles_ExpectedFiles_AreReadable)
 	BOOST_REQUIRE_EQUAL(starts4.size(), means4.size());
 }
 
-BOOST_AUTO_TEST_CASE(Unweighted_fndcpt_MatchesDNAcopy_OnSimpleCase)
+BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_SimpleCase)
 {
 	const vector<double> x = read_values_second_column("cbs_case1_input.tsv");
 	const vector<int> starts = read_segment_starts("cbs_case1_expected.tsv");
-	BOOST_REQUIRE_EQUAL(starts.size(), 3u);
-
-	double sumx = 0.0, sumsq = 0.0;
-	for (double v : x) {
-		sumx += v;
-		sumsq += v * v;
-	}
-	const double tss = sumsq - (sumx * sumx) / x.size();
+	const vector<double> means = read_segment_means("cbs_case1_expected.tsv");
 	std::mt19937_64 rng(1);
 	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
-	const auto res = cbs::fndcpt(x, tss, 200, 0.01, false, false, 2, 25, 0.05, 100, sbdry, 1e-6, rng);
-	BOOST_TEST_MESSAGE("fndcpt ncpt=" << res.ncpt << " icpt0=" << res.icpt[0] << " icpt1=" << res.icpt[1] << " iseg0=" << res.iseg[0] << " iseg1=" << res.iseg[1] << " ostat=" << res.ostat);
+	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
 
-	BOOST_CHECK_EQUAL(res.ncpt, 2);
-	BOOST_CHECK_EQUAL(res.icpt[0], starts[1] - 1);
-	BOOST_CHECK_EQUAL(res.icpt[1], starts[2] - 1);
+	BOOST_REQUIRE_EQUAL(seg.lengths.size(), 3u);
+	BOOST_REQUIRE_EQUAL(seg.means.size(), 3u);
+	BOOST_CHECK_EQUAL(seg.lengths[0], 20);
+	BOOST_CHECK_EQUAL(seg.lengths[1], 20);
+	BOOST_CHECK_EQUAL(seg.lengths[2], 20);
+	BOOST_CHECK_SMALL(seg.means[0] - means[0], 1e-9);
+	BOOST_CHECK_SMALL(seg.means[1] - means[1], 1e-9);
+	BOOST_CHECK_SMALL(seg.means[2] - means[2], 1e-9);
 }
 
-BOOST_AUTO_TEST_CASE(Weighted_wfindcpt_MatchesDNAcopy_OnSimpleCase)
+BOOST_AUTO_TEST_CASE(Weighted_SegmentDriver_MatchesDNAcopy_SimpleCase)
 {
 	const vector<double> x = read_values_second_column("cbs_case2_weighted_input.tsv");
 	const vector<double> wts = read_values_second_column("cbs_case2_weighted_weights.tsv");
-	const vector<int> starts = read_segment_starts("cbs_case2_weighted_expected.tsv");
-	BOOST_REQUIRE_EQUAL(starts.size(), 4u);
-
-	vector<double> rwts(wts.size()), cwts(wts.size());
-	double wsum = 0.0, wxsum = 0.0, wxxsum = 0.0, csum = 0.0;
-	for (size_t i = 0; i < x.size(); ++i) {
-		rwts[i] = std::sqrt(wts[i]);
-		csum += wts[i];
-		cwts[i] = csum;
-		wsum += wts[i];
-		wxsum += wts[i] * x[i];
-		wxxsum += wts[i] * x[i] * x[i];
-	}
-	const double tss = wxxsum - wsum * std::pow(wxsum / wsum, 2.0);
+	const vector<double> means = read_segment_means("cbs_case2_weighted_expected.tsv");
 	std::mt19937_64 rng(1);
 	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
-	const auto res = cbs::wfindcpt(x, tss, wts, rwts, cwts, 200, 0.01, false, 2, 25, 0.05, 100, sbdry, 1e-6, rng);
-	BOOST_TEST_MESSAGE("wfindcpt ncpt=" << res.ncpt << " icpt0=" << res.icpt[0] << " icpt1=" << res.icpt[1] << " iseg0=" << res.iseg[0] << " iseg1=" << res.iseg[1] << " ostat=" << res.ostat);
+	const auto seg = cbs::segment_weighted(x, wts, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
 
-	BOOST_CHECK_EQUAL(res.ncpt, 2);
-	BOOST_CHECK_EQUAL(res.icpt[0], starts[1] - 1);
-	BOOST_CHECK_EQUAL(res.icpt[1], starts[3] - 1);
+	BOOST_REQUIRE_EQUAL(seg.lengths.size(), 4u);
+	BOOST_REQUIRE_EQUAL(seg.means.size(), 4u);
+	BOOST_CHECK_EQUAL(seg.lengths[0], 15);
+	BOOST_CHECK_EQUAL(seg.lengths[1], 15);
+	BOOST_CHECK_EQUAL(seg.lengths[2], 15);
+	BOOST_CHECK_EQUAL(seg.lengths[3], 15);
+	BOOST_CHECK_SMALL(seg.means[0] - means[0], 1e-9);
+	BOOST_CHECK_SMALL(seg.means[1] - means[1], 1e-9);
+	BOOST_CHECK_SMALL(seg.means[2] - means[2], 1e-9);
+	BOOST_CHECK_SMALL(seg.means[3] - means[3], 1e-9);
 }
 
 

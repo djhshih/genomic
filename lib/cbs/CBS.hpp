@@ -21,6 +21,11 @@ struct BinarySegmentationResult {
     int end = 0;
 };
 
+struct SegmentationResult {
+    std::vector<int> lengths;
+    std::vector<double> means;
+};
+
 double tailp(double b, double delta, int m, int ngrid, double tol);
 double btailp(double b, int m, int ng, double tol);
 
@@ -91,6 +96,36 @@ ChangePointResult wfindcpt(const std::vector<double>& x,
                            const std::vector<int>& sbdry,
                            double tol,
                            std::mt19937_64& rng);
+
+SegmentationResult segment(const std::vector<double>& x,
+                           bool ibin,
+                           double alpha,
+                           int nperm,
+                           bool hybrid,
+                           int min_width,
+                           int kmax,
+                           int nmin,
+                           double eta,
+                           const std::vector<int>& sbdry,
+                           double tol,
+                           std::mt19937_64& rng,
+                           bool undo_prune = false,
+                           double undo_prune_cutoff = 0.05);
+
+SegmentationResult segment_weighted(const std::vector<double>& x,
+                                    const std::vector<double>& weights,
+                                    double alpha,
+                                    int nperm,
+                                    bool hybrid,
+                                    int min_width,
+                                    int kmax,
+                                    int nmin,
+                                    double eta,
+                                    const std::vector<int>& sbdry,
+                                    double tol,
+                                    std::mt19937_64& rng,
+                                    bool undo_prune = false,
+                                    double undo_prune_cutoff = 0.05);
 
 } // namespace cbs
 
