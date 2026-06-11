@@ -519,10 +519,11 @@ double tpermp(int n1, int n2, int n, const double* x, std::vector<double>& px, i
         m1 = n2; rm1 = rn2; ostat = 0.99999 * std::abs(xsum2 / rn2 - xbar); tstat = (ostat * ostat) * rn2 * rn / rn1;
     }
     tstat /= ((tss - tstat) / (rn - 2.0));
-    if ((tstat > 25.0) && (m1 >= 10)) return 1.0;
+    if ((tstat > 25.0) && (m1 >= 10)) return 0.0;
     int nrej = 0;
     for (int np = 1; np <= nperm; ++np) {
         xsum1 = 0.0;
+        for (int i = 0; i < n; ++i) px[i] = x[i];
         for (int i = n; i >= n - m1 + 1; --i) {
             const int j = static_cast<int>(runif01(rng) * static_cast<double>(i)) + 1;
             std::swap(px[i - 1], px[j - 1]);
@@ -572,10 +573,12 @@ double wtpermp(int n1, int n2, int n, const double* x, std::vector<double>& px, 
         m1 = n2; rm1 = rn2; ostat = 0.99999 * std::abs(xsum2 / rn2 - xbar); tstat = (ostat * ostat) * rn2 * rn / rn1;
     }
     tstat /= ((tss - tstat) / (static_cast<double>(n) - 2.0));
-    if ((tstat > 25.0) && (m1 >= 10)) return 1.0;
+    if ((tstat > 25.0) && (m1 >= 10)) return 0.0;
     int nrej = 0;
     for (int np = 1; np <= nperm; ++np) {
         xsum1 = 0.0;
+        for (int i = 0; i < n1; ++i) px[i] = x[i] * rwts[i];
+        for (int i = n1; i < n; ++i) px[i] = x[i];
         for (int i = n; i >= n - m1 + 1; --i) {
             const int j = static_cast<int>(runif01(rng) * static_cast<double>(i)) + 1;
             std::swap(px[i - 1], px[j - 1]);
@@ -878,7 +881,12 @@ ChangePointResult fndcpt(const std::vector<double>& x, double tss, int nperm, do
         n2 = n - iseg2;
         n1 = n12 - n2;
         tpval = tpermp(n1, n2, n12, x.data() + offset, px, nperm, rng);
-        if (tpval <= cpval) res.icpt[res.ncpt++] = obs.end;
+        if (tpval <= cpval) {
+            if (res.ncpt < 2) {
+                res.icpt[res.ncpt] = obs.end;
+                ++res.ncpt;
+            }
+        }
     }
     return res;
 }
@@ -938,7 +946,12 @@ ChangePointResult wfindcpt(const std::vector<double>& x, double tss, const std::
         n2 = n - iseg2;
         n1 = n12 - n2;
         tpval = wtpermp(n1, n2, n12, x.data() + offset, px, wts.data() + offset, rwts.data() + offset, nperm, rng);
-        if (tpval <= cpval) res.icpt[res.ncpt++] = obs.end;
+        if (tpval <= cpval) {
+            if (res.ncpt < 2) {
+                res.icpt[res.ncpt] = obs.end;
+                ++res.ncpt;
+            }
+        }
     }
     return res;
 }
@@ -975,6 +988,9 @@ SegmentationResult segment(const std::vector<double>& x,
                 double tss = 0.0;
                 for (double v : cur) tss += v * v;
                 zzz = fndcpt(cur, tss, nperm, alpha, ibin, use_hybrid, min_width, kmax, delta, 100, sbdry, tol, rng);
+                if (current_n == static_cast<int>(x.size())) {
+                    (void)avg;
+                }
             }
         }
         if (zzz.ncpt == 0) {
