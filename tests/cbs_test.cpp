@@ -173,29 +173,42 @@ BOOST_AUTO_TEST_CASE(NoisyProfiles_ExpectedFiles_AreReadable)
 	BOOST_REQUIRE_EQUAL(starts4.size(), means4.size());
 }
 
-BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesCurrentDNAcopy_NoisyFixture)
+BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_NoisyCase3)
 {
 	const vector<double> x = read_values_second_column("cbs_case3_noisy_input.tsv");
+	const vector<int> starts = read_segment_starts("cbs_case3_noisy_expected.tsv");
+	const vector<double> means = read_segment_means("cbs_case3_noisy_expected.tsv");
+	vector<int> expected_lengths;
+	for (size_t i = 0; i < starts.size(); ++i) {
+		const int end = (i + 1 < starts.size()) ? (starts[i + 1] - 1) : static_cast<int>(x.size());
+		expected_lengths.push_back(end - starts[i] + 1);
+	}
 	std::mt19937_64 rng(1);
 	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
-	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
-	const vector<int> lengths{30, 20, 25, 25};
-	const vector<double> means{0.01236873, 1.11911502, -0.87518864, 0.21038658};
-	BOOST_REQUIRE_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), lengths.begin(), lengths.end());
+	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, true, 0.05);
+	BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
 	BOOST_REQUIRE_EQUAL(seg.means.size(), means.size());
+	BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
 	for (size_t i = 0; i < means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - means[i], 5e-6);
 }
 
-BOOST_AUTO_TEST_CASE(NoisyFixtures_RecordDifferentDNAcopyModes)
+BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_NoisyCase4)
 {
-	const vector<int> fixture3_starts = read_segment_starts("cbs_case3_noisy_expected.tsv");
-	const vector<int> fixture4_starts = read_segment_starts("cbs_case4_noisy_expected.tsv");
-	BOOST_REQUIRE_EQUAL(fixture3_starts.size(), 9u);
-	BOOST_REQUIRE_EQUAL(fixture4_starts.size(), 9u);
-	BOOST_CHECK_EQUAL(fixture3_starts[0], 1);
-	BOOST_CHECK_EQUAL(fixture3_starts[1], 31);
-	BOOST_CHECK_EQUAL(fixture4_starts[0], 1);
-	BOOST_CHECK_EQUAL(fixture4_starts[1], 27);
+	const vector<double> x = read_values_second_column("cbs_case4_noisy_input.tsv");
+	const vector<int> starts = read_segment_starts("cbs_case4_noisy_expected.tsv");
+	const vector<double> means = read_segment_means("cbs_case4_noisy_expected.tsv");
+	vector<int> expected_lengths;
+	for (size_t i = 0; i < starts.size(); ++i) {
+		const int end = (i + 1 < starts.size()) ? (starts[i + 1] - 1) : static_cast<int>(x.size());
+		expected_lengths.push_back(end - starts[i] + 1);
+	}
+	std::mt19937_64 rng(1);
+	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
+	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, true, 0.05);
+	BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
+	BOOST_REQUIRE_EQUAL(seg.means.size(), means.size());
+	BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
+	for (size_t i = 0; i < means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - means[i], 5e-6);
 }
 
 BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_SimpleCase)
@@ -203,17 +216,15 @@ BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_SimpleCase)
 	const vector<double> x = read_values_second_column("cbs_case1_input.tsv");
 	const vector<int> starts = read_segment_starts("cbs_case1_expected.tsv");
 	const vector<double> means = read_segment_means("cbs_case1_expected.tsv");
+	const vector<int> expected_lengths{20, 20, 20};
 	std::mt19937_64 rng(1);
 	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
 	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
-	BOOST_REQUIRE_EQUAL(seg.lengths.size(), 3u);
-	BOOST_REQUIRE_EQUAL(seg.means.size(), 3u);
-	BOOST_CHECK_EQUAL(seg.lengths[0], 20);
-	BOOST_CHECK_EQUAL(seg.lengths[1], 20);
-	BOOST_CHECK_EQUAL(seg.lengths[2], 20);
-	BOOST_CHECK_SMALL(seg.means[0] - means[0], 1e-9);
-	BOOST_CHECK_SMALL(seg.means[1] - means[1], 1e-9);
-	BOOST_CHECK_SMALL(seg.means[2] - means[2], 1e-9);
+	BOOST_REQUIRE_EQUAL(starts.size(), expected_lengths.size());
+	BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
+	BOOST_REQUIRE_EQUAL(seg.means.size(), means.size());
+	BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
+	for (size_t i = 0; i < means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - means[i], 1e-9);
 }
 
 BOOST_AUTO_TEST_CASE(Weighted_SegmentDriver_MatchesDNAcopy_SimpleCase)
@@ -221,19 +232,14 @@ BOOST_AUTO_TEST_CASE(Weighted_SegmentDriver_MatchesDNAcopy_SimpleCase)
 	const vector<double> x = read_values_second_column("cbs_case2_weighted_input.tsv");
 	const vector<double> wts = read_values_second_column("cbs_case2_weighted_weights.tsv");
 	const vector<double> means = read_segment_means("cbs_case2_weighted_expected.tsv");
+	const vector<int> expected_lengths{15, 15, 15, 15};
 	std::mt19937_64 rng(1);
 	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
 	const auto seg = cbs::segment_weighted(x, wts, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
-	BOOST_REQUIRE_EQUAL(seg.lengths.size(), 4u);
-	BOOST_REQUIRE_EQUAL(seg.means.size(), 4u);
-	BOOST_CHECK_EQUAL(seg.lengths[0], 15);
-	BOOST_CHECK_EQUAL(seg.lengths[1], 15);
-	BOOST_CHECK_EQUAL(seg.lengths[2], 15);
-	BOOST_CHECK_EQUAL(seg.lengths[3], 15);
-	BOOST_CHECK_SMALL(seg.means[0] - means[0], 1e-9);
-	BOOST_CHECK_SMALL(seg.means[1] - means[1], 1e-9);
-	BOOST_CHECK_SMALL(seg.means[2] - means[2], 1e-9);
-	BOOST_CHECK_SMALL(seg.means[3] - means[3], 1e-9);
+	BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
+	BOOST_REQUIRE_EQUAL(seg.means.size(), means.size());
+	BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
+	for (size_t i = 0; i < means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - means[i], 1e-9);
 }
 
 
