@@ -11,6 +11,8 @@
 #include <queue>
 #include <stdexcept>
 #include <cstdio>
+#include <cstdlib>
+#include <sstream>
 
 using namespace std;
 
@@ -131,6 +133,20 @@ struct IOFixture
 };
 
 
+namespace {
+
+std::string shell_quote(const std::string& s) {
+	std::string out = "'";
+	for (char c : s) {
+		if (c == '\'') out += "'\\''";
+		else out += c;
+	}
+	out += "'";
+	return out;
+}
+
+}
+
 BOOST_AUTO_TEST_SUITE(SampleSetBasic)
 
 BOOST_FIXTURE_TEST_CASE(InputOutput, IOFixture)
@@ -236,6 +252,20 @@ BOOST_AUTO_TEST_CASE(RawSampleSet_Filter)
 		BOOST_CHECK_EQUAL(diff.different(out, ans), 0);
 		
 	}
+}
+
+BOOST_AUTO_TEST_CASE(CLI_Segment_Matches_DNAcopy_Expected_Output)
+{
+	FilesDiff diff;
+	const std::string input = "segment_cli_case1_input.cn";
+	const std::string output = "segment_cli_case1_output.seg";
+	const std::string expected = "segment_cli_case1_expected.seg";
+
+	const std::string cmd = std::string("../cna segment -i ") + shell_quote(input) +
+		" -o " + shell_quote(output);
+	const int rc = std::system(cmd.c_str());
+	BOOST_REQUIRE_EQUAL(rc, 0);
+	BOOST_CHECK_EQUAL(diff.different(output, expected), 0);
 }
 
 BOOST_AUTO_TEST_CASE(RawSampleSet_Filter_RemovesAlternatingMarkersAndPreservesAlignment)

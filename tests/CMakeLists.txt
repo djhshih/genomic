@@ -47,7 +47,18 @@ if(NOT SMOOTH_CNA_GENERATE_RESULT EQUAL 0)
 	message(WARNING "Failed to run tests/smooth_generate.R")
 endif()
 
-file(COPY data/ DESTINATION . FILES_MATCHING REGEX "/.*\\.(cfg|in|ans|cn|seg|cnas|segas|txt|tsv)$")
+execute_process(
+	COMMAND Rscript ${CMAKE_CURRENT_SOURCE_DIR}/segment_generate.R
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+	RESULT_VARIABLE SEGMENT_GENERATE_RESULT
+	OUTPUT_QUIET
+	ERROR_QUIET
+)
+if(NOT SEGMENT_GENERATE_RESULT EQUAL 0)
+	message(WARNING "Failed to run tests/segment_generate.R")
+endif()
+
+file(COPY data/ DESTINATION . FILES_MATCHING PATTERN "*.cfg" PATTERN "*.in" PATTERN "*.ans" PATTERN "*.cn" PATTERN "*.seg" PATTERN "*.cnas" PATTERN "*.segas" PATTERN "*.txt" PATTERN "*.tsv" PATTERN "*.raw")
 
 add_test(cna_test cna_test)
 

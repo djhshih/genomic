@@ -68,6 +68,10 @@ public:
 		this->fileName = fileName;
 		_write(file);
 	}
+
+	cna::marker::Set* marker_set() const {
+		return markers;
+	}
 	
 	virtual void clear() = 0;
 	virtual void sort() = 0;

@@ -10,5 +10,6 @@
 #include "cna_filter.hpp"
 #include "cna_clean.hpp"
 #include "cna_sort.hpp"
+#include "cna_segment.hpp"
 
 #endif

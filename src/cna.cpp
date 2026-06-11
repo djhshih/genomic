@@ -20,6 +20,7 @@ int main(int argc, char **argv)
 	Filter filter;
 	Clean clean;
 	Sort sort;
+	Segment segment;
 	CommandMap commands;
 	
 	bool printUsage = false;
@@ -32,6 +33,7 @@ int main(int argc, char **argv)
 		commands.emplace("filter", ref(filter));
 		commands.emplace("clean", ref(clean));
 		commands.emplace("sort", ref(sort));
+		commands.emplace("segment", ref(segment));
 		
 		// Use the first argument (excluding name of program itself)
 		//   to determine the command

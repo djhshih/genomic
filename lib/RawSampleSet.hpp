@@ -108,6 +108,11 @@ public:
 	}
 	
 	void sort();
+
+	// TODO replace with begin() and end()
+	const Samples& getSamples() const {
+		return samples;
+	}
 	
 	size_t size() {
 		return samples.size();
