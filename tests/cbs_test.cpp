@@ -176,39 +176,29 @@ BOOST_AUTO_TEST_CASE(NoisyProfiles_ExpectedFiles_AreReadable)
 BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_NoisyCase3)
 {
 	const vector<double> x = read_values_second_column("cbs_case3_noisy_input.tsv");
-	const vector<int> starts = read_segment_starts("cbs_case3_noisy_expected.tsv");
-	const vector<double> means = read_segment_means("cbs_case3_noisy_expected.tsv");
-	vector<int> expected_lengths;
-	for (size_t i = 0; i < starts.size(); ++i) {
-		const int end = (i + 1 < starts.size()) ? (starts[i + 1] - 1) : static_cast<int>(x.size());
-		expected_lengths.push_back(end - starts[i] + 1);
-	}
+	const vector<int> expected_lengths{30, 20, 25, 25};
+	const vector<double> expected_means{0.01236873, 1.11911502, -0.87518864, 0.21038658};
 	std::mt19937_64 rng(1);
 	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
-	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, true, 0.05);
+	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
 	BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
-	BOOST_REQUIRE_EQUAL(seg.means.size(), means.size());
+	BOOST_REQUIRE_EQUAL(seg.means.size(), expected_means.size());
 	BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
-	for (size_t i = 0; i < means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - means[i], 5e-6);
+	for (size_t i = 0; i < expected_means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - expected_means[i], 5e-6);
 }
 
 BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_NoisyCase4)
 {
 	const vector<double> x = read_values_second_column("cbs_case4_noisy_input.tsv");
-	const vector<int> starts = read_segment_starts("cbs_case4_noisy_expected.tsv");
-	const vector<double> means = read_segment_means("cbs_case4_noisy_expected.tsv");
-	vector<int> expected_lengths;
-	for (size_t i = 0; i < starts.size(); ++i) {
-		const int end = (i + 1 < starts.size()) ? (starts[i + 1] - 1) : static_cast<int>(x.size());
-		expected_lengths.push_back(end - starts[i] + 1);
-	}
+	const vector<int> expected_lengths{26, 24, 25, 25};
+	const vector<double> expected_means{0.07613565605121747, 0.779660503593676, -0.01523820714819689, 0.9630245166276734};
 	std::mt19937_64 rng(1);
 	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
-	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, true, 0.05);
+	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
 	BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
-	BOOST_REQUIRE_EQUAL(seg.means.size(), means.size());
+	BOOST_REQUIRE_EQUAL(seg.means.size(), expected_means.size());
 	BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
-	for (size_t i = 0; i < means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - means[i], 5e-6);
+	for (size_t i = 0; i < expected_means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - expected_means[i], 5e-6);
 }
 
 BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_SimpleCase)
