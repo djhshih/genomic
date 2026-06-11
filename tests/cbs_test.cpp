@@ -8,6 +8,7 @@
 #include <vector>
 #include <cmath>
 #include <random>
+#include <tuple>
 
 #include "cbs/CBS.hpp"
 
@@ -128,11 +129,20 @@ BOOST_AUTO_TEST_CASE(Unweighted_tmaxo_Matches_FortranRawStatisticBehavior)
 		sumsq += v * v;
 	}
 	const double tss = sumsq - (sumx * sumx) / x.size();
-	const auto obs = cbs::tmaxo(x, tss, 2, false);
-
-	BOOST_CHECK_EQUAL(obs.start, 0);
-	BOOST_CHECK_EQUAL(obs.end, 58);
-	BOOST_CHECK(obs.statistic > 1000.0);
+	const vector<tuple<int, bool, int, int, double>> cases{{2, false, 0, 58, 1000.0}, {2, true, 0, 58, 10.0}};
+	for (const auto& tc : cases) {
+		const int al0 = std::get<0>(tc);
+		const bool ibin = std::get<1>(tc);
+		const int expect_start = std::get<2>(tc);
+		const int expect_end = std::get<3>(tc);
+		const double min_stat = std::get<4>(tc);
+		const auto obs = cbs::tmaxo(x, tss, al0, ibin);
+		BOOST_TEST_CONTEXT("al0=" << al0 << " ibin=" << ibin) {
+			BOOST_CHECK_EQUAL(obs.start, expect_start);
+			BOOST_CHECK_EQUAL(obs.end, expect_end);
+			BOOST_CHECK(obs.statistic > min_stat);
+		}
+	}
 }
 
 BOOST_AUTO_TEST_CASE(Weighted_wtmaxo_Matches_FortranRawStatisticBehavior)
@@ -149,11 +159,16 @@ BOOST_AUTO_TEST_CASE(Weighted_wtmaxo_Matches_FortranRawStatisticBehavior)
 		wxxsum += wts[i] * x[i] * x[i];
 	}
 	const double tss = wxxsum - wsum * std::pow(wxsum / wsum, 2.0);
-	const auto obs = cbs::wtmaxo(x, wts, tss, cwts, 2);
-
-	BOOST_CHECK_EQUAL(obs.start, 0);
-	BOOST_CHECK_EQUAL(obs.end, 58);
-	BOOST_CHECK(obs.statistic > 1.0);
+	const vector<tuple<int, int, int>> cases{{2, 0, 58}, {3, 0, 57}};
+	for (const auto& tc : cases) {
+		const int al0 = std::get<0>(tc);
+		const auto obs = cbs::wtmaxo(x, wts, tss, cwts, al0);
+		BOOST_TEST_CONTEXT("al0=" << al0) {
+			BOOST_CHECK_EQUAL(obs.start, std::get<1>(tc));
+			BOOST_CHECK_EQUAL(obs.end, std::get<2>(tc));
+			BOOST_CHECK(obs.statistic > 1.0);
+		}
+	}
 }
 
 BOOST_AUTO_TEST_CASE(NoisyProfiles_ExpectedFiles_AreReadable)
@@ -176,60 +191,102 @@ BOOST_AUTO_TEST_CASE(NoisyProfiles_ExpectedFiles_AreReadable)
 BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_NoisyCase3)
 {
 	const vector<double> x = read_values_second_column("cbs_case3_noisy_input.tsv");
-	const vector<int> expected_lengths{30, 20, 25, 25};
-	const vector<double> expected_means{0.01236873, 1.11911502, -0.87518864, 0.21038658};
-	std::mt19937_64 rng(1);
-	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
-	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
-	BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
-	BOOST_REQUIRE_EQUAL(seg.means.size(), expected_means.size());
-	BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
-	for (size_t i = 0; i < expected_means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - expected_means[i], 5e-6);
+	const vector<tuple<double, int, bool, vector<int>, vector<double>>> cases{
+		{0.01, 200, false, {30, 20, 25, 25}, {0.01236873, 1.11911502, -0.87518864, 0.21038658}},
+		{0.05, 100, false, {30, 20, 25, 25}, {0.01236873, 1.11911502, -0.87518864, 0.21038658}},
+		{0.01, 200, true, {30, 20, 25, 25}, {0.01236873, 1.11911502, -0.87518864, 0.21038658}},
+		{0.05, 100, true, {30, 20, 25, 25}, {0.01236873, 1.11911502, -0.87518864, 0.21038658}}
+	};
+	for (const auto& tc : cases) {
+		const auto& expected_lengths = std::get<3>(tc);
+		const auto& expected_means = std::get<4>(tc);
+		std::mt19937_64 rng(1);
+		std::vector<int> sbdry((std::get<1>(tc) + 1) * (std::get<1>(tc) + 2) / 2 + 2, std::get<1>(tc) + 1);
+		const auto seg = cbs::segment(x, false, std::get<0>(tc), std::get<1>(tc), std::get<2>(tc), 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
+		BOOST_TEST_CONTEXT("alpha=" << std::get<0>(tc) << " nperm=" << std::get<1>(tc) << " hybrid=" << std::get<2>(tc)) {
+			BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
+			BOOST_REQUIRE_EQUAL(seg.means.size(), expected_means.size());
+			BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
+			for (size_t i = 0; i < expected_means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - expected_means[i], 5e-6);
+		}
+	}
 }
 
 BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_NoisyCase4)
 {
 	const vector<double> x = read_values_second_column("cbs_case4_noisy_input.tsv");
-	const vector<int> expected_lengths{26, 24, 25, 25};
-	const vector<double> expected_means{0.07613565605121747, 0.779660503593676, -0.01523820714819689, 0.9630245166276734};
-	std::mt19937_64 rng(1);
-	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
-	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
-	BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
-	BOOST_REQUIRE_EQUAL(seg.means.size(), expected_means.size());
-	BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
-	for (size_t i = 0; i < expected_means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - expected_means[i], 5e-6);
+	const vector<tuple<double, int, bool, vector<int>, vector<double>>> cases{
+		{0.01, 200, false, {26, 24, 25, 25}, {0.07613565605121747, 0.779660503593676, -0.01523820714819689, 0.9630245166276734}},
+		{0.05, 100, false, {26, 24, 25, 25}, {0.07613565605121747, 0.779660503593676, -0.01523820714819689, 0.9630245166276734}},
+		{0.01, 200, true, {26, 24, 25, 25}, {0.07613565605121747, 0.779660503593676, -0.01523820714819689, 0.9630245166276734}},
+		{0.05, 100, true, {26, 24, 25, 25}, {0.07613565605121747, 0.779660503593676, -0.01523820714819689, 0.9630245166276734}}
+	};
+	for (const auto& tc : cases) {
+		const auto& expected_lengths = std::get<3>(tc);
+		const auto& expected_means = std::get<4>(tc);
+		std::mt19937_64 rng(1);
+		std::vector<int> sbdry((std::get<1>(tc) + 1) * (std::get<1>(tc) + 2) / 2 + 2, std::get<1>(tc) + 1);
+		const auto seg = cbs::segment(x, false, std::get<0>(tc), std::get<1>(tc), std::get<2>(tc), 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
+		BOOST_TEST_CONTEXT("alpha=" << std::get<0>(tc) << " nperm=" << std::get<1>(tc) << " hybrid=" << std::get<2>(tc)) {
+			BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
+			BOOST_REQUIRE_EQUAL(seg.means.size(), expected_means.size());
+			BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
+			for (size_t i = 0; i < expected_means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - expected_means[i], 5e-6);
+		}
+	}
 }
 
 BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_SimpleCase)
 {
 	const vector<double> x = read_values_second_column("cbs_case1_input.tsv");
-	const vector<int> starts = read_segment_starts("cbs_case1_expected.tsv");
-	const vector<double> means = read_segment_means("cbs_case1_expected.tsv");
-	const vector<int> expected_lengths{20, 20, 20};
-	std::mt19937_64 rng(1);
-	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
-	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
-	BOOST_REQUIRE_EQUAL(starts.size(), expected_lengths.size());
-	BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
-	BOOST_REQUIRE_EQUAL(seg.means.size(), means.size());
-	BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
-	for (size_t i = 0; i < means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - means[i], 1e-9);
+	const vector<tuple<double, int, bool, int, vector<int>, vector<double>>> cases{
+		{0.01, 200, false, 2, {20, 20, 20}, {0.0, 1.5, 0.0}},
+		{0.05, 100, false, 2, {20, 20, 20}, {0.0, 1.5, 0.0}},
+		{0.01, 200, false, 3, {20, 20, 20}, {0.0, 1.5, 0.0}},
+		{0.01, 200, true, 2, {20, 20, 20}, {0.0, 1.5, 0.0}},
+		{0.05, 100, true, 2, {20, 20, 20}, {0.0, 1.5, 0.0}},
+		{0.01, 200, true, 3, {20, 20, 20}, {0.0, 1.5, 0.0}}
+	};
+	for (const auto& tc : cases) {
+		const auto& expected_lengths = std::get<4>(tc);
+		const auto& expected_means = std::get<5>(tc);
+		std::mt19937_64 rng(1);
+		std::vector<int> sbdry((std::get<1>(tc) + 1) * (std::get<1>(tc) + 2) / 2 + 2, std::get<1>(tc) + 1);
+		const auto seg = cbs::segment(x, false, std::get<0>(tc), std::get<1>(tc), std::get<2>(tc), std::get<3>(tc), 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
+		BOOST_TEST_CONTEXT("alpha=" << std::get<0>(tc) << " nperm=" << std::get<1>(tc) << " hybrid=" << std::get<2>(tc) << " min_width=" << std::get<3>(tc)) {
+			BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
+			BOOST_REQUIRE_EQUAL(seg.means.size(), expected_means.size());
+			BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
+			for (size_t i = 0; i < expected_means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - expected_means[i], 1e-9);
+		}
+	}
 }
 
 BOOST_AUTO_TEST_CASE(Weighted_SegmentDriver_MatchesDNAcopy_SimpleCase)
 {
 	const vector<double> x = read_values_second_column("cbs_case2_weighted_input.tsv");
 	const vector<double> wts = read_values_second_column("cbs_case2_weighted_weights.tsv");
-	const vector<double> means = read_segment_means("cbs_case2_weighted_expected.tsv");
-	const vector<int> expected_lengths{15, 15, 15, 15};
-	std::mt19937_64 rng(1);
-	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
-	const auto seg = cbs::segment_weighted(x, wts, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
-	BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
-	BOOST_REQUIRE_EQUAL(seg.means.size(), means.size());
-	BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
-	for (size_t i = 0; i < means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - means[i], 1e-9);
+	const vector<tuple<double, int, bool, int, vector<int>, vector<double>>> cases{
+		{0.01, 200, false, 2, {15, 15, 15, 15}, {0.0, 2.0, -1.5, 0.0}},
+		{0.05, 100, false, 2, {15, 15, 15, 15}, {0.0, 2.0, -1.5, 0.0}},
+		{0.01, 200, false, 3, {15, 15, 15, 15}, {0.0, 2.0, -1.5, 0.0}},
+		{0.01, 200, true, 2, {15, 15, 15, 15}, {0.0, 2.0, -1.5, 0.0}},
+		{0.05, 100, true, 2, {15, 15, 15, 15}, {0.0, 2.0, -1.5, 0.0}},
+		{0.01, 200, true, 3, {15, 15, 15, 15}, {0.0, 2.0, -1.5, 0.0}}
+	};
+	for (const auto& tc : cases) {
+		const auto& expected_lengths = std::get<4>(tc);
+		const auto& expected_means = std::get<5>(tc);
+		std::mt19937_64 rng(1);
+		std::vector<int> sbdry((std::get<1>(tc) + 1) * (std::get<1>(tc) + 2) / 2 + 2, std::get<1>(tc) + 1);
+		const auto seg = cbs::segment_weighted(x, wts, std::get<0>(tc), std::get<1>(tc), std::get<2>(tc), std::get<3>(tc), 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
+		BOOST_TEST_CONTEXT("alpha=" << std::get<0>(tc) << " nperm=" << std::get<1>(tc) << " hybrid=" << std::get<2>(tc) << " min_width=" << std::get<3>(tc)) {
+			BOOST_REQUIRE_EQUAL(seg.lengths.size(), expected_lengths.size());
+			BOOST_REQUIRE_EQUAL(seg.means.size(), expected_means.size());
+			BOOST_CHECK_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), expected_lengths.begin(), expected_lengths.end());
+			for (size_t i = 0; i < expected_means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - expected_means[i], 1e-9);
+		}
+	}
 }
 
 
