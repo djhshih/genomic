@@ -99,6 +99,19 @@ static void check_iranges_case(const string& stem) {
 	}
 }
 
+static void check_iranges_case_order(const string& stem) {
+	const vector<cna::NCList::IntervalRef> intervals = read_intervals(stem + "_intervals.tsv");
+	const vector<QueryRange> queries = read_queries(stem + "_queries.tsv");
+	const vector<vector<size_t> > expected = read_expected_hits(stem + "_expected.tsv", queries.size());
+	cna::NCList index(intervals);
+
+	for (size_t qi = 0; qi < queries.size(); ++qi) {
+		vector<size_t> hits;
+		index.findOverlaps(queries[qi].start, queries[qi].end, back_inserter(hits));
+		BOOST_CHECK(hits == expected[qi]);
+	}
+}
+
 BOOST_AUTO_TEST_SUITE(NCList)
 
 BOOST_AUTO_TEST_CASE(EmptyIndex)
@@ -154,6 +167,35 @@ BOOST_AUTO_TEST_CASE(ZeroLengthInterval)
 	cna::NCList index(intervals);
 	BOOST_CHECK_EQUAL(index.overlapsAny(5, 5), true);
 	BOOST_CHECK_EQUAL(index.overlapsAny(6, 6), false);
+}
+
+BOOST_AUTO_TEST_CASE(InvalidBuildThrows)
+{
+	std::vector<cna::NCList::IntervalRef> intervals;
+	intervals.push_back(cna::NCList::IntervalRef{10, 9, 0});
+	BOOST_CHECK_THROW(cna::NCList index(intervals), std::logic_error);
+}
+
+BOOST_AUTO_TEST_CASE(InvalidQueryThrows)
+{
+	cna::NCList index;
+	BOOST_CHECK_THROW(index.overlapsAny(10, 9), std::logic_error);
+	std::vector<size_t> hits;
+	BOOST_CHECK_THROW(index.findOverlaps(10, 9, std::back_inserter(hits)), std::logic_error);
+}
+
+BOOST_AUTO_TEST_CASE(LargeDuplicateRanges)
+{
+	std::vector<cna::NCList::IntervalRef> intervals;
+	for (size_t i = 0; i < 50; ++i)
+		intervals.push_back(cna::NCList::IntervalRef{100, 200, i});
+	cna::NCList index(intervals);
+	std::vector<size_t> hits;
+	index.findOverlaps(150, 150, std::back_inserter(hits));
+	BOOST_REQUIRE_EQUAL(hits.size(), 50u);
+	std::sort(hits.begin(), hits.end());
+	for (size_t i = 0; i < 50; ++i)
+		BOOST_CHECK_EQUAL(hits[i], i);
 }
 
 BOOST_AUTO_TEST_CASE(InvariantsHold)
@@ -241,6 +283,16 @@ BOOST_AUTO_TEST_CASE(MatchesIRangesCase1)
 	check_iranges_case("nclist_case1");
 }
 
+BOOST_AUTO_TEST_CASE(MatchesIRangesOrderCase1)
+{
+	check_iranges_case_order("nclist_case1");
+}
+
+BOOST_AUTO_TEST_CASE(MatchesIRangesOrderCase2)
+{
+	check_iranges_case_order("nclist_case2");
+}
+
 BOOST_AUTO_TEST_CASE(MatchesIRangesCase2)
 {
 	check_iranges_case("nclist_case2");
@@ -294,6 +346,21 @@ BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz2)
 BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz3)
 {
 	check_iranges_case("nclist_fuzz3");
+}
+
+BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz4)
+{
+	check_iranges_case("nclist_fuzz4");
+}
+
+BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz5)
+{
+	check_iranges_case("nclist_fuzz5");
+}
+
+BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz6)
+{
+	check_iranges_case("nclist_fuzz6");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
