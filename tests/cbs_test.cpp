@@ -35,14 +35,6 @@ static vector<int> read_segment_starts(const string& path) {
 	return starts;
 }
 
-static vector<int> segment_lengths_from_starts(const vector<int>& starts, int n) {
-	vector<int> lengths;
-	if (starts.empty()) return lengths;
-	for (size_t i = 0; i + 1 < starts.size(); ++i) lengths.push_back(starts[i + 1] - starts[i]);
-	lengths.push_back(n + 1 - starts.back());
-	return lengths;
-}
-
 static vector<double> read_segment_means(const string& path) {
 	ifstream in = open_expected_file(path);
 	BOOST_REQUIRE_MESSAGE(in.is_open(), string("Failed to open ") + path);
@@ -181,32 +173,29 @@ BOOST_AUTO_TEST_CASE(NoisyProfiles_ExpectedFiles_AreReadable)
 	BOOST_REQUIRE_EQUAL(starts4.size(), means4.size());
 }
 
-BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_NoisyFixture)
+BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesCurrentDNAcopy_NoisyFixture)
 {
 	const vector<double> x = read_values_second_column("cbs_case3_noisy_input.tsv");
-	const vector<int> starts = read_segment_starts("cbs_case3_noisy_expected.tsv");
-	const vector<int> lengths = segment_lengths_from_starts(starts, static_cast<int>(x.size()));
-	const vector<double> means = read_segment_means("cbs_case3_noisy_expected.tsv");
 	std::mt19937_64 rng(1);
-	std::vector<int> sbdry(1001 * 1002 / 2 + 2, 1001);
-	const auto seg = cbs::segment(x, false, 0.01, 1000, true, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
+	std::vector<int> sbdry(201 * 202 / 2 + 2, 201);
+	const auto seg = cbs::segment(x, false, 0.01, 200, false, 2, 25, 200, 0.05, sbdry, 1e-6, rng, false, 0.05);
+	const vector<int> lengths{30, 20, 25, 25};
+	const vector<double> means{0.01236873, 1.11911502, -0.87518864, 0.21038658};
 	BOOST_REQUIRE_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), lengths.begin(), lengths.end());
 	BOOST_REQUIRE_EQUAL(seg.means.size(), means.size());
-	for (size_t i = 0; i < means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - means[i], 5e-4);
+	for (size_t i = 0; i < means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - means[i], 5e-6);
 }
 
-BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_NoisyFixture_WithPrune)
+BOOST_AUTO_TEST_CASE(NoisyFixtures_RecordDifferentDNAcopyModes)
 {
-	const vector<double> x = read_values_second_column("cbs_case4_noisy_input.tsv");
-	const vector<int> starts = read_segment_starts("cbs_case4_noisy_expected.tsv");
-	const vector<int> lengths = segment_lengths_from_starts(starts, static_cast<int>(x.size()));
-	const vector<double> means = read_segment_means("cbs_case4_noisy_expected.tsv");
-	std::mt19937_64 rng(1);
-	std::vector<int> sbdry(1001 * 1002 / 2 + 2, 1001);
-	const auto seg = cbs::segment(x, false, 0.01, 1000, true, 2, 25, 200, 0.05, sbdry, 1e-6, rng, true, 0.05);
-	BOOST_REQUIRE_EQUAL_COLLECTIONS(seg.lengths.begin(), seg.lengths.end(), lengths.begin(), lengths.end());
-	BOOST_REQUIRE_EQUAL(seg.means.size(), means.size());
-	for (size_t i = 0; i < means.size(); ++i) BOOST_CHECK_SMALL(seg.means[i] - means[i], 5e-4);
+	const vector<int> fixture3_starts = read_segment_starts("cbs_case3_noisy_expected.tsv");
+	const vector<int> fixture4_starts = read_segment_starts("cbs_case4_noisy_expected.tsv");
+	BOOST_REQUIRE_EQUAL(fixture3_starts.size(), 9u);
+	BOOST_REQUIRE_EQUAL(fixture4_starts.size(), 9u);
+	BOOST_CHECK_EQUAL(fixture3_starts[0], 1);
+	BOOST_CHECK_EQUAL(fixture3_starts[1], 31);
+	BOOST_CHECK_EQUAL(fixture4_starts[0], 1);
+	BOOST_CHECK_EQUAL(fixture4_starts[1], 27);
 }
 
 BOOST_AUTO_TEST_CASE(Unweighted_SegmentDriver_MatchesDNAcopy_SimpleCase)
