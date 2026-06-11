@@ -251,4 +251,49 @@ BOOST_AUTO_TEST_CASE(MatchesIRangesCase3)
 	check_iranges_case("nclist_case3");
 }
 
+BOOST_AUTO_TEST_CASE(MatchesIRangesCase4Random)
+{
+	check_iranges_case("nclist_case4");
+}
+
+BOOST_AUTO_TEST_CASE(MatchesIRangesCase5DeepContainment)
+{
+	check_iranges_case("nclist_case5_deep");
+}
+
+BOOST_AUTO_TEST_CASE(MatchesIRangesCase6SameStart)
+{
+	check_iranges_case("nclist_case6_same_start");
+}
+
+BOOST_AUTO_TEST_CASE(MatchesIRangesCase7SameEnd)
+{
+	check_iranges_case("nclist_case7_same_end");
+}
+
+BOOST_AUTO_TEST_CASE(MatchesIRangesCase8Sparse)
+{
+	check_iranges_case("nclist_case8_sparse");
+}
+
+BOOST_AUTO_TEST_CASE(MatchesIRangesCase9Dense)
+{
+	check_iranges_case("nclist_case9_dense");
+}
+
+BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz1)
+{
+	check_iranges_case("nclist_fuzz1");
+}
+
+BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz2)
+{
+	check_iranges_case("nclist_fuzz2");
+}
+
+BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz3)
+{
+	check_iranges_case("nclist_fuzz3");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
