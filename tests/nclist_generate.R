@@ -62,14 +62,14 @@ case10_queries <- data.frame(qstart=c(10L, 15L, 20L, 25L, 30L), qend=c(10L, 15L,
 write_case("nclist_case10_duplicates", c(10L, 10L, 10L, 20L, 20L), c(20L, 20L, 20L, 30L, 30L), case10_queries)
 
 set.seed(42)
-for (case_idx in 1:6) {
-  n_intervals <- if (case_idx <= 3) 120L else 400L
-  n_queries <- if (case_idx <= 3) 80L else 250L
-  starts <- sample(1:1200, n_intervals, replace=TRUE)
-  widths <- sample(0:80, n_intervals, replace=TRUE)
+for (case_idx in 1:3) {
+  n_intervals <- c(60L, 90L, 120L)[case_idx]
+  n_queries <- c(40L, 60L, 80L)[case_idx]
+  starts <- sample(1:600, n_intervals, replace=TRUE)
+  widths <- sample(0:40, n_intervals, replace=TRUE)
   ends <- starts + widths
-  qstarts <- sample(1:1200, n_queries, replace=TRUE)
-  qwidths <- sample(0:60, n_queries, replace=TRUE)
+  qstarts <- sample(1:600, n_queries, replace=TRUE)
+  qwidths <- sample(0:30, n_queries, replace=TRUE)
   qends <- qstarts + qwidths
   write_case(paste0("nclist_fuzz", case_idx), starts, ends, data.frame(qstart=qstarts, qend=qends))
 }

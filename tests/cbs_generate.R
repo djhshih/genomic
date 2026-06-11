@@ -1,8 +1,8 @@
 suppressPackageStartupMessages(library(DNAcopy))
 
-# Unified CBS fixture generator.
+# Unified CBS fixture generator / inspection helper.
 # Generates deterministic input/expected TSVs for multiple parameterizations
-# used by tests/cbs_test.cpp.
+# used by tests/cbs_test.cpp, and can optionally print selected hybrid cases.
 
 write_vec <- function(path, x, value.name="value") {
   write.table(data.frame(index=seq_along(x), setNames(list(x), value.name)),
@@ -96,7 +96,22 @@ x3 <- c(rnorm(30, 0, 0.15), rnorm(20, 1.1, 0.15), rnorm(25, -0.9, 0.15), rnorm(2
 set.seed(2)
 x4 <- c(rnorm(25, 0, 0.2), rnorm(25, 0.8, 0.2), rnorm(25, 0, 0.2), rnorm(25, 1.0, 0.2))
 
-write_case_bundle("cbs_case1", x1, NULL, list(perm_cfg, perm_alt_cfg, hybrid_cfg, hybrid_alt_cfg))
-write_case_bundle("cbs_case2_weighted", x2, w2, list(perm_cfg, perm_alt_cfg, hybrid_cfg, hybrid_alt_cfg))
-write_case_bundle("cbs_case3_noisy", x3, NULL, list(noisy_perm_cfg, noisy_perm_alt_cfg, noisy_hybrid_cfg, noisy_hybrid_alt_cfg))
-write_case_bundle("cbs_case4_noisy", x4, NULL, list(noisy_perm_cfg, noisy_perm_alt_cfg, noisy_hybrid_cfg, noisy_hybrid_alt_cfg))
+mode <- if (length(commandArgs(trailingOnly=TRUE)) > 0) commandArgs(trailingOnly=TRUE)[1] else "generate"
+
+if (mode == "generate") {
+  write_case_bundle("cbs_case1", x1, NULL, list(perm_cfg, perm_alt_cfg, hybrid_cfg, hybrid_alt_cfg))
+  write_case_bundle("cbs_case2_weighted", x2, w2, list(perm_cfg, perm_alt_cfg, hybrid_cfg, hybrid_alt_cfg))
+  write_case_bundle("cbs_case3_noisy", x3, NULL, list(noisy_perm_cfg, noisy_perm_alt_cfg, noisy_hybrid_cfg, noisy_hybrid_alt_cfg))
+  write_case_bundle("cbs_case4_noisy", x4, NULL, list(noisy_perm_cfg, noisy_perm_alt_cfg, noisy_hybrid_cfg, noisy_hybrid_alt_cfg))
+} else if (mode == "print-hybrid") {
+  cat("case1 hybrid\n")
+  print(run_case(x1, alpha=0.01, nperm=200, p.method="hybrid", min.width=2, kmax=25, nmin=200, eta=0.05))
+  cat("case1 hybrid alt\n")
+  print(run_case(x1, alpha=0.05, nperm=100, p.method="hybrid", min.width=3, kmax=25, nmin=200, eta=0.05))
+  cat("case2 weighted hybrid\n")
+  print(run_case(x2, w2, alpha=0.01, nperm=200, p.method="hybrid", min.width=2, kmax=25, nmin=200, eta=0.05))
+  cat("case2 weighted hybrid alt\n")
+  print(run_case(x2, w2, alpha=0.05, nperm=100, p.method="hybrid", min.width=3, kmax=25, nmin=200, eta=0.05))
+} else {
+  stop("Unknown mode: ", mode, ". Use 'generate' or 'print-hybrid'.")
+}

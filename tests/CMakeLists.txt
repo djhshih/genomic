@@ -14,21 +14,29 @@ if(CNA_ENABLE_WARNINGS)
 	)
 endif()
 
+execute_process(
+	COMMAND Rscript ${CMAKE_CURRENT_SOURCE_DIR}/nclist_generate.R
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+	RESULT_VARIABLE NCLIST_COMPARE_RESULT
+	OUTPUT_QUIET
+	ERROR_QUIET
+)
+if(NOT NCLIST_COMPARE_RESULT EQUAL 0)
+	message(WARNING "Failed to run tests/nclist_compare.R")
+endif()
+
+execute_process(
+	COMMAND Rscript ${CMAKE_CURRENT_SOURCE_DIR}/cbs_generate.R
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+	RESULT_VARIABLE CBS_COMPARE_RESULT
+	OUTPUT_QUIET
+	ERROR_QUIET
+)
+if(NOT CBS_COMPARE_RESULT EQUAL 0)
+	message(WARNING "Failed to run tests/cbs_compare.R")
+endif()
+
 file(COPY data/ DESTINATION . FILES_MATCHING REGEX "/.*\\.(cfg|in|ans|cn|seg|cnas|segas|txt|tsv)$")
-file(COPY cbs_compare.R DESTINATION .)
-file(COPY nclist_compare.R DESTINATION .)
-file(COPY data/cbs_case1_perm_alt_expected.tsv DESTINATION .)
-file(COPY data/cbs_case1_hybrid_expected.tsv DESTINATION .)
-file(COPY data/cbs_case1_hybrid_alt_expected.tsv DESTINATION .)
-file(COPY data/cbs_case2_weighted_perm_alt_expected.tsv DESTINATION .)
-file(COPY data/cbs_case2_weighted_hybrid_expected.tsv DESTINATION .)
-file(COPY data/cbs_case2_weighted_hybrid_alt_expected.tsv DESTINATION .)
-file(COPY data/cbs_case3_noisy_perm_alt_expected.tsv DESTINATION .)
-file(COPY data/cbs_case3_noisy_hybrid_expected.tsv DESTINATION .)
-file(COPY data/cbs_case3_noisy_hybrid_alt_expected.tsv DESTINATION .)
-file(COPY data/cbs_case4_noisy_perm_alt_expected.tsv DESTINATION .)
-file(COPY data/cbs_case4_noisy_hybrid_expected.tsv DESTINATION .)
-file(COPY data/cbs_case4_noisy_hybrid_alt_expected.tsv DESTINATION .)
 
 add_test(cna_test cna_test)
 

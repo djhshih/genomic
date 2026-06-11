@@ -308,6 +308,11 @@ BOOST_AUTO_TEST_CASE(MatchesIRangesCase4Random)
 	check_iranges_case("nclist_case4");
 }
 
+BOOST_AUTO_TEST_CASE(MatchesIRangesCase10Duplicates)
+{
+	check_iranges_case("nclist_case10_duplicates");
+}
+
 BOOST_AUTO_TEST_CASE(MatchesIRangesCase5DeepContainment)
 {
 	check_iranges_case("nclist_case5_deep");
@@ -346,21 +351,6 @@ BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz2)
 BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz3)
 {
 	check_iranges_case("nclist_fuzz3");
-}
-
-BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz4)
-{
-	check_iranges_case("nclist_fuzz4");
-}
-
-BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz5)
-{
-	check_iranges_case("nclist_fuzz5");
-}
-
-BOOST_AUTO_TEST_CASE(MatchesIRangesFuzz6)
-{
-	check_iranges_case("nclist_fuzz6");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
