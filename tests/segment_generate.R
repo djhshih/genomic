@@ -10,7 +10,7 @@ write_seg_output <- function(path, rows) {
   write.table(rows, file=path, sep="\t", row.names=FALSE, quote=FALSE)
 }
 
-run_sample <- function(values, chrom, maploc,
+run_sample <- function(values, sample_name, chrom, maploc,
                        smooth.region=10, outlier.SD.scale=4, smooth.SD.scale=2, trim=0.025,
                        alpha=0.01, nperm=200, p.method="perm", min.width=2, kmax=25, nmin=200, eta=0.05) {
   cna <- CNA(genomdat=values, chrom=chrom, maploc=maploc, data.type="logratio", presorted=TRUE)
@@ -30,12 +30,12 @@ run_sample <- function(values, chrom, maploc,
                  verbose=0)
   out <- seg$output
   data.frame(
-    ID=out$ID,
-    chrom=out$chrom,
-    loc.start=out$loc.start,
-    loc.end=out$loc.end,
-    num.mark=out$num.mark,
-    seg.mean=out$seg.mean,
+    sample=rep(sample_name, nrow(out)),
+    chromosome=out$chrom,
+    start=out$loc.start,
+    end=out$loc.end,
+    count=out$num.mark,
+    state=out$seg.mean,
     check.names=FALSE
   )
 }
@@ -56,8 +56,19 @@ expected_path <- "tests/data/segment_cli_case1_expected.seg"
 write_raw_matrix(input_path, marker, chrom_name, chrom, position, list(sample1=sample1, sample2=sample2))
 
 expected <- rbind(
-  run_sample(sample1, chrom, position),
-  run_sample(sample2, chrom, position)
+  run_sample(sample1, "sample1", chrom, position),
+  run_sample(sample2, "sample2", chrom, position)
 )
 
 write_seg_output(expected_path, expected)
+
+positive_only <- data.frame(
+  marker=marker,
+  chromosome=chrom_name,
+  position=position,
+  sample1=seq(0.1, 1.6, length.out=length(marker)),
+  sample2=seq(0.2, 1.7, length.out=length(marker)),
+  check.names=FALSE
+)
+write.table(positive_only, file="tests/data/segment_cli_not_logscale_input.cn",
+            sep="\t", row.names=FALSE, quote=FALSE)

@@ -268,6 +268,18 @@ BOOST_AUTO_TEST_CASE(CLI_Segment_Matches_DNAcopy_Expected_Output)
 	BOOST_CHECK_EQUAL(diff.different(output, expected), 0);
 }
 
+BOOST_AUTO_TEST_CASE(CLI_Segment_Rejects_NonLogScale_Input)
+{
+	const std::string input = "segment_cli_not_logscale_input.cn";
+	const std::string output = "segment_cli_not_logscale_output.seg";
+	const std::string cmd = std::string("../cna segment -i ") + shell_quote(input) +
+		" -o " + shell_quote(output) + " > /dev/null 2>&1";
+	const int rc = std::system(cmd.c_str());
+	BOOST_CHECK_NE(rc, 0);
+	std::ifstream out(output.c_str());
+	BOOST_CHECK(!out.good());
+}
+
 BOOST_AUTO_TEST_CASE(RawSampleSet_Filter_RemovesAlternatingMarkersAndPreservesAlignment)
 {
 	const char* set1fn = "cnfilt_cleanup_a.in";

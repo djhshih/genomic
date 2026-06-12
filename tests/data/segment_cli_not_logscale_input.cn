@@ -1,0 +1,17 @@
+marker	chromosome	position	sample1	sample2
+m01	chr1	10	0.1	0.2
+m02	chr1	20	0.2	0.3
+m03	chr1	30	0.3	0.4
+m04	chr1	40	0.4	0.5
+m05	chr1	50	0.5	0.6
+m06	chr1	60	0.6	0.7
+m07	chr1	70	0.7	0.8
+m08	chr1	80	0.8	0.9
+m09	chr2	10	0.9	1
+m10	chr2	20	1	1.1
+m11	chr2	30	1.1	1.2
+m12	chr2	40	1.2	1.3
+m13	chr2	50	1.3	1.4
+m14	chr2	60	1.4	1.5
+m15	chr2	70	1.5	1.6
+m16	chr2	80	1.6	1.7
