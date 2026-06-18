@@ -38,6 +38,7 @@ set(lib_sources
 	lib/Marker.cpp
 	lib/cbs/CBS.cpp
 	lib/cbs/smooth.cpp
+	lib/cngpld/summarize.cpp
 )
 
 add_library(cna_lib ${lib_sources})
