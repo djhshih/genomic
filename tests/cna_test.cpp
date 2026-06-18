@@ -5,6 +5,7 @@
 #include "config.h"
 #include "global.hpp"
 #include "SampleSets.hpp"
+#include "SegmentedSampleSet.hpp"
 #include "FilesDiff.hpp"
 
 #include <fstream>
@@ -423,6 +424,43 @@ BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Find_EmptyChromosome)
 
 	BOOST_CHECK_EQUAL(set.find(sample, 0, 10), 0u);
 }
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListMatchesLegacy)
+{
+	cna::SegmentedSampleSet<rvalue> ref;
+	cna::SegmentedSampleSet<rvalue> queries;
+
+	cna::SegmentedSampleSet<rvalue>::SegmentedSample* refSample1 = ref.create("ref1");
+	refSample1->addToChromosome(0, cna::Segment<rvalue>(1, 10, 20, 1, 0.0f));
+	refSample1->addToChromosome(0, cna::Segment<rvalue>(1, 25, 40, 1, 0.0f));
+	refSample1->addToChromosome(0, cna::Segment<rvalue>(1, 50, 80, 1, 0.0f));
+	refSample1->addToChromosome(0, cna::Segment<rvalue>(1, 55, 60, 1, 0.0f));
+	cna::SegmentedSampleSet<rvalue>::SegmentedSample* refSample2 = ref.create("ref2");
+	refSample2->addToChromosome(0, cna::Segment<rvalue>(1, 5, 8, 1, 0.0f));
+	refSample2->addToChromosome(0, cna::Segment<rvalue>(1, 90, 100, 1, 0.0f));
+
+	cna::SegmentedSampleSet<rvalue>::SegmentedSample* querySample = queries.create("q1");
+	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 1, 5, 1, 0.0f));
+	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 15, 18, 1, 0.0f));
+	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 20, 25, 1, 0.0f));
+	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 30, 35, 1, 0.0f));
+	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 58, 58, 1, 0.0f));
+	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 81, 90, 1, 0.0f));
+	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 95, 95, 1, 0.0f));
+
+	cna::dice_overlapper overlapper(0.2f);
+	cna::reference_segment_filter<rvalue, cna::dice_overlapper> legacy(ref, overlapper, true);
+	nclist::reference_segment_filter<rvalue, cna::dice_overlapper> accelerated(ref, overlapper, true);
+
+	cna::SegmentedSampleSet<rvalue>::Segments& chrom = (*querySample)[0];
+	for (size_t i = 0; i < chrom.size(); ++i) {
+		cna::Segment<rvalue> seg1 = chrom[i];
+		cna::Segment<rvalue> seg2 = chrom[i];
+		BOOST_CHECK_EQUAL(legacy(seg1), accelerated(seg2));
+		BOOST_CHECK_EQUAL(seg1.flag, seg2.flag);
+	}
+}
+
 
 BOOST_AUTO_TEST_CASE(RawSampleSet_Read_WithConfiguredDelimiter)
 {

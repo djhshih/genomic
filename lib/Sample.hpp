@@ -54,7 +54,13 @@ public:
 	Chromosome& at(chromid chromIndex) {
 		return this->operator[](chromIndex);
 	}
+	const Chromosome& at(chromid chromIndex) const {
+		return this->operator[](chromIndex);
+	}
 	Chromosome& at(const std::string& chromName) {
+		return this->operator[](chromName);
+	}
+	const Chromosome& at(const std::string& chromName) const {
 		return this->operator[](chromName);
 	}
 	Chromosome& operator[](chromid chromIndex) {
@@ -64,7 +70,19 @@ public:
 			throw std::logic_error("Chromosome index is out of bound.");
 		}
 	}
+	const Chromosome& operator[](chromid chromIndex) const {
+		if (chromIndex < items.size()) {
+			return items[chromIndex];
+		} else {
+			throw std::logic_error("Chromosome index is out of bound.");
+		}
+	}
 	Chromosome& operator[](const std::string& chromName) {
+		chromid k = cna::mapping::chromosome[chromName];
+		if (k != 0) return items[k-1];
+		throw std::logic_error("Chromosome name is not found.");
+	}
+	const Chromosome& operator[](const std::string& chromName) const {
 		chromid k = cna::mapping::chromosome[chromName];
 		if (k != 0) return items[k-1];
 		throw std::logic_error("Chromosome name is not found.");

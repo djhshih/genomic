@@ -58,6 +58,17 @@ if(NOT SEGMENT_GENERATE_RESULT EQUAL 0)
 	message(WARNING "Failed to run tests/segment_generate.R")
 endif()
 
+execute_process(
+	COMMAND Rscript ${CMAKE_CURRENT_SOURCE_DIR}/cngpld_generate.R
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+	RESULT_VARIABLE CNGPLD_GENERATE_RESULT
+	OUTPUT_QUIET
+	ERROR_QUIET
+)
+if(NOT CNGPLD_GENERATE_RESULT EQUAL 0)
+	message(WARNING "Failed to run tests/cngpld_generate.R")
+endif()
+
 file(COPY data/ DESTINATION . FILES_MATCHING PATTERN "*.cfg" PATTERN "*.in" PATTERN "*.ans" PATTERN "*.cn" PATTERN "*.seg" PATTERN "*.cnas" PATTERN "*.segas" PATTERN "*.txt" PATTERN "*.tsv" PATTERN "*.raw")
 
 add_test(cna_test cna_test)
@@ -85,6 +96,18 @@ if(CNA_ENABLE_WARNINGS)
 endif()
 
 add_test(smooth_test smooth_test)
+
+add_executable(cngpld_test cngpld_test.cpp)
+target_include_directories(cngpld_test PRIVATE ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
+target_link_libraries(cngpld_test cna_lib boost_unit_test_framework)
+
+if(CNA_ENABLE_WARNINGS)
+	target_compile_options(cngpld_test PRIVATE
+		$<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
+	)
+endif()
+
+add_test(cngpld_test cngpld_test)
 
 add_executable(nclist_test nclist_test.cpp)
 target_include_directories(nclist_test PRIVATE ${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})

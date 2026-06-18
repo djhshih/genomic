@@ -13,6 +13,8 @@
 #include "AlleleSpecific.hpp"
 #include "SampleSet.hpp"
 #include "parse.hpp"
+#include "NCList.hpp"
+
 
 #define ENABLE_IF_OVERLAPPER typename boost::enable_if<boost::is_base_and_derived<overlapper_base, overlapper_type>, overlapper_type>
 
@@ -20,6 +22,11 @@ namespace cna {
 
 template <typename V> class RawSampleSet;
 template <typename V> class SegmentedSampleSet;
+}
+
+namespace nclist { template <typename V, typename overlapper_type> class reference_segment_filter; }
+
+namespace cna {
  
 template <typename V>
 class filter_operator
@@ -346,6 +353,10 @@ public:
 	}
 	size_t find(SegmentedSample* sample, size_t chromIndex, position start) const {
 		return _find(*(sample->chromosome(chromIndex)), start);
+	}
+	const SegmentedSample* sample(const std::string& sampleName) const {
+		typename std::map<std::string, SegmentedSample*>::const_iterator it = byNames.find(sampleName);
+		return (it == byNames.end()) ? NULL : it->second;
 	}
 	
 	void set(const CNACriteria& criteria) {
@@ -917,5 +928,86 @@ void cna::SegmentedSampleSet<V>::removeFlagged(bool merge)
 
 } // namespace cna
 
+namespace nclist {
+
+template <typename V, typename overlapper_type>
+class reference_segment_filter : public cna::filter_operator<V>
+{
+	typedef cna::SegmentedSampleSet<V> ReferenceSet;
+
+	const ReferenceSet& ref;
+	overlapper_type overlap_checker;
+	bool optimize;
+	mutable std::map<const typename ReferenceSet::SegmentedSample*, std::vector<cna::NCList> > index_cache;
+
+	const cna::NCList& indexFor(const typename ReferenceSet::SegmentedSample* sample, chromid chri) const {
+		typename std::map<const typename ReferenceSet::SegmentedSample*, std::vector<cna::NCList> >::iterator cache_it = index_cache.find(sample);
+		if (cache_it == index_cache.end()) {
+			cache_it = index_cache.insert(std::make_pair(sample, std::vector<cna::NCList>(sample->size()))).first;
+		}
+		cna::NCList& index = cache_it->second[chri];
+		if (index.empty()) {
+			typename ReferenceSet::Segments& refChrom = *(const_cast<typename ReferenceSet::SegmentedSample*>(sample)->chromosome(chri));
+			std::vector<cna::NCList::IntervalRef> intervals;
+			intervals.reserve(refChrom.size());
+			for (size_t i = 0; i < refChrom.size(); ++i)
+				intervals.push_back(cna::NCList::IntervalRef{refChrom[i].start, refChrom[i].end, i});
+			index.build(intervals);
+		}
+		return index;
+	}
+
+public:
+	reference_segment_filter(const ReferenceSet& reference, const overlapper_type& _overlap_checker, bool _optimize)
+	: ref(reference), overlap_checker(_overlap_checker), optimize(_optimize)
+	{}
+
+	bool operator()(cna::Segment<V>& seg) const {
+		bool filterSegment = false;
+		chromid chri = seg.chromosome - 1;
+		const char* chrom = cna::mapping::chromosome[chri+1].c_str();
+
+		typename ReferenceSet::Samples::const_iterator refIt, refEnd = ref.end();
+		for (refIt = ref.begin(); refIt != refEnd; ++refIt) {
+			typename ReferenceSet::Segments& refChrom = (**refIt)[chri];
+			if (refChrom.size() > 0) {
+				position_diff lower, upper;
+				position query_start = seg.start;
+				position query_end = seg.end;
+				if (optimize && overlap_checker.bounds(seg.start, seg.end, lower, upper)) {
+					if (upper < 0)
+						continue;
+					query_start = static_cast<position>(lower < 0 ? 0 : lower);
+					query_end = static_cast<position>(upper);
+					if (query_start > query_end)
+						continue;
+				}
+
+				const cna::NCList& index = indexFor(*refIt, chri);
+				std::vector<size_t> candidates;
+				index.findOverlaps(query_start, query_end, std::back_inserter(candidates));
+				for (size_t ci = 0; ci < candidates.size(); ++ci) {
+					size_t i = candidates[ci];
+					position_diff intersection = std::min(refChrom[i].end, seg.end) - std::max(refChrom[i].start, seg.start) + 1;
+					if (intersection > 0) {
+						float score;
+						if (overlap_checker.overlap(intersection, seg.length(), refChrom[i].length(), score)) {
+							seg.flag = filterSegment = true;
+							log_trace(__FILE__, __LINE__, __func__, "Filter chr%s:%d-%d: %.2f overlap with chr%s:%d-%d in reference",
+									chrom, seg.start, seg.end,
+									score,
+									chrom, refChrom[i].start, refChrom[i].end);
+							break;
+						}
+					}
+				}
+			}
+			if (filterSegment) break;
+		}
+		return filterSegment;
+	}
+};
+
+} // namespace nclist
 
 #endif
