@@ -425,20 +425,27 @@ BOOST_AUTO_TEST_CASE(SegmentedSampleSet_Find_EmptyChromosome)
 	BOOST_CHECK_EQUAL(set.find(sample, 0, 10), 0u);
 }
 
-BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListMatchesLegacy)
+namespace {
+
+cna::SegmentedSampleSet<rvalue> makeReferenceFilterFixture()
 {
 	cna::SegmentedSampleSet<rvalue> ref;
-	cna::SegmentedSampleSet<rvalue> queries;
-
 	cna::SegmentedSampleSet<rvalue>::SegmentedSample* refSample1 = ref.create("ref1");
 	refSample1->addToChromosome(0, cna::Segment<rvalue>(1, 10, 20, 1, 0.0f));
 	refSample1->addToChromosome(0, cna::Segment<rvalue>(1, 25, 40, 1, 0.0f));
 	refSample1->addToChromosome(0, cna::Segment<rvalue>(1, 50, 80, 1, 0.0f));
 	refSample1->addToChromosome(0, cna::Segment<rvalue>(1, 55, 60, 1, 0.0f));
+	refSample1->addToChromosome(0, cna::Segment<rvalue>(1, 120, 120, 1, 0.0f));
 	cna::SegmentedSampleSet<rvalue>::SegmentedSample* refSample2 = ref.create("ref2");
 	refSample2->addToChromosome(0, cna::Segment<rvalue>(1, 5, 8, 1, 0.0f));
 	refSample2->addToChromosome(0, cna::Segment<rvalue>(1, 90, 100, 1, 0.0f));
+	refSample2->addToChromosome(0, cna::Segment<rvalue>(1, 130, 150, 1, 0.0f));
+	return ref;
+}
 
+cna::SegmentedSampleSet<rvalue> makeQueryFilterFixture()
+{
+	cna::SegmentedSampleSet<rvalue> queries;
 	cna::SegmentedSampleSet<rvalue>::SegmentedSample* querySample = queries.create("q1");
 	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 1, 5, 1, 0.0f));
 	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 15, 18, 1, 0.0f));
@@ -447,18 +454,147 @@ BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListMatchesLegacy)
 	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 58, 58, 1, 0.0f));
 	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 81, 90, 1, 0.0f));
 	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 95, 95, 1, 0.0f));
+	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 120, 120, 1, 0.0f));
+	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 140, 145, 1, 0.0f));
+	querySample->addToChromosome(0, cna::Segment<rvalue>(1, 151, 155, 1, 0.0f));
+	return queries;
+}
 
-	cna::dice_overlapper overlapper(0.2f);
-	cna::reference_segment_filter<rvalue, cna::dice_overlapper> legacy(ref, overlapper, true);
-	nclist::reference_segment_filter<rvalue, cna::dice_overlapper> accelerated(ref, overlapper, true);
+template <typename Overlapper>
+void checkReferenceFilterMatch(const cna::SegmentedSampleSet<rvalue>& ref,
+					 const cna::SegmentedSampleSet<rvalue>& queries,
+					 const Overlapper& overlapper,
+					 bool optimize)
+{
+	cna::reference_segment_filter<rvalue, Overlapper> legacy(ref, overlapper, optimize);
+	nclist::reference_segment_filter<rvalue, Overlapper> accelerated(ref, overlapper, optimize);
 
-	cna::SegmentedSampleSet<rvalue>::Segments& chrom = (*querySample)[0];
-	for (size_t i = 0; i < chrom.size(); ++i) {
-		cna::Segment<rvalue> seg1 = chrom[i];
-		cna::Segment<rvalue> seg2 = chrom[i];
-		BOOST_CHECK_EQUAL(legacy(seg1), accelerated(seg2));
-		BOOST_CHECK_EQUAL(seg1.flag, seg2.flag);
+	for (cna::SegmentedSampleSet<rvalue>::Samples::const_iterator sampleIt = queries.begin(); sampleIt != queries.end(); ++sampleIt) {
+		for (chromid chri = 0; chri < (*sampleIt)->size(); ++chri) {
+			cna::SegmentedSampleSet<rvalue>::Segments& chrom = (**sampleIt)[chri];
+			for (size_t i = 0; i < chrom.size(); ++i) {
+				cna::Segment<rvalue> seg1 = chrom[i];
+				cna::Segment<rvalue> seg2 = chrom[i];
+				BOOST_CHECK_EQUAL(legacy(seg1), accelerated(seg2));
+				BOOST_CHECK_EQUAL(seg1.flag, seg2.flag);
+			}
+		}
 	}
+}
+
+template <typename Overlapper>
+void checkReferenceFilterMatch(const Overlapper& overlapper, bool optimize)
+{
+	checkReferenceFilterMatch(makeReferenceFilterFixture(), makeQueryFilterFixture(), overlapper, optimize);
+}
+
+cna::SegmentedSampleSet<rvalue> makeRegressionReferenceFixture()
+{
+	cna::SegmentedSampleSet<rvalue> ref;
+	cna::SegmentedSampleSet<rvalue>::SegmentedSample* ref1 = ref.create("refA");
+	ref1->addToChromosome(0, cna::Segment<rvalue>(1, 10, 10, 1, 0.0f));
+	ref1->addToChromosome(0, cna::Segment<rvalue>(1, 10, 15, 1, 0.0f));
+	ref1->addToChromosome(0, cna::Segment<rvalue>(1, 16, 30, 1, 0.0f));
+	ref1->addToChromosome(0, cna::Segment<rvalue>(1, 30, 30, 1, 0.0f));
+	ref1->addToChromosome(0, cna::Segment<rvalue>(1, 100, 160, 1, 0.0f));
+	ref1->addToChromosome(0, cna::Segment<rvalue>(1, 120, 130, 1, 0.0f));
+	ref1->addToChromosome(1, cna::Segment<rvalue>(2, 5, 25, 1, 0.0f));
+	ref1->addToChromosome(1, cna::Segment<rvalue>(2, 40, 45, 1, 0.0f));
+
+	cna::SegmentedSampleSet<rvalue>::SegmentedSample* ref2 = ref.create("refB");
+	ref2->addToChromosome(0, cna::Segment<rvalue>(1, 200, 220, 1, 0.0f));
+	ref2->addToChromosome(0, cna::Segment<rvalue>(1, 200, 220, 1, 0.0f));
+	ref2->addToChromosome(0, cna::Segment<rvalue>(1, 221, 240, 1, 0.0f));
+	ref2->addToChromosome(1, cna::Segment<rvalue>(2, 1, 3, 1, 0.0f));
+	ref2->addToChromosome(1, cna::Segment<rvalue>(2, 50, 70, 1, 0.0f));
+	return ref;
+}
+
+cna::SegmentedSampleSet<rvalue> makeRegressionQueryFixture()
+{
+	cna::SegmentedSampleSet<rvalue> queries;
+	cna::SegmentedSampleSet<rvalue>::SegmentedSample* q1 = queries.create("qA");
+	q1->addToChromosome(0, cna::Segment<rvalue>(1, 1, 9, 1, 0.0f));
+	q1->addToChromosome(0, cna::Segment<rvalue>(1, 10, 10, 1, 0.0f));
+	q1->addToChromosome(0, cna::Segment<rvalue>(1, 15, 16, 1, 0.0f));
+	q1->addToChromosome(0, cna::Segment<rvalue>(1, 30, 30, 1, 0.0f));
+	q1->addToChromosome(0, cna::Segment<rvalue>(1, 118, 121, 1, 0.0f));
+	q1->addToChromosome(0, cna::Segment<rvalue>(1, 130, 160, 1, 0.0f));
+	q1->addToChromosome(0, cna::Segment<rvalue>(1, 199, 200, 1, 0.0f));
+	q1->addToChromosome(0, cna::Segment<rvalue>(1, 210, 210, 1, 0.0f));
+	q1->addToChromosome(0, cna::Segment<rvalue>(1, 221, 240, 1, 0.0f));
+	q1->addToChromosome(0, cna::Segment<rvalue>(1, 241, 250, 1, 0.0f));
+	q1->addToChromosome(1, cna::Segment<rvalue>(2, 1, 1, 1, 0.0f));
+	q1->addToChromosome(1, cna::Segment<rvalue>(2, 20, 22, 1, 0.0f));
+	q1->addToChromosome(1, cna::Segment<rvalue>(2, 46, 49, 1, 0.0f));
+	q1->addToChromosome(1, cna::Segment<rvalue>(2, 50, 70, 1, 0.0f));
+	q1->addToChromosome(1, cna::Segment<rvalue>(2, 71, 80, 1, 0.0f));
+
+	cna::SegmentedSampleSet<rvalue>::SegmentedSample* q2 = queries.create("qB");
+	q2->addToChromosome(0, cna::Segment<rvalue>(1, 1000, 1010, 1, 0.0f));
+	return queries;
+}
+
+} // namespace
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListMatchesLegacy_Dice)
+{
+	checkReferenceFilterMatch(cna::dice_overlapper(0.2f), true);
+}
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListMatchesLegacy_Reference)
+{
+	checkReferenceFilterMatch(cna::reference_overlapper(0.5f), false);
+}
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListMatchesLegacy_Query)
+{
+	checkReferenceFilterMatch(cna::query_overlapper(0.5f), false);
+}
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListMatchesLegacy_Min)
+{
+	checkReferenceFilterMatch(cna::min_overlapper(0.5f), false);
+}
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListMatchesLegacy_Max)
+{
+	checkReferenceFilterMatch(cna::max_overlapper(0.5f), false);
+}
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListMatchesLegacy_Union)
+{
+	checkReferenceFilterMatch(cna::union_overlapper(0.34f), false);
+}
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListRegressionExamples_Dice)
+{
+	checkReferenceFilterMatch(makeRegressionReferenceFixture(), makeRegressionQueryFixture(), cna::dice_overlapper(0.2f), true);
+}
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListRegressionExamples_Reference)
+{
+	checkReferenceFilterMatch(makeRegressionReferenceFixture(), makeRegressionQueryFixture(), cna::reference_overlapper(0.5f), false);
+}
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListRegressionExamples_Query)
+{
+	checkReferenceFilterMatch(makeRegressionReferenceFixture(), makeRegressionQueryFixture(), cna::query_overlapper(0.5f), false);
+}
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListRegressionExamples_Min)
+{
+	checkReferenceFilterMatch(makeRegressionReferenceFixture(), makeRegressionQueryFixture(), cna::min_overlapper(0.5f), false);
+}
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListRegressionExamples_Max)
+{
+	checkReferenceFilterMatch(makeRegressionReferenceFixture(), makeRegressionQueryFixture(), cna::max_overlapper(0.5f), false);
+}
+
+BOOST_AUTO_TEST_CASE(ReferenceSegmentFilter_NCListRegressionExamples_Union)
+{
+	checkReferenceFilterMatch(makeRegressionReferenceFixture(), makeRegressionQueryFixture(), cna::union_overlapper(0.34f), false);
 }
 
 
